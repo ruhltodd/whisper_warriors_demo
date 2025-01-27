@@ -82,6 +82,7 @@ class Player extends RectangleComponent
   final double firingCooldown = 0.5; // Cooldown period in seconds
   double timeSinceLastShot = 0.0; // Time since the last shot
   int health = 10; // Player's starting health
+  int maxHealth = 10; // Player's maximum health
   int level = 1;
   int exp = 0;
   int expToNextLevel = 100; // Starting experience threshold
@@ -115,8 +116,9 @@ class Player extends RectangleComponent
     level++;
     exp -= expToNextLevel;
     expToNextLevel = (expToNextLevel * 1.5).toInt(); // Increase threshold
-    health = (health * 1.2).toInt(); // Increase health by 20%
-    healthBar?.updateHealth(health);
+    maxHealth = (maxHealth * 1.2).toInt(); // Increase max health by 20%
+    health = maxHealth; // Restore health to max on level up
+    healthBar?.updateHealth(health, maxHealth); // Update the health bar
   }
 
   void takeDamage(int damage) {
@@ -125,7 +127,7 @@ class Player extends RectangleComponent
       removeFromParent(); // Remove the player when health is depleted
       healthBar?.removeFromParent(); // Remove the health bar
     } else {
-      healthBar?.updateHealth(health); // Update the health bar
+      healthBar?.updateHealth(health, maxHealth); // Update the health bar
     }
   }
 
@@ -179,43 +181,45 @@ class Player extends RectangleComponent
 
 class HealthBar extends PositionComponent {
   final Player player;
-  final double barWidth = 50; // Full width of the health bar
-  final double barHeight = 5; // Height of the health bar
+  final double barWidth = 50; // Fixed width of the health bar
+  final double barHeight = 5; // Fixed height of the health bar
   late Paint greenPaint;
   late Paint redPaint;
-  late Paint currentPaint;
 
   HealthBar(this.player) {
-    greenPaint = Paint()
-      ..color = const Color(0xFF00FF00); // Green for full health
-    redPaint = Paint()..color = const Color(0xFFFF0000); // Red for low health
-    currentPaint = greenPaint; // Default to green
-    width = barWidth; // Start at full health
-    height = barHeight;
+    greenPaint = Paint()..color = const Color(0xFF00FF00); // Green for health
+    redPaint = Paint()
+      ..color = const Color(0xFFFF0000); // Red for missing health
+    size = Vector2(barWidth, barHeight);
   }
 
-  void updateHealth(int health) {
-    // Change color based on health level
-    currentPaint = health <= 2 ? redPaint : greenPaint;
+  void updateHealth(int currentHealth, int maxHealth) {
+    // Ensure that the health value scales dynamically within the bar's size
+    double healthPercentage = currentHealth / maxHealth;
+    greenPaint.color = currentHealth <= maxHealth * 0.25
+        ? const Color(0xFFFF0000) // Turn red if health is low
+        : const Color(0xFF00FF00); // Green otherwise
 
-    // Update bar width to reflect health percentage
-    width = (health / 10) * barWidth;
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    // Position the health bar centered above the player
-    position = player.position - Vector2(barWidth / 2, player.size.y / 2 + 10);
+    // Update the width of the health bar to reflect the current health percentage
+    size = Vector2(barWidth * healthPercentage, barHeight);
   }
 
   @override
   void render(Canvas canvas) {
     super.render(canvas);
 
-    // Draw the current health bar
-    canvas.drawRect(Rect.fromLTWH(0, 0, width, barHeight), currentPaint);
+    // Draw the red background bar (always full width)
+    canvas.drawRect(Rect.fromLTWH(0, 0, barWidth, barHeight), redPaint);
+
+    // Draw the green health bar proportional to the current health
+    canvas.drawRect(size.toRect(), greenPaint);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    // Position the health bar above the player
+    position = player.position - Vector2(barWidth / 2, player.size.y / 2 + 10);
   }
 }
 
