@@ -25,20 +25,17 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     super.onLoad();
 
     // Initialize the player
-    player = Player()
-      ..position = Vector2(size.x / 2, size.y / 2)
-      ..size = Vector2(50, 50)
-      ..anchor = Anchor.center;
+    // player = Player()
+    //    ..position = Vector2(size.x / 2, size.y / 2)
+    ///    ..size = Vector2(50, 50)
+    //   ..anchor = Anchor.center;
 
-    await add(player); // Add player first
+    // await add(player); // Add player first
 
     // Add the player
     whisperWarrior = WhisperWarrior()
       ..position = player.position.clone()
       ..size = Vector2(64, 64); // Ensure the size matches the sprite sheet
-
-    player.whisperWarrior =
-        whisperWarrior; // Link the player to the WhisperWarrior
     add(whisperWarrior);
 
     // Add the experience bar
@@ -54,7 +51,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       margin: const EdgeInsets.only(left: 20, bottom: 20),
     );
 
-    player.joystick = joystick;
+    whisperWarrior.joystick = joystick;
     add(joystick);
 
     // Start the wave system
@@ -457,24 +454,22 @@ class ExperienceBar extends PositionComponent
 }
 
 class WhisperWarrior extends SpriteAnimationComponent
-    with HasGameRef<RogueShooterGame> {
-  late Map<String, SpriteAnimation> animations; // Declare animations map
+    with HasGameRef<RogueShooterGame>, CollisionCallbacks {
+  late Map<String, SpriteAnimation> animations;
+  bool isLoaded = false;
+  JoystickComponent? joystick; // Joystick reference for movement
 
-  WhisperWarrior()
-      : super(size: Vector2(64, 64)); // Assuming each frame is 64x64 pixels
+  WhisperWarrior() : super(size: Vector2(64, 64));
 
   @override
   Future<void> onLoad() async {
-    super.onLoad();
+    print("Loading WhisperWarrior...");
 
-    // Load the sprite sheet
     final spriteSheet = SpriteSheet(
-      image:
-          await gameRef.images.load('images/whisper_warrior_spritesheet.png'),
-      srcSize: Vector2(64, 64), // Frame size
+      image: await gameRef.images.load('whisper_warrior_spritesheet.png'),
+      srcSize: Vector2(64, 64),
     );
 
-    // Initialize animations
     animations = {
       'idle': spriteSheet.createAnimation(row: 0, stepTime: 0.2, to: 4),
       'walk': spriteSheet.createAnimation(row: 1, stepTime: 0.15, to: 6),
@@ -483,14 +478,37 @@ class WhisperWarrior extends SpriteAnimationComponent
       'death': spriteSheet.createAnimation(row: 4, stepTime: 0.25, to: 5),
     };
 
-    // Set the default animation
     animation = animations['idle'];
+    isLoaded = true;
+
+    print("WhisperWarrior loaded successfully!");
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    // Handle joystick movement
+    if (joystick != null && joystick!.delta.length > 0) {
+      // Move the WhisperWarrior based on joystick input
+      position +=
+          joystick!.delta.normalized() * 200 * dt; // Adjust speed as needed
+
+      // Play walk animation when moving
+      if (animation != animations['walk']) {
+        animation = animations['walk'];
+      }
+    } else {
+      // Play idle animation when not moving
+      if (animation != animations['idle']) {
+        animation = animations['idle'];
+      }
+    }
   }
 
   void playAnimation(String animationName) {
-    // Ensure animations is initialized
-    if (animations.isEmpty) {
-      print("Error: Animations not initialized.");
+    if (!isLoaded) {
+      print("Warning: Attempted to play animation before loading completed.");
       return;
     }
 
