@@ -1,22 +1,22 @@
 import 'dart:async';
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
+//import 'package:flame/events.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:flame/input.dart';
+import 'dart:math';
 
 void main() {
   runApp(GameWidget(game: RogueShooterGame()));
 }
 
-class RogueShooterGame extends FlameGame
-    with TapCallbacks, HasCollisionDetection {
+class RogueShooterGame extends FlameGame with HasCollisionDetection {
   late Player player;
   late ExperienceBar experienceBar;
-  late JoystickComponent joystick; // Joystick addition
-  int wave = 1; // Track the current wave
-  int enemiesToSpawn = 5; // Number of enemies to spawn per wave
+  late JoystickComponent joystick;
+  int baseEnemiesToSpawn = 5; // Starting enemies per level
+  int enemiesToSpawn = 5; // Updated each level
+  double spawnDelay = 1.0; // Delay between enemy spawns
 
   @override
   Future<void> onLoad() async {
@@ -30,49 +30,87 @@ class RogueShooterGame extends FlameGame
 
     add(player);
 
+    // Add the experience bar
+    experienceBar = ExperienceBar();
+    add(experienceBar);
+
     // Add the joystick
     joystick = JoystickComponent(
       knob: CircleComponent(
           radius: 15, paint: Paint()..color = const Color(0xFFCCCCCC)),
       background: CircleComponent(
           radius: 50, paint: Paint()..color = const Color(0xFF888888)),
-      margin: const EdgeInsets.only(left: 20, bottom: 20),
+      margin: const EdgeInsets.only(right: 20, bottom: 20),
     );
 
-    player.joystick = joystick; // Pass the joystick to the player
+    player.joystick = joystick;
     add(joystick);
-
-    // Add the experience bar
-    experienceBar = ExperienceBar();
-    add(experienceBar);
 
     // Start the wave system
     startWave();
   }
 
   void startWave() async {
+    enemiesToSpawn =
+        baseEnemiesToSpawn + (player.level - 1) * 2; // Scale with level
+
     for (int i = 0; i < enemiesToSpawn; i++) {
       spawnEnemy();
-      await Future.delayed(const Duration(seconds: 1)); // Delay between spawns
+      await Future.delayed(Duration(
+          milliseconds: (spawnDelay * 1000).toInt())); // Delay between spawns
     }
 
-    // Wait before starting the next wave
-    await Future.delayed(const Duration(seconds: 5));
-    wave++;
-    enemiesToSpawn += 2; // Increase difficulty by adding more enemies
-    startWave();
+    // Start the next wave after all enemies have spawned
+    await Future.delayed(
+        const Duration(seconds: 5)); // Optional delay between waves
+    startWave(); // Trigger the next wave
   }
 
   void spawnEnemy() {
-    final randomPosition = Vector2.random();
-    randomPosition.multiply(Vector2(size.x, size.y));
+    final Vector2 spawnPosition = _getRandomOffscreenPosition();
 
     final enemy = Enemy(player)
-      ..position = randomPosition
+      ..position = spawnPosition
       ..size = Vector2(40, 40)
       ..anchor = Anchor.center;
 
     add(enemy);
+  }
+
+  Vector2 _getRandomOffscreenPosition() {
+    final random = Random();
+    final spawnMargin = 50.0; // Distance from screen edges to spawn enemies
+    Vector2 position;
+
+    do {
+      final side = random.nextInt(
+          4); // Randomly choose a side (0 = top, 1 = right, 2 = bottom, 3 = left)
+      switch (side) {
+        case 0: // Top
+          position = Vector2(random.nextDouble() * size.x, -spawnMargin);
+          break;
+        case 1: // Right
+          position =
+              Vector2(size.x + spawnMargin, random.nextDouble() * size.y);
+          break;
+        case 2: // Bottom
+          position =
+              Vector2(random.nextDouble() * size.x, size.y + spawnMargin);
+          break;
+        case 3: // Left
+          position = Vector2(-spawnMargin, random.nextDouble() * size.y);
+          break;
+        default:
+          position = Vector2.zero();
+      }
+    } while (_isTooCloseToPlayer(position));
+
+    return position;
+  }
+
+  bool _isTooCloseToPlayer(Vector2 position) {
+    const safeDistance = 100.0; // Minimum distance from the player
+    return (player.position - position).length < safeDistance;
   }
 }
 
