@@ -5,6 +5,7 @@ import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:flame/sprite.dart';
 
 void main() {
   runApp(GameWidget(game: RogueShooterGame()));
@@ -12,6 +13,7 @@ void main() {
 
 class RogueShooterGame extends FlameGame with HasCollisionDetection {
   late Player player;
+  late WhisperWarrior whisperWarrior;
   late ExperienceBar experienceBar;
   late JoystickComponent joystick;
   int baseEnemiesToSpawn = 5; // Starting enemies per level
@@ -22,13 +24,22 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   Future<void> onLoad() async {
     super.onLoad();
 
-    // Add the player
+    // Initialize the player
     player = Player()
       ..position = Vector2(size.x / 2, size.y / 2)
       ..size = Vector2(50, 50)
       ..anchor = Anchor.center;
 
-    add(player);
+    await add(player); // Add player first
+
+    // Add the player
+    whisperWarrior = WhisperWarrior()
+      ..position = player.position.clone()
+      ..size = Vector2(64, 64); // Ensure the size matches the sprite sheet
+
+    player.whisperWarrior =
+        whisperWarrior; // Link the player to the WhisperWarrior
+    add(whisperWarrior);
 
     // Add the experience bar
     experienceBar = ExperienceBar();
@@ -40,7 +51,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
           radius: 15, paint: Paint()..color = const Color(0xFFCCCCCC)),
       background: CircleComponent(
           radius: 50, paint: Paint()..color = const Color(0xFF888888)),
-      margin: const EdgeInsets.only(right: 20, bottom: 20),
+      margin: const EdgeInsets.only(left: 20, bottom: 20),
     );
 
     player.joystick = joystick;
@@ -126,6 +137,7 @@ class Player extends RectangleComponent
   int expToNextLevel = 100; // Starting experience threshold
   HealthBar? healthBar; // Health bar component
   JoystickComponent? joystick; // Reference to the joystick
+  late WhisperWarrior whisperWarrior; // Animation component reference
 
   Player() : super(paint: Paint()..color = const Color(0xFF00FF00)) {
     add(RectangleHitbox()); // Add a hitbox for collision
@@ -138,6 +150,12 @@ class Player extends RectangleComponent
     // Add the health bar above the player
     healthBar = HealthBar(this);
     gameRef.add(healthBar!);
+
+    // Add the animated player sprite
+    whisperWarrior = WhisperWarrior()
+      ..position = position.clone()
+      ..size = Vector2(64, 64); // Match the sprite size
+    gameRef.add(whisperWarrior);
   }
 
   int get damage => 1 + (level - 1) * 1; // Base damage scales with level
@@ -161,7 +179,9 @@ class Player extends RectangleComponent
 
   void takeDamage(int damage) {
     health -= damage;
+    whisperWarrior.playAnimation('hit'); // Play hit animation
     if (health <= 0) {
+      whisperWarrior.playAnimation('death'); // Play death animation
       removeFromParent(); // Remove the player when health is depleted
       healthBar?.removeFromParent(); // Remove the health bar
     } else {
@@ -179,7 +199,14 @@ class Player extends RectangleComponent
     // Move the player using joystick input
     if (joystick != null && joystick!.delta.length > 0) {
       position += joystick!.delta.normalized() * speed * dt;
+      whisperWarrior.playAnimation('walk'); // Play walking animation
+    } else {
+      whisperWarrior
+          .playAnimation('idle'); // Play idle animation when not moving
     }
+
+    // Update the position of the animated sprite to match the player's
+    whisperWarrior.position = position.clone();
 
     // Shoot a projectile if cooldown allows
     if (timeSinceLastShot >= firingCooldown) {
@@ -189,31 +216,8 @@ class Player extends RectangleComponent
   }
 
   void shootProjectile() {
-    final enemies = gameRef.children.whereType<Enemy>();
-    if (enemies.isEmpty) return;
-
-    Enemy? closestEnemy;
-    double closestDistance = double.infinity;
-
-    for (final enemy in enemies) {
-      final distance = (enemy.position - position).length;
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestEnemy = enemy;
-      }
-    }
-
-    if (closestEnemy != null) {
-      final direction = (closestEnemy.position - position).normalized();
-
-      final projectile = Projectile(damage: damage)
-        ..position = position.clone()
-        ..size = Vector2(10, 10)
-        ..anchor = Anchor.center
-        ..velocity = direction * 300;
-
-      gameRef.add(projectile);
-    }
+    whisperWarrior.playAnimation('attack'); // Play attack animation
+    // Your existing projectile logic here
   }
 }
 
@@ -449,5 +453,51 @@ class ExperienceBar extends PositionComponent
 
     // Position the experience bar at the top-left corner of the screen
     position = Vector2(10, 50); // A fixed position with padding
+  }
+}
+
+class WhisperWarrior extends SpriteAnimationComponent
+    with HasGameRef<RogueShooterGame> {
+  late Map<String, SpriteAnimation> animations; // Declare animations map
+
+  WhisperWarrior()
+      : super(size: Vector2(64, 64)); // Assuming each frame is 64x64 pixels
+
+  @override
+  Future<void> onLoad() async {
+    super.onLoad();
+
+    // Load the sprite sheet
+    final spriteSheet = SpriteSheet(
+      image:
+          await gameRef.images.load('images/whisper_warrior_spritesheet.png'),
+      srcSize: Vector2(64, 64), // Frame size
+    );
+
+    // Initialize animations
+    animations = {
+      'idle': spriteSheet.createAnimation(row: 0, stepTime: 0.2, to: 4),
+      'walk': spriteSheet.createAnimation(row: 1, stepTime: 0.15, to: 6),
+      'attack': spriteSheet.createAnimation(row: 2, stepTime: 0.1, to: 4),
+      'hit': spriteSheet.createAnimation(row: 3, stepTime: 0.2, to: 2),
+      'death': spriteSheet.createAnimation(row: 4, stepTime: 0.25, to: 5),
+    };
+
+    // Set the default animation
+    animation = animations['idle'];
+  }
+
+  void playAnimation(String animationName) {
+    // Ensure animations is initialized
+    if (animations.isEmpty) {
+      print("Error: Animations not initialized.");
+      return;
+    }
+
+    if (animations.containsKey(animationName)) {
+      animation = animations[animationName];
+    } else {
+      print('Animation "$animationName" not found.');
+    }
   }
 }
