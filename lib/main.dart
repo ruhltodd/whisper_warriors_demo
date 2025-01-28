@@ -403,10 +403,19 @@ class Enemy extends SpriteAnimationComponent
 
   void takeDamage(int damage) {
     health -= damage;
+
+    // Spawn damage number
+    final damageNumber = DamageNumber(
+        damage,
+        position.clone() +
+            Vector2(0, -10)); // Adjusted position above the enemy
+    gameRef.add(damageNumber);
+
     if (health <= 0) {
       // Drop an experience item
       final drop = DropItem(expValue: 10)..position = position.clone();
       gameRef.add(drop);
+
       removeFromParent(); // Remove the enemy when health is depleted
     }
   }
