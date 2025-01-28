@@ -12,31 +12,23 @@ void main() {
 }
 
 class RogueShooterGame extends FlameGame with HasCollisionDetection {
-  late Player player;
-  late WhisperWarrior whisperWarrior;
+  late Player player; // Player now includes WhisperWarrior functionality
   late ExperienceBar experienceBar;
   late JoystickComponent joystick;
   int baseEnemiesToSpawn = 5; // Starting enemies per level
   int enemiesToSpawn = 5; // Updated each level
   double spawnDelay = 1.0; // Delay between enemy spawns
+  bool debugMode = false;
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
     // Initialize the player
-    // player = Player()
-    //    ..position = Vector2(size.x / 2, size.y / 2)
-    ///    ..size = Vector2(50, 50)
-    //   ..anchor = Anchor.center;
-
-    // await add(player); // Add player first
-
-    // Add the player
-    whisperWarrior = WhisperWarrior()
-      ..position = player.position.clone()
-      ..size = Vector2(64, 64); // Ensure the size matches the sprite sheet
-    add(whisperWarrior);
+    player = Player()
+      ..position = Vector2(size.x / 2, size.y / 2)
+      ..size = Vector2(64, 64); // Ensure size matches the WhisperWarrior sprite
+    await add(player);
 
     // Add the experience bar
     experienceBar = ExperienceBar();
@@ -51,7 +43,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       margin: const EdgeInsets.only(left: 20, bottom: 20),
     );
 
-    whisperWarrior.joystick = joystick;
+    player.joystick = joystick; // Assign joystick to player
     add(joystick);
 
     // Start the wave system
@@ -116,13 +108,16 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     return position;
   }
 
+  @override
+  Color backgroundColor() => const Color(0xFF888888); // Gray background
+
   bool _isTooCloseToPlayer(Vector2 position) {
     const safeDistance = 100.0; // Minimum distance from the player
     return (player.position - position).length < safeDistance;
   }
 }
 
-class Player extends RectangleComponent
+class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   final double speed = 200; // Movement speed
   final double firingCooldown = 0.5; // Cooldown period in seconds
@@ -136,7 +131,7 @@ class Player extends RectangleComponent
   JoystickComponent? joystick; // Reference to the joystick
   late WhisperWarrior whisperWarrior; // Animation component reference
 
-  Player() : super(paint: Paint()..color = const Color(0xFF00FF00)) {
+  Player() : super(size: Vector2(64, 64)) {
     add(RectangleHitbox()); // Add a hitbox for collision
   }
 
@@ -151,7 +146,7 @@ class Player extends RectangleComponent
     // Add the animated player sprite
     whisperWarrior = WhisperWarrior()
       ..position = position.clone()
-      ..size = Vector2(64, 64); // Match the sprite size
+      ..size = size.clone();
     gameRef.add(whisperWarrior);
   }
 
@@ -214,7 +209,32 @@ class Player extends RectangleComponent
 
   void shootProjectile() {
     whisperWarrior.playAnimation('attack'); // Play attack animation
-    // Your existing projectile logic here
+
+    final enemies = gameRef.children.whereType<Enemy>();
+    if (enemies.isEmpty) return;
+
+    Enemy? closestEnemy;
+    double closestDistance = double.infinity;
+
+    for (final enemy in enemies) {
+      final distance = (enemy.position - position).length;
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestEnemy = enemy;
+      }
+    }
+
+    if (closestEnemy != null) {
+      final direction = (closestEnemy.position - position).normalized();
+
+      final projectile = Projectile(damage: damage)
+        ..position = position.clone()
+        ..size = Vector2(10, 10)
+        ..anchor = Anchor.center
+        ..velocity = direction * 300;
+
+      gameRef.add(projectile);
+    }
   }
 }
 
@@ -459,7 +479,11 @@ class WhisperWarrior extends SpriteAnimationComponent
   bool isLoaded = false;
   JoystickComponent? joystick; // Joystick reference for movement
 
-  WhisperWarrior() : super(size: Vector2(64, 64));
+  WhisperWarrior()
+      : super(
+          size: Vector2(64, 64),
+          paint: Paint()..blendMode = BlendMode.srcOver,
+        );
 
   @override
   Future<void> onLoad() async {
@@ -471,11 +495,11 @@ class WhisperWarrior extends SpriteAnimationComponent
     );
 
     animations = {
-      'idle': spriteSheet.createAnimation(row: 0, stepTime: 0.2, to: 4),
-      'walk': spriteSheet.createAnimation(row: 1, stepTime: 0.15, to: 6),
-      'attack': spriteSheet.createAnimation(row: 2, stepTime: 0.1, to: 4),
-      'hit': spriteSheet.createAnimation(row: 3, stepTime: 0.2, to: 2),
-      'death': spriteSheet.createAnimation(row: 4, stepTime: 0.25, to: 5),
+      'idle': spriteSheet.createAnimation(row: 0, stepTime: 0.2),
+      //  'walk': spriteSheet.createAnimation(row: 1, stepTime: 0.15),
+      //  'attack': spriteSheet.createAnimation(row: 2, stepTime: 0.1),
+      //  'hit': spriteSheet.createAnimation(row: 3, stepTime: 0.2),
+      //  'death': spriteSheet.createAnimation(row: 4, stepTime: 0.25),
     };
 
     animation = animations['idle'];
