@@ -429,13 +429,21 @@ class DamageNumber extends TextComponent with HasGameRef<RogueShooterGame> {
   }
 }
 
-class DropItem extends CircleComponent
+class DropItem extends SpriteComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   final int expValue;
-  DropItem({required this.expValue}) {
-    paint = Paint()..color = const Color(0xFFFFD700); // Gold for coin
-    size = Vector2(15, 15);
+
+  DropItem({required this.expValue}) : super(size: Vector2(15, 15)) {
     add(CircleHitbox()); // Add a hitbox for collision
+  }
+
+  @override
+  Future<void> onLoad() async {
+    super.onLoad();
+
+    // Load the sprite for the coin
+    sprite =
+        await gameRef.loadSprite('blue_coin.png'); // Ensure this file exists
   }
 
   @override
