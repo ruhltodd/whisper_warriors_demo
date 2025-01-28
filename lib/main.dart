@@ -196,7 +196,7 @@ class Player extends PositionComponent
     // Move the player using joystick input
     if (joystick != null && joystick!.delta.length > 0) {
       position += joystick!.delta.normalized() * speed * dt;
-      whisperWarrior.playAnimation('walk'); // Play walking animation
+      //whisperWarrior.playAnimation('walk'); // Play walking animation
     } else {
       whisperWarrior
           .playAnimation('idle'); // Play idle animation when not moving
@@ -332,13 +332,32 @@ class Projectile extends SpriteComponent
   }
 }
 
-class Enemy extends RectangleComponent
+class Enemy extends SpriteAnimationComponent
     with CollisionCallbacks, HasGameRef<RogueShooterGame> {
   final Player player;
   final double speed = 100;
   int health = 3;
 
-  Enemy(this.player) : super(paint: Paint()..color = const Color(0xFFFF0000)) {
+  Enemy(this.player)
+      : super(
+          size: Vector2(32, 32),
+          anchor: Anchor.center,
+        );
+
+  @override
+  Future<void> onLoad() async {
+    super.onLoad();
+
+    // Load the sprite sheet
+    final spriteSheet = SpriteSheet(
+      image: await gameRef.images.load('mob1.png'),
+      srcSize: Vector2(32, 32),
+    );
+
+    // Create a walking animation
+    animation = spriteSheet.createAnimation(row: 0, stepTime: 0.2, to: 2);
+
+    // Add a collision hitbox
     add(RectangleHitbox());
   }
 
@@ -353,24 +372,26 @@ class Enemy extends RectangleComponent
     // Damage the player if too close
     if ((player.position - position).length < 10) {
       player.takeDamage(1); // Deal 1 damage to the player
-      removeFromParent(); // Remove the enemy after dealing damage
+      removeFromParent();
     }
   }
 
   void takeDamage(int damage) {
     health -= damage;
-
-    // Spawn damage number
-    final damageNumber = DamageNumber(damage, position.clone());
-    gameRef.add(damageNumber);
-
     if (health <= 0) {
-      // Drop an experience item
-      final drop = DropItem(expValue: 10)..position = position.clone();
-      gameRef.add(drop);
-
-      removeFromParent(); // Remove enemy when health is depleted
+      print(
+          'Enemy position at death: $position'); // Log position before dropping
+      _dropItem(); // Ensure the item is dropped before removal
+      removeFromParent();
     }
+  }
+
+  void _dropItem() {
+    final drop = DropItem(expValue: 10)
+      ..position = position.clone()
+      ..size = Vector2(15, 15);
+    gameRef.world.add(drop);
+    print('DropItem added at position: ${drop.position}');
   }
 }
 
@@ -415,16 +436,18 @@ class DamageNumber extends TextComponent with HasGameRef<RogueShooterGame> {
 class DropItem extends CircleComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   final int expValue;
+
   DropItem({required this.expValue}) {
     paint = Paint()..color = const Color(0xFFFFD700); // Gold for coin
     size = Vector2(15, 15);
-    add(CircleHitbox()); // Add a hitbox for collision
+    add(CircleHitbox.relative(1.5, parentSize: size)); // Adjusted hitbox size
   }
 
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is Player) {
-      other.gainExperience(expValue); // Player gains experience
+      print('DropItem collected by Player at position: $position'); // Debug log
+      other.gainExperience(expValue); // Grant experience
       removeFromParent(); // Remove the drop after collection
     }
     super.onCollision(intersectionPoints, other);
@@ -510,7 +533,7 @@ class WhisperWarrior extends SpriteAnimationComponent
 
     animations = {
       'idle': spriteSheet.createAnimation(row: 0, stepTime: 0.2),
-      //  'walk': spriteSheet.createAnimation(row: 1, stepTime: 0.15),
+      //'walk': spriteSheet.createAnimation(row: 1, stepTime: 0.15),
       //  'attack': spriteSheet.createAnimation(row: 2, stepTime: 0.1),
       //  'hit': spriteSheet.createAnimation(row: 3, stepTime: 0.2),
       //  'death': spriteSheet.createAnimation(row: 4, stepTime: 0.25),

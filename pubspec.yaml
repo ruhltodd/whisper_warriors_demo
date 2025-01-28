@@ -58,6 +58,7 @@ flutter:
     - assets/images/whisper_warrior_spritesheet.png
     - assets/images/projectile_normal.png
     - assets/images/grass_map.png
+    - assets/images/mob1.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
