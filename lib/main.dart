@@ -24,6 +24,14 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   Future<void> onLoad() async {
     super.onLoad();
 
+    // Add the grass map as the background
+    final grassMap = SpriteComponent(
+      sprite: await loadSprite('grass_map.png'),
+      size: Vector2(1280, 1280), // Update size based on your map's resolution
+      position: Vector2.zero(), // Start at the top-left corner
+    );
+    add(grassMap);
+
     // Initialize the player
     player = Player()
       ..position = Vector2(size.x / 2, size.y / 2)
@@ -107,9 +115,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
 
     return position;
   }
-
-  @override
-  Color backgroundColor() => const Color(0xFF888888); // Gray background
 
   bool _isTooCloseToPlayer(Vector2 position) {
     const safeDistance = 100.0; // Minimum distance from the player
@@ -282,14 +287,23 @@ class HealthBar extends PositionComponent {
   }
 }
 
-class Projectile extends CircleComponent
+class Projectile extends SpriteComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   late Vector2 velocity;
   final int damage;
 
   Projectile({required this.damage})
-      : super(paint: Paint()..color = const Color(0xFFFFFF00)) {
-    add(CircleHitbox()); // Add a hitbox for collision
+      : super(size: Vector2(16, 16)); // Adjust size as needed
+
+  @override
+  Future<void> onLoad() async {
+    super.onLoad();
+
+    // Load the sprite from assets
+    sprite = await gameRef.loadSprite('projectile_normal.png');
+
+    // Add a circular hitbox for collision
+    add(CircleHitbox()..debugMode = false); // Disable debug visuals
   }
 
   @override
@@ -312,7 +326,7 @@ class Projectile extends CircleComponent
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is Enemy) {
       other.takeDamage(damage); // Deal damage to the enemy
-      removeFromParent();
+      removeFromParent(); // Destroy projectile after collision
     }
     super.onCollision(intersectionPoints, other);
   }
