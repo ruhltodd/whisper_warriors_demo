@@ -12,9 +12,12 @@ void main() {
 }
 
 class RogueShooterGame extends FlameGame with HasCollisionDetection {
+  //late World world; // A world to hold all game components
+  late CameraComponent cameraComponent; // The camera component
   late Player player; // Player now includes WhisperWarrior functionality
   late ExperienceBar experienceBar;
   late JoystickComponent joystick;
+  late SpriteComponent grassMap;
   int baseEnemiesToSpawn = 5; // Starting enemies per level
   int enemiesToSpawn = 5; // Updated each level
   double spawnDelay = 1.0; // Delay between enemy spawns
@@ -24,20 +27,35 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   Future<void> onLoad() async {
     super.onLoad();
 
+    // Create and add the world
+    world = World();
+    add(world);
+
     // Add the grass map as the background
-    final grassMap = SpriteComponent(
+    grassMap = SpriteComponent(
       sprite: await loadSprite('grass_map.png'),
       size: Vector2(1280, 1280), // Update size based on your map's resolution
-      position: Vector2.zero(), // Start at the top-left corner
+      position: Vector2.zero(),
+      priority: 0, // Start at the top-left corner
     );
     add(grassMap);
+    //world.add(grassMap);
 
     // Initialize the player
     player = Player()
       ..position = Vector2(size.x / 2, size.y / 2)
-      ..size = Vector2(64, 64); // Ensure size matches the WhisperWarrior sprite
-    await add(player);
+      ..size = Vector2(64, 64)
+      ..priority = 1; // Ensure size matches the WhisperWarrior sprite
+    add(player);
 
+    // Attach the camera and configure the viewfinder
+    // cameraComponent = CameraComponent();
+    // add(cameraComponent);
+
+// Lock the camera to follow the player
+    // cameraComponent.viewfinder.add(
+    //   PositionComponent()..add(player),
+    // );
     // Add the experience bar
     experienceBar = ExperienceBar();
     add(experienceBar);
@@ -124,9 +142,9 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
-  final double speed = 200; // Movement speed
+  final double speed = 150; // Movement speed
   final double firingCooldown = 0.5; // Cooldown period in seconds
-  double timeSinceLastShot = 0.0; // Time since the last shot
+  double timeSinceLastShot = 0.5; // Time since the last shot
   int health = 10; // Player's starting health
   int maxHealth = 10; // Player's maximum health
   int level = 1;
@@ -258,32 +276,35 @@ class HealthBar extends PositionComponent {
   }
 
   void updateHealth(int currentHealth, int maxHealth) {
-    // Ensure that the health value scales dynamically within the bar's size
-    double healthPercentage = currentHealth / maxHealth;
-    greenPaint.color = currentHealth <= maxHealth * 0.25
-        ? const Color(0xFFFF0000) // Turn red if health is low
-        : const Color(0xFF00FF00); // Green otherwise
-
-    // Update the width of the health bar to reflect the current health percentage
+    final healthPercentage = currentHealth / maxHealth;
     size = Vector2(barWidth * healthPercentage, barHeight);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    // Calculate the position relative to the player's sprite anchor
+
+    // Center the health bar above the player's head and shift it to the right
+    const double xOffset =
+        30; // Adjust this value to move the bar further right
+    const double yOffset = -10; // Adjust this value to move the bar up or down
+
+    position = player.position.clone() -
+        Vector2(barWidth / 2, player.size.y / 2 + yOffset) +
+        Vector2(xOffset, 0);
   }
 
   @override
   void render(Canvas canvas) {
     super.render(canvas);
 
-    // Draw the red background bar (always full width)
+    // Draw the red background
     canvas.drawRect(Rect.fromLTWH(0, 0, barWidth, barHeight), redPaint);
 
-    // Draw the green health bar proportional to the current health
-    canvas.drawRect(size.toRect(), greenPaint);
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-    // Position the health bar above the player
-    position = player.position - Vector2(barWidth / 2, player.size.y / 2 + 10);
+    // Draw the green health bar
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.x, barHeight), greenPaint);
   }
 }
 
