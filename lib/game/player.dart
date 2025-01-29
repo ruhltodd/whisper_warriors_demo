@@ -10,36 +10,35 @@ import 'whisperwarrior.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
-  final double speed = 150; // Movement speed
-  final double firingCooldown = 0.5; // Cooldown period in seconds
-  double timeSinceLastShot = 0.5; // Time since the last shot
-  int health = 10; // Player's starting health
-  int maxHealth = 10; // Player's maximum health
+  final double speed = 120;
+  final double firingCooldown = 1.0;
+  double timeSinceLastShot = 1.0;
+  int health = 10;
+  int maxHealth = 10;
   int level = 1;
   int exp = 0;
-  int expToNextLevel = 100; // Starting experience threshold
-  HealthBar? healthBar; // Health bar component
-  Vector2 joystickDelta = Vector2.zero(); // Joystick movement delta
-  late WhisperWarrior whisperWarrior; // Animation component reference
+  int expToNextLevel = 100;
+  HealthBar? healthBar;
+  Vector2 joystickDelta = Vector2.zero();
+  late WhisperWarrior whisperWarrior;
+  Enemy? closestEnemy; // 🔹 Store closest enemy reference
 
   Player() : super(size: Vector2(64, 64)) {
-    add(RectangleHitbox()); // Add a hitbox for collision
+    add(RectangleHitbox());
   }
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    // Add the health bar above the player
     healthBar = HealthBar(this);
     gameRef.add(healthBar!);
 
-    // Initialize the WhisperWarrior sprite for animations
     whisperWarrior = WhisperWarrior()
       ..size = size.clone()
       ..anchor = Anchor.center
-      ..position = position.clone(); // Sync initial position
-    gameRef.add(whisperWarrior); //
+      ..position = position.clone();
+    gameRef.add(whisperWarrior);
   }
 
   void updateJoystick(Vector2 delta) {
@@ -47,16 +46,79 @@ class Player extends PositionComponent
   }
 
   @override
-  void render(Canvas canvas) {
-    super.render(canvas);
+  void update(double dt) {
+    super.update(dt);
+    timeSinceLastShot += dt;
 
-    // Optionally render a debugging rectangle for the Player
-    //final paint = Paint()..color = const Color(0xFF0000FF); // Blue color
-    // final rect = Rect.fromLTWH(0, 0, size.x, size.y); // Player size
-    //canvas.drawRect(rect, paint);
+    // 🔹 Run closest enemy check more often
+    if (timeSinceLastShot >= 0.2) {
+      updateClosestEnemy();
+    }
+
+    // Move player using joystick input
+    if (joystickDelta.length > 0) {
+      position += joystickDelta.normalized() * speed * dt;
+      whisperWarrior.playAnimation('walk');
+    } else {
+      whisperWarrior.playAnimation('idle');
+    }
+
+    whisperWarrior.position = position.clone();
+
+    // 🔹 Ensure an enemy is targeted before shooting
+    if (timeSinceLastShot >= firingCooldown && closestEnemy != null) {
+      shootProjectile();
+      timeSinceLastShot = 0.0;
+    }
+
+    if (healthBar != null) {
+      healthBar!.position = position +
+          Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
+    }
   }
 
-  int get damage => 1 + (level - 1) * 1; // Base damage scales with level
+  void updateClosestEnemy() {
+    final enemies = gameRef.children.whereType<Enemy>().toList();
+
+    if (enemies.isEmpty) {
+      closestEnemy = null;
+      return;
+    }
+
+    Enemy? newClosest;
+    double closestDistance = double.infinity;
+
+    for (final enemy in enemies) {
+      final distance = (enemy.position - position).length;
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        newClosest = enemy;
+      }
+    }
+
+    // 🔹 Assign only if it's different
+    if (newClosest != closestEnemy) {
+      closestEnemy = newClosest;
+    }
+  }
+
+  void shootProjectile() {
+    whisperWarrior.playAnimation('idle');
+
+    if (closestEnemy == null) return;
+
+    final direction = (closestEnemy!.position - position).normalized();
+
+    final projectile = Projectile(damage: damage)
+      ..position = position.clone()
+      ..size = Vector2(10, 10)
+      ..anchor = Anchor.center
+      ..velocity = direction * 300;
+
+    gameRef.add(projectile);
+  }
+
+  int get damage => 1 + (level - 1) * 1;
 
   void gainExperience(int amount) {
     exp += amount;
@@ -69,82 +131,21 @@ class Player extends PositionComponent
   void levelUp() {
     level++;
     exp -= expToNextLevel;
-    expToNextLevel = (expToNextLevel * 1.5).toInt(); // Increase threshold
-    maxHealth = (maxHealth * 1.2).toInt(); // Increase max health by 20%
-    health = maxHealth; // Restore health to max on level up
-    healthBar?.updateHealth(health, maxHealth); // Update the health bar
+    expToNextLevel = (expToNextLevel * 1.5).toInt();
+    maxHealth = (maxHealth * 1.2).toInt();
+    health = maxHealth;
+    healthBar?.updateHealth(health, maxHealth);
   }
 
   void takeDamage(int damage) {
     health -= damage;
-    whisperWarrior.playAnimation('hit'); // Play hit animation
+    whisperWarrior.playAnimation('hit');
     if (health <= 0) {
-      whisperWarrior.playAnimation('death'); // Play death animation
-      removeFromParent(); // Remove the player when health is depleted
-      healthBar?.removeFromParent(); // Remove the health bar
+      whisperWarrior.playAnimation('death');
+      removeFromParent();
+      healthBar?.removeFromParent();
     } else {
-      healthBar?.updateHealth(health, maxHealth); // Update the health bar
-    }
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    // Update the firing cooldown timer
-    timeSinceLastShot += dt;
-
-    // Move the player using joystick input
-    if (joystickDelta.length > 0) {
-      position += joystickDelta.normalized() * speed * dt;
-      whisperWarrior.playAnimation('walk'); // Play walking animation
-    } else {
-      whisperWarrior
-          .playAnimation('idle'); // Play idle animation when not moving
-    }
-
-    // Update the position of the animated sprite to match the player's
-    whisperWarrior.position = position.clone();
-
-    // Shoot a projectile if cooldown allows
-    if (timeSinceLastShot >= firingCooldown) {
-      shootProjectile();
-      timeSinceLastShot = 0.0; // Reset the timer after firing
-    }
-    if (healthBar != null) {
-// Center the health bar above the player's sprite
-      healthBar!.position = position +
-          Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
-    }
-  }
-
-  void shootProjectile() {
-    whisperWarrior.playAnimation('idle'); // Play attack animation
-
-    final enemies = gameRef.children.whereType<Enemy>();
-    if (enemies.isEmpty) return;
-
-    Enemy? closestEnemy;
-    double closestDistance = double.infinity;
-
-    for (final enemy in enemies) {
-      final distance = (enemy.position - position).length;
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestEnemy = enemy;
-      }
-    }
-
-    if (closestEnemy != null) {
-      final direction = (closestEnemy.position - position).normalized();
-
-      final projectile = Projectile(damage: damage)
-        ..position = position.clone()
-        ..size = Vector2(10, 10)
-        ..anchor = Anchor.center
-        ..velocity = direction * 300;
-
-      gameRef.add(projectile);
+      healthBar?.updateHealth(health, maxHealth);
     }
   }
 }
