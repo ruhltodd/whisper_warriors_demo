@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
+import 'package:flutter/foundation.dart'; // Import for VoidCallback
 import 'package:flame/sprite.dart';
 import 'player.dart';
 import 'main.dart';
@@ -12,6 +13,7 @@ class Enemy extends SpriteAnimationComponent
   final Player player;
   final double speed = 100;
   int health = 3;
+  VoidCallback? onRemoveCallback; // Add callback for removal
 
   Enemy(this.player)
       : super(
@@ -72,5 +74,11 @@ class Enemy extends SpriteAnimationComponent
 
       removeFromParent(); // Remove the enemy when health is depleted
     }
+  }
+
+  @override
+  void onRemove() {
+    super.onRemove();
+    onRemoveCallback?.call(); // Trigger the callback on removal
   }
 }

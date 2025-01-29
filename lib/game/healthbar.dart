@@ -28,9 +28,9 @@ class HealthBar extends PositionComponent {
     // Calculate the position relative to the player's sprite anchor
 
     // Center the health bar above the player's head and shift it to the right
-    const double xOffset =
-        30; // Adjust this value to move the bar further right
-    const double yOffset = -10; // Adjust this value to move the bar up or down
+    const double xOffset = 0;
+    30; // Adjust this value to move the bar further right
+    const double yOffset = 10; // Adjust this value to move the bar up or down
 
     position = player.position.clone() -
         Vector2(barWidth / 2, player.size.y / 2 + yOffset) +

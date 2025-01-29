@@ -1,11 +1,12 @@
-import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
-import 'main.dart';
+import 'package:flame/game.dart';
 import 'healthbar.dart';
-import 'whisperwarrior.dart';
-import 'projectile.dart';
+import 'main.dart';
 import 'enemy.dart';
+import 'projectile.dart';
+import 'whisperwarrior.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
@@ -18,7 +19,7 @@ class Player extends PositionComponent
   int exp = 0;
   int expToNextLevel = 100; // Starting experience threshold
   HealthBar? healthBar; // Health bar component
-  JoystickComponent? joystick; // Reference to the joystick
+  Vector2 joystickDelta = Vector2.zero(); // Joystick movement delta
   late WhisperWarrior whisperWarrior; // Animation component reference
 
   Player() : super(size: Vector2(64, 64)) {
@@ -33,11 +34,26 @@ class Player extends PositionComponent
     healthBar = HealthBar(this);
     gameRef.add(healthBar!);
 
-    // Add the animated player sprite
+    // Initialize the WhisperWarrior sprite for animations
     whisperWarrior = WhisperWarrior()
-      ..position = position.clone()
-      ..size = size.clone();
-    gameRef.add(whisperWarrior);
+      ..size = size.clone()
+      ..anchor = Anchor.center
+      ..position = position.clone(); // Sync initial position
+    gameRef.add(whisperWarrior); //
+  }
+
+  void updateJoystick(Vector2 delta) {
+    joystickDelta = delta;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+
+    // Optionally render a debugging rectangle for the Player
+    //final paint = Paint()..color = const Color(0xFF0000FF); // Blue color
+    // final rect = Rect.fromLTWH(0, 0, size.x, size.y); // Player size
+    //canvas.drawRect(rect, paint);
   }
 
   int get damage => 1 + (level - 1) * 1; // Base damage scales with level
@@ -79,8 +95,8 @@ class Player extends PositionComponent
     timeSinceLastShot += dt;
 
     // Move the player using joystick input
-    if (joystick != null && joystick!.delta.length > 0) {
-      position += joystick!.delta.normalized() * speed * dt;
+    if (joystickDelta.length > 0) {
+      position += joystickDelta.normalized() * speed * dt;
       whisperWarrior.playAnimation('walk'); // Play walking animation
     } else {
       whisperWarrior
@@ -95,10 +111,15 @@ class Player extends PositionComponent
       shootProjectile();
       timeSinceLastShot = 0.0; // Reset the timer after firing
     }
+    if (healthBar != null) {
+// Center the health bar above the player's sprite
+      healthBar!.position = position +
+          Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
+    }
   }
 
   void shootProjectile() {
-    whisperWarrior.playAnimation('attack'); // Play attack animation
+    whisperWarrior.playAnimation('idle'); // Play attack animation
 
     final enemies = gameRef.children.whereType<Enemy>();
     if (enemies.isEmpty) return;

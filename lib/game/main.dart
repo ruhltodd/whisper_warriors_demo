@@ -1,144 +1,158 @@
-import 'dart:async';
+import 'dart:async'; // Ensure this is imported
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
-//import 'package:flame/events.dart';
-import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:flame/sprite.dart';
-import 'player.dart';
 import 'experience.dart';
 import 'enemy.dart';
+import 'customcamera.dart';
+import 'hud.dart';
+import 'player.dart';
 
 void main() {
-  runApp(GameWidget(game: RogueShooterGame()));
+  runApp(GameWidget(
+    game: RogueShooterGame(),
+    overlayBuilderMap: {
+      'hud': (_, game) => HUD(
+            onJoystickMove: (delta) =>
+                (game as RogueShooterGame).player.updateJoystick(delta),
+            experienceBar: (game as RogueShooterGame).experienceBar,
+          ),
+    },
+  ));
 }
 
 class RogueShooterGame extends FlameGame with HasCollisionDetection {
-  //late World world; // A world to hold all game components
-  late CameraComponent cameraComponent; // The camera component
-  late Player player; // Player now includes WhisperWarrior functionality
+  late CustomCamera customCamera;
+  late Player player;
   late ExperienceBar experienceBar;
-  late JoystickComponent joystick;
   late SpriteComponent grassMap;
-  int baseEnemiesToSpawn = 5; // Starting enemies per level
-  int enemiesToSpawn = 5; // Updated each level
-  double spawnDelay = 1.0; // Delay between enemy spawns
-  bool debugMode = false;
+  late TimerComponent enemySpawnerTimer; // Use TimerComponent from Flame
+  int enemyCount = 0;
+  int maxEnemies = 5;
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    // Create and add the world
-    world = World();
-    add(world);
+    // Initialize the custom camera
+    customCamera = CustomCamera(
+      screenSize: size,
+      worldSize: Vector2(1280, 1280),
+    );
 
-    // Add the grass map as the background
+    // Add the grass map
     grassMap = SpriteComponent(
       sprite: await loadSprite('grass_map.png'),
-      size: Vector2(1280, 1280), // Update size based on your map's resolution
+      size: Vector2(1280, 1280),
       position: Vector2.zero(),
-      priority: 0, // Start at the top-left corner
     );
     add(grassMap);
-    //world.add(grassMap);
 
-    // Initialize the player
+    // Add the player
     player = Player()
-      ..position = Vector2(size.x / 2, size.y / 2)
-      ..size = Vector2(64, 64)
-      ..priority = 1; // Ensure size matches the WhisperWarrior sprite
+      ..position = Vector2(size.x / 2, size.y / 2) // Center player
+      ..size = Vector2(64, 64); // Default size for the player
     add(player);
 
-    // Attach the camera and configure the viewfinder
-    // cameraComponent = CameraComponent();
-    // add(cameraComponent);
-
-// Lock the camera to follow the player
-    // cameraComponent.viewfinder.add(
-    //   PositionComponent()..add(player),
-    // );
-    // Add the experience bar
+    // Initialize the experience bar
     experienceBar = ExperienceBar();
-    add(experienceBar);
 
-    // Add the joystick
-    joystick = JoystickComponent(
-      knob: CircleComponent(
-          radius: 15, paint: Paint()..color = const Color(0xFFCCCCCC)),
-      background: CircleComponent(
-          radius: 50, paint: Paint()..color = const Color(0xFF888888)),
-      margin: const EdgeInsets.only(left: 20, bottom: 20),
+    // Center the camera on the player initially
+    customCamera.follow(player.position, 0);
+
+    // Add the HUD overlay after all components are initialized
+    overlays.add('hud');
+
+    // Start the enemy spawner
+    startEnemySpawner();
+  }
+
+  void startEnemySpawner() {
+    enemySpawnerTimer = TimerComponent(
+      period: 2.0, // Spawn enemies every 2 seconds
+      repeat: true,
+      onTick: () {
+        if (enemyCount < maxEnemies) {
+          addEnemy();
+        }
+      },
     );
-
-    player.joystick = joystick; // Assign joystick to player
-    add(joystick);
-
-    // Start the wave system
-    startWave();
+    add(enemySpawnerTimer); // Add the TimerComponent to the game
   }
 
-  void startWave() async {
-    enemiesToSpawn =
-        baseEnemiesToSpawn + (player.level - 1) * 2; // Scale with level
-
-    for (int i = 0; i < enemiesToSpawn; i++) {
-      spawnEnemy();
-      await Future.delayed(Duration(
-          milliseconds: (spawnDelay * 1000).toInt())); // Delay between spawns
-    }
-
-    // Start the next wave after all enemies have spawned
-    await Future.delayed(
-        const Duration(seconds: 5)); // Optional delay between waves
-    startWave(); // Trigger the next wave
-  }
-
-  void spawnEnemy() {
-    final Vector2 spawnPosition = _getRandomOffscreenPosition();
-
+  void addEnemy() {
+    final spawnPosition = _getRandomSpawnPosition();
     final enemy = Enemy(player)
       ..position = spawnPosition
-      ..size = Vector2(40, 40)
-      ..anchor = Anchor.center;
+      ..onRemoveCallback = () {
+        enemyCount--; // Decrement enemy count when removed
+      };
+
+    // Increment enemy count
+    enemyCount++;
 
     add(enemy);
   }
 
-  Vector2 _getRandomOffscreenPosition() {
+  Vector2 _getRandomSpawnPosition() {
     final random = Random();
-    final spawnMargin = 50.0; // Distance from screen edges to spawn enemies
-    Vector2 position;
+    final spawnMargin = 50.0;
+    Vector2 spawnPosition;
 
     do {
-      final side = random.nextInt(
-          4); // Randomly choose a side (0 = top, 1 = right, 2 = bottom, 3 = left)
+      final side = random.nextInt(4); // Random side (top, right, bottom, left)
       switch (side) {
-        case 0: // Top
-          position = Vector2(random.nextDouble() * size.x, -spawnMargin);
+        case 0:
+          spawnPosition =
+              Vector2(random.nextDouble() * size.x, -spawnMargin); // Top
           break;
-        case 1: // Right
-          position =
-              Vector2(size.x + spawnMargin, random.nextDouble() * size.y);
+        case 1:
+          spawnPosition = Vector2(
+              size.x + spawnMargin, random.nextDouble() * size.y); // Right
           break;
-        case 2: // Bottom
-          position =
-              Vector2(random.nextDouble() * size.x, size.y + spawnMargin);
+        case 2:
+          spawnPosition = Vector2(
+              random.nextDouble() * size.x, size.y + spawnMargin); // Bottom
           break;
-        case 3: // Left
-          position = Vector2(-spawnMargin, random.nextDouble() * size.y);
+        case 3:
+          spawnPosition =
+              Vector2(-spawnMargin, random.nextDouble() * size.y); // Left
           break;
         default:
-          position = Vector2.zero();
+          spawnPosition = Vector2.zero();
       }
-    } while (_isTooCloseToPlayer(position));
+    } while ((spawnPosition - player.position).length <
+        100.0); // Avoid spawning near the player
 
-    return position;
+    return spawnPosition;
   }
 
-  bool _isTooCloseToPlayer(Vector2 position) {
-    const safeDistance = 100.0; // Minimum distance from the player
-    return (player.position - position).length < safeDistance;
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    // Update the custom camera to follow the player
+    customCamera.follow(player.position, dt);
+  }
+
+  @override
+  void render(Canvas canvas) {
+    canvas.save();
+
+    // Apply camera transformations
+    customCamera.applyTransform(canvas);
+
+    // Render game world
+    super.render(canvas);
+
+    canvas.restore();
+  }
+
+  @override
+  void onRemove() {
+    super.onRemove();
+    // Stop the timer when the game is removed
+    enemySpawnerTimer.timer.stop();
   }
 }
