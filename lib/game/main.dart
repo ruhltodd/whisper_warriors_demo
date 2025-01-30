@@ -10,25 +10,67 @@ import 'hud.dart';
 import 'player.dart';
 import 'powerup.dart';
 import 'enemy2.dart';
+import 'mainmenu.dart';
 
 void main() {
-  runApp(GameWidget(
-    game: RogueShooterGame(),
-    overlayBuilderMap: {
-      'hud': (_, game) => HUD(
-            onJoystickMove: (delta) =>
-                (game as RogueShooterGame).player.updateJoystick(delta),
-            experienceBar: (game as RogueShooterGame).experienceBar,
-            game: game as RogueShooterGame,
-          ),
-      'powerUpSelection': (_, game) => PowerUpSelectionOverlay(
-            game: game as RogueShooterGame,
-          ),
-      'powerUpBuffs': (_, game) => PowerUpBuffsOverlay(
-            game: game as RogueShooterGame,
-          ),
-    },
-  ));
+  runApp(MyApp());
+}
+
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _gameStarted = false;
+
+  void startGame() {
+    setState(() {
+      _gameStarted = true;
+    });
+  }
+
+  void openOptions() {
+    print("⚙ Options menu clicked!"); // ✅ Placeholder for options menu
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Stack(
+          children: [
+            if (!_gameStarted)
+              MainMenu(
+                startGame: startGame,
+                openOptions: openOptions,
+              ), // ✅ Show Main Menu first
+            if (_gameStarted)
+              GameWidget(
+                game:
+                    RogueShooterGame(), // ✅ Start the game after pressing "Start"
+                overlayBuilderMap: {
+                  'hud': (_, game) => HUD(
+                        onJoystickMove: (delta) => (game as RogueShooterGame)
+                            .player
+                            .updateJoystick(delta),
+                        experienceBar: (game as RogueShooterGame).experienceBar,
+                        game: game as RogueShooterGame,
+                      ),
+                  'powerUpSelection': (_, game) => PowerUpSelectionOverlay(
+                        game: game as RogueShooterGame,
+                      ),
+                  'powerUpBuffs': (_, game) => PowerUpBuffsOverlay(
+                        game: game as RogueShooterGame,
+                      ),
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class RogueShooterGame extends FlameGame with HasCollisionDetection {

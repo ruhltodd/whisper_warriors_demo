@@ -61,6 +61,9 @@ flutter:
     - assets/images/mob1.png
     - assets/images/mob2.png
     - assets/images/blue_coin.png
+    - assets/images/main_menu_background.png
+    - assets/images/start_button.png
+    - assets/images/options_button.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
