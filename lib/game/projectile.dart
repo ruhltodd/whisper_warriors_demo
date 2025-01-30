@@ -8,8 +8,10 @@ class Projectile extends SpriteComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   late Vector2 velocity;
   final int damage;
+  final double maxRange; // 🔹 Max travel distance before disappearing
+  late Vector2 spawnPosition; // 🔹 Track where it was fired
 
-  Projectile({required this.damage})
+  Projectile({required this.damage, this.maxRange = 200}) // 🔹 De
       : super(size: Vector2(16, 16)); // Adjust size as needed
 
   @override
@@ -21,6 +23,7 @@ class Projectile extends SpriteComponent
 
     // Add a circular hitbox for collision
     add(CircleHitbox()..debugMode = false); // Disable debug visuals
+    spawnPosition = position.clone(); // 🔹 Store initial position
   }
 
   @override
@@ -30,7 +33,12 @@ class Projectile extends SpriteComponent
     // Move the projectile
     position += velocity * dt;
 
-    // Remove projectile if it goes off-screen
+    // 🔹 Remove projectile if it exceeds max range
+    if ((position - spawnPosition).length > maxRange) {
+      removeFromParent();
+      return;
+    }
+    // 🔹 Remove projectile if it goes off-screen
     if (position.y < 0 ||
         position.y > gameRef.size.y ||
         position.x < 0 ||

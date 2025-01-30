@@ -103,11 +103,51 @@ class Player extends PositionComponent
   }
 
   void shootProjectile() {
-    whisperWarrior.playAnimation('idle');
+    whisperWarrior.playAnimation('idle'); // Play attack animation
 
-    if (closestEnemy == null) return;
+    // 🔹 Define attack range
+    const double attackRange = 300.0;
+    const double rangeMargin = 50.0; // Allow slight randomness in targeting
 
-    final direction = (closestEnemy!.position - position).normalized();
+    // 🔹 Get list of nearby enemies
+    final List<Enemy> enemies = gameRef.children
+        .whereType<Enemy>()
+        .where((enemy) => (enemy.position - position).length <= attackRange)
+        .toList();
+
+    if (enemies.isEmpty) return; // ✅ No enemies in range, don't fire
+
+    // 🔹 Sort enemies by distance
+    enemies.sort((a, b) => (a.position - position).length.compareTo(
+          (b.position - position).length,
+        ));
+
+    // 🔹 Get the closest enemy's distance
+    double closestDistance = (enemies.first.position - position).length;
+
+    // 🔹 Filter for enemies within a close range margin
+    List<Enemy> closeEnemies = enemies
+        .where((enemy) =>
+            (enemy.position - position).length <= closestDistance + rangeMargin)
+        .toList();
+
+    // 🔹 Prioritize enemies in the player's **facing direction**
+    closeEnemies.sort((a, b) {
+      final double angleA =
+          joystickDelta.angleTo((a.position - position).normalized());
+      final double angleB =
+          joystickDelta.angleTo((b.position - position).normalized());
+
+      return angleA
+          .abs()
+          .compareTo(angleB.abs()); // Lower angle difference = better target
+    });
+
+    // 🔹 Pick a random enemy from the top 2 closest and in direction
+    final Enemy targetEnemy = (closeEnemies.take(2).toList()..shuffle()).first;
+
+    // 🔹 Fire projectile at chosen enemy
+    final direction = (targetEnemy.position - position).normalized();
 
     final projectile = Projectile(damage: damage)
       ..position = position.clone()
@@ -132,8 +172,12 @@ class Player extends PositionComponent
     level++;
     exp -= expToNextLevel;
     expToNextLevel = (expToNextLevel * 1.5).toInt();
+    int oldMaxHealth = maxHealth;
     maxHealth = (maxHealth * 1.2).toInt();
-    health = maxHealth;
+
+    health = (health / oldMaxHealth * maxHealth).toInt().clamp(1, maxHealth);
+
+    // Adjust current health proportionally to prevent full restore
     healthBar?.updateHealth(health, maxHealth);
   }
 

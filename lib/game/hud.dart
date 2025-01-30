@@ -10,15 +10,27 @@ class HUD extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double safeTop = MediaQuery.of(context).padding.top; // Detect notch
+
     return Stack(
       children: [
+        // Experience Bar (Top Center, below notch)
+        Positioned(
+          top: safeTop + 10, // Moves it below the notch
+          left: MediaQuery.of(context).size.width / 2 - 100, // Centered
+          child: SizedBox(
+            width: 200,
+            height: 20,
+            child: CustomPaint(
+              painter: ExperienceBarPainter(experienceBar),
+            ),
+          ),
+        ),
+
+        // Joystick (Bottom Left)
         Align(
           alignment: Alignment.bottomLeft,
           child: JoystickOverlay(onMove: onJoystickMove),
-        ),
-        Align(
-          alignment: Alignment.topCenter,
-          child: ExperienceBarOverlay(experienceBar: experienceBar),
         ),
       ],
     );
@@ -129,6 +141,10 @@ class ExperienceBarPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final backgroundPaint = Paint()..color = Colors.black26;
     final progressPaint = Paint()..color = Colors.green;
+    final textPaint = TextPainter(
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
 
     // Draw background bar
     canvas.drawRect(
@@ -143,6 +159,25 @@ class ExperienceBarPainter extends CustomPainter {
       Rect.fromLTWH(0, 0, progressWidth, size.height),
       progressPaint,
     );
+    // Draw Level Text
+    final textSpan = TextSpan(
+      text: "Level ${experienceBar.playerLevel}",
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+
+    textPaint.text = textSpan;
+    textPaint.layout(minWidth: size.width, maxWidth: size.width);
+
+    final textOffset = Offset(
+      (size.width - textPaint.width) / 2,
+      (size.height - textPaint.height) / 2,
+    );
+
+    textPaint.paint(canvas, textOffset);
   }
 
   @override
