@@ -5,6 +5,7 @@ import 'package:flame/game.dart';
 import 'healthbar.dart';
 import 'main.dart';
 import 'enemy.dart';
+import 'enemy2.dart';
 import 'projectile.dart';
 import 'whisperwarrior.dart';
 import 'powerup.dart';
@@ -120,18 +121,20 @@ class Player extends PositionComponent
     // 🔹 Define attack range
     const double attackRange = 300.0;
     const double rangeMargin = 50.0; // Allow slight randomness in targeting
+    const double enemy2RangeBoost = 20.0; // Increase hit detection
 
-    // 🔹 Get list of nearby enemies
-    final List<Enemy> enemies = gameRef.children
-        .whereType<Enemy>()
-        .where((enemy) => (enemy.position - position).length <= attackRange)
+    // 🔹 Get list of nearby enemies (Includes Enemy & Enemy2)
+    final List<PositionComponent> enemies = gameRef.children
+        .whereType<
+            PositionComponent>() // ✅ Ensures we get only PositionComponents
+        .where(
+            (entity) => entity is Enemy || entity is Enemy2) // ✅ Filter enemies
         .toList();
 
     if (enemies.isEmpty) {
       print("❌ NO ENEMIES TO SHOOT!");
       return;
     }
-    ; // ✅ No enemies in range, don't fire
 
     // 🔹 Sort enemies by distance
     enemies.sort((a, b) => (a.position - position).length.compareTo(
@@ -143,7 +146,7 @@ class Player extends PositionComponent
     double closestDistance = (enemies.first.position - position).length;
 
     // 🔹 Filter for enemies within a close range margin
-    List<Enemy> closeEnemies = enemies
+    List<PositionComponent> closeEnemies = enemies
         .where((enemy) =>
             (enemy.position - position).length <= closestDistance + rangeMargin)
         .toList();
@@ -161,7 +164,8 @@ class Player extends PositionComponent
     });
 
     // 🔹 Pick a random enemy from the top 2 closest and in direction
-    final Enemy targetEnemy = (closeEnemies.take(2).toList()..shuffle()).first;
+    final PositionComponent targetEnemy =
+        (closeEnemies.take(2).toList()..shuffle()).first;
 
     // 🔹 Fire projectile at chosen enemy
     final direction = (targetEnemy.position - position).normalized();

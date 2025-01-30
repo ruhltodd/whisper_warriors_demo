@@ -9,6 +9,7 @@ import 'customcamera.dart';
 import 'hud.dart';
 import 'player.dart';
 import 'powerup.dart';
+import 'enemy2.dart';
 
 void main() {
   runApp(GameWidget(
@@ -18,14 +19,14 @@ void main() {
             onJoystickMove: (delta) =>
                 (game as RogueShooterGame).player.updateJoystick(delta),
             experienceBar: (game as RogueShooterGame).experienceBar,
-            game: game as RogueShooterGame, // ✅ Fix: Pass the game reference
+            game: game as RogueShooterGame,
           ),
       'powerUpSelection': (_, game) => PowerUpSelectionOverlay(
             game: game as RogueShooterGame,
           ),
       'powerUpBuffs': (_, game) => PowerUpBuffsOverlay(
             game: game as RogueShooterGame,
-          ), // ✅ NEW Buff UI
+          ),
     },
   ));
 }
@@ -37,17 +38,19 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   late SpriteComponent grassMap;
   late TimerComponent enemySpawnerTimer;
   late TimerComponent gameTimer;
+  late TimerComponent enemy2SpawnerTimer;
   int enemyCount = 0;
   int maxEnemies = 5;
   List<PowerUpType> powerUpOptions = [];
   late ValueNotifier<int> gameHudNotifier;
   bool isPaused = false;
   int remainingTime = 1200; // 20 minutes in seconds
+  bool enemy2Spawned = false; // ✅ Track if Enemy2 has been spawned
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
-    gameHudNotifier = ValueNotifier<int>(remainingTime); // ✅ Initialize
+    gameHudNotifier = ValueNotifier<int>(remainingTime);
 
     customCamera = CustomCamera(
       screenSize: size,
@@ -81,14 +84,23 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   }
 
   void triggerEvent() {
-    if (remainingTime == 1080) {
+    print("🔹 EVENT TRIGGERED at ${formatTime(remainingTime)}");
+
+    if (remainingTime == 1140 && !enemy2Spawned) {
+      print("✅ 19:00 HIT! Spawning Enemy2...");
+      spawnEnemy2Wave();
+      enemy2Spawned = true;
+    } else if (remainingTime == 1080) {
       maxEnemies += 5;
+      print("⚔ Increased max enemies to $maxEnemies!");
     } else if (remainingTime == 600) {
       maxEnemies += 10;
+      print("🔥 Further increased max enemies to $maxEnemies!");
     } else if (remainingTime == 300) {
       maxEnemies += 15;
+      print("💀 Final difficulty increase! Max enemies: $maxEnemies");
     } else if (remainingTime == 60) {
-      print("Final minute!");
+      print("🕛 FINAL MINUTE! Prepare for chaos!");
     }
   }
 
@@ -99,23 +111,21 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
 
   void startGameTimer() {
     gameTimer = TimerComponent(
-      period: 1.0, // ⏳ Tick every second
+      period: 1.0,
       repeat: true,
       onTick: () {
         if (remainingTime > 0) {
-          print(
-              "🕒 Timer Tick! Remaining Time: $remainingTime"); // 🔹 Debugging line
+          print("🕒 Timer Tick! Remaining Time: $remainingTime"); // ✅ Debugging
 
-          remainingTime--; // ✅ Decrease timer
-          gameHudNotifier.value = remainingTime; // ✅ Notify HUD
-        }
+          remainingTime--;
+          gameHudNotifier.value = remainingTime;
 
-        if (remainingTime % 120 == 0) {
-          triggerEvent(); // ✅ Trigger game events every 2 minutes
+          // ✅ Call `triggerEvent()` every second to check conditions
+          triggerEvent();
         }
 
         if (remainingTime <= 0) {
-          endGame(); // ✅ End the game when timer reaches 0
+          endGame();
         }
       },
     );
@@ -145,6 +155,33 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       };
     enemyCount++;
     add(enemy);
+  }
+
+  void spawnEnemy2Wave() {
+    print("🆕 Spawning initial wave of Enemy2");
+
+    for (int i = 0; i < 3; i++) {
+      addEnemy2();
+    }
+
+    enemy2SpawnerTimer = TimerComponent(
+      period: 20.0,
+      repeat: true,
+      onTick: () {
+        print("🆕 Enemy2 Spawned");
+        addEnemy2();
+      },
+    );
+
+    add(enemy2SpawnerTimer);
+  }
+
+  void addEnemy2() {
+    final spawnPosition = _getRandomSpawnPosition();
+    final enemy2 = Enemy2(player)..position = spawnPosition;
+
+    enemyCount++;
+    add(enemy2);
   }
 
   void showPowerUpSelection() {
