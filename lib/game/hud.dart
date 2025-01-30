@@ -12,7 +12,7 @@ class HUD extends StatelessWidget {
   HUD({
     required this.onJoystickMove,
     required this.experienceBar,
-    required this.game, // ✅ Inject game reference for timer
+    required this.game,
   });
 
   @override
@@ -26,10 +26,10 @@ class HUD extends StatelessWidget {
           top: safeTop + 10,
           right: 20,
           child: ValueListenableBuilder<int>(
-            valueListenable: game.gameHudNotifier, // ✅ Notifies UI on change
+            valueListenable: game.gameHudNotifier, // ✅ Timer updates here
             builder: (context, time, _) {
               return Text(
-                game.formatTime(time),
+                game.formatTime(time), // ✅ Live updating countdown
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,

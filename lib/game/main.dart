@@ -40,15 +40,14 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   int enemyCount = 0;
   int maxEnemies = 5;
   List<PowerUpType> powerUpOptions = [];
-  ValueNotifier<int> gameHudNotifier = ValueNotifier<int>(1200); // 20 min timer
+  late ValueNotifier<int> gameHudNotifier;
   bool isPaused = false;
   int remainingTime = 1200; // 20 minutes in seconds
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
-
-    startGameTimer();
+    gameHudNotifier = ValueNotifier<int>(remainingTime); // ✅ Initialize
 
     customCamera = CustomCamera(
       screenSize: size,
@@ -104,7 +103,11 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       repeat: true,
       onTick: () {
         if (remainingTime > 0) {
+          print(
+              "🕒 Timer Tick! Remaining Time: $remainingTime"); // 🔹 Debugging line
+
           remainingTime--; // ✅ Decrease timer
+          gameHudNotifier.value = remainingTime; // ✅ Notify HUD
         }
 
         if (remainingTime % 120 == 0) {
@@ -116,8 +119,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
         }
       },
     );
-
-    add(gameTimer); // ✅ Ensure TimerComponent is added to the game
+    add(gameTimer);
   }
 
   void startEnemySpawner() {
