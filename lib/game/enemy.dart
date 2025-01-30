@@ -71,7 +71,9 @@ class Enemy extends SpriteAnimationComponent
       // Drop an experience item
       final drop = DropItem(expValue: 10)..position = position.clone();
       gameRef.add(drop);
-
+      if (gameRef.player.vampiricHealing > 0) {
+        gameRef.player.gainHealth(gameRef.player.vampiricHealing.toInt());
+      }
       removeFromParent(); // Remove the enemy when health is depleted
     }
   }

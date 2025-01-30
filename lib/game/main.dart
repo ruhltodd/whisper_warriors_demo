@@ -8,6 +8,7 @@ import 'enemy.dart';
 import 'customcamera.dart';
 import 'hud.dart';
 import 'player.dart';
+import 'powerup.dart';
 
 void main() {
   runApp(GameWidget(
@@ -17,7 +18,14 @@ void main() {
             onJoystickMove: (delta) =>
                 (game as RogueShooterGame).player.updateJoystick(delta),
             experienceBar: (game as RogueShooterGame).experienceBar,
+            game: game as RogueShooterGame, // ✅ Fix: Pass the game reference
           ),
+      'powerUpSelection': (_, game) => PowerUpSelectionOverlay(
+            game: game as RogueShooterGame,
+          ),
+      'powerUpBuffs': (_, game) => PowerUpBuffsOverlay(
+            game: game as RogueShooterGame,
+          ), // ✅ NEW Buff UI
     },
   ));
 }
@@ -27,21 +35,26 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   late Player player;
   late ExperienceBar experienceBar;
   late SpriteComponent grassMap;
-  late TimerComponent enemySpawnerTimer; // Use TimerComponent from Flame
+  late TimerComponent enemySpawnerTimer;
+  late TimerComponent gameTimer;
   int enemyCount = 0;
   int maxEnemies = 5;
+  List<PowerUpType> powerUpOptions = [];
+  ValueNotifier<int> gameHudNotifier = ValueNotifier<int>(1200); // 20 min timer
+  bool isPaused = false;
+  int remainingTime = 1200; // 20 minutes in seconds
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    // Initialize the custom camera
+    startGameTimer();
+
     customCamera = CustomCamera(
       screenSize: size,
       worldSize: Vector2(1280, 1280),
     );
 
-    // Add the grass map
     grassMap = SpriteComponent(
       sprite: await loadSprite('grass_map.png'),
       size: Vector2(1280, 1280),
@@ -49,36 +62,76 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     );
     add(grassMap);
 
-    // Add the player
     player = Player()
-      ..position = Vector2(size.x / 2, size.y / 2) // Center player
-      ..size = Vector2(64, 64); // Default size for the player
+      ..position = Vector2(size.x / 2, size.y / 2)
+      ..size = Vector2(64, 64);
     add(player);
 
-    // Initialize the experience bar
     experienceBar = ExperienceBar();
-
-    // Center the camera on the player initially
     customCamera.follow(player.position, 0);
-
-    // Add the HUD overlay after all components are initialized
     overlays.add('hud');
 
-    // Start the enemy spawner
     startEnemySpawner();
+    startGameTimer();
+  }
+
+  String formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int secs = seconds % 60;
+    return "$minutes:${secs.toString().padLeft(2, '0')}";
+  }
+
+  void triggerEvent() {
+    if (remainingTime == 1080) {
+      maxEnemies += 5;
+    } else if (remainingTime == 600) {
+      maxEnemies += 10;
+    } else if (remainingTime == 300) {
+      maxEnemies += 15;
+    } else if (remainingTime == 60) {
+      print("Final minute!");
+    }
+  }
+
+  void endGame() {
+    overlays.add('gameOver');
+    pauseEngine();
+  }
+
+  void startGameTimer() {
+    gameTimer = TimerComponent(
+      period: 1.0, // ⏳ Tick every second
+      repeat: true,
+      onTick: () {
+        if (remainingTime > 0) {
+          remainingTime--; // ✅ Decrease timer
+        }
+
+        if (remainingTime % 120 == 0) {
+          triggerEvent(); // ✅ Trigger game events every 2 minutes
+        }
+
+        if (remainingTime <= 0) {
+          endGame(); // ✅ End the game when timer reaches 0
+        }
+      },
+    );
+
+    add(gameTimer); // ✅ Ensure TimerComponent is added to the game
   }
 
   void startEnemySpawner() {
     enemySpawnerTimer = TimerComponent(
-      period: 2.0, // Spawn enemies every 2 seconds
+      period: 2.0,
       repeat: true,
       onTick: () {
+        checkLevelUpScaling();
         if (enemyCount < maxEnemies) {
           addEnemy();
         }
       },
     );
-    add(enemySpawnerTimer); // Add the TimerComponent to the game
+    add(enemySpawnerTimer);
   }
 
   void addEnemy() {
@@ -86,13 +139,51 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     final enemy = Enemy(player)
       ..position = spawnPosition
       ..onRemoveCallback = () {
-        enemyCount--; // Decrement enemy count when removed
+        enemyCount--;
       };
-
-    // Increment enemy count
     enemyCount++;
-
     add(enemy);
+  }
+
+  void showPowerUpSelection() {
+    pauseGame();
+    List<PowerUpType> allPowerUps = PowerUpType.values.toList();
+    allPowerUps.shuffle();
+    powerUpOptions = allPowerUps.take(3).toList();
+    overlays.add('powerUpSelection');
+  }
+
+  void selectPowerUp(PowerUpType selectedType) {
+    player.gainPowerUp(selectedType);
+    overlays.remove('powerUpSelection');
+    resumeGame();
+  }
+
+  void pauseGame() {
+    isPaused = true;
+    pauseEngine();
+  }
+
+  void resumeGame() {
+    isPaused = false;
+    resumeEngine();
+  }
+
+  void checkLevelUpScaling() {
+    if (player.level >= 3 && maxEnemies != 20) {
+      maxEnemies = 20;
+      remove(enemySpawnerTimer);
+      enemySpawnerTimer = TimerComponent(
+        period: 1.0,
+        repeat: true,
+        onTick: () {
+          if (enemyCount < maxEnemies) {
+            addEnemy();
+          }
+        },
+      );
+      add(enemySpawnerTimer);
+    }
   }
 
   Vector2 _getRandomSpawnPosition() {
@@ -101,29 +192,26 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     Vector2 spawnPosition;
 
     do {
-      final side = random.nextInt(4); // Random side (top, right, bottom, left)
+      final side = random.nextInt(4);
       switch (side) {
         case 0:
-          spawnPosition =
-              Vector2(random.nextDouble() * size.x, -spawnMargin); // Top
+          spawnPosition = Vector2(random.nextDouble() * size.x, -spawnMargin);
           break;
         case 1:
-          spawnPosition = Vector2(
-              size.x + spawnMargin, random.nextDouble() * size.y); // Right
+          spawnPosition =
+              Vector2(size.x + spawnMargin, random.nextDouble() * size.y);
           break;
         case 2:
-          spawnPosition = Vector2(
-              random.nextDouble() * size.x, size.y + spawnMargin); // Bottom
+          spawnPosition =
+              Vector2(random.nextDouble() * size.x, size.y + spawnMargin);
           break;
         case 3:
-          spawnPosition =
-              Vector2(-spawnMargin, random.nextDouble() * size.y); // Left
+          spawnPosition = Vector2(-spawnMargin, random.nextDouble() * size.y);
           break;
         default:
           spawnPosition = Vector2.zero();
       }
-    } while ((spawnPosition - player.position).length <
-        100.0); // Avoid spawning near the player
+    } while ((spawnPosition - player.position).length < 100.0);
 
     return spawnPosition;
   }
@@ -131,28 +219,20 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   @override
   void update(double dt) {
     super.update(dt);
-
-    // Update the custom camera to follow the player
     customCamera.follow(player.position, dt);
   }
 
   @override
   void render(Canvas canvas) {
     canvas.save();
-
-    // Apply camera transformations
     customCamera.applyTransform(canvas);
-
-    // Render game world
     super.render(canvas);
-
     canvas.restore();
   }
 
   @override
   void onRemove() {
     super.onRemove();
-    // Stop the timer when the game is removed
     enemySpawnerTimer.timer.stop();
   }
 }

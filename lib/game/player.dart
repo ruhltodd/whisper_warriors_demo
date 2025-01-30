@@ -7,11 +7,13 @@ import 'main.dart';
 import 'enemy.dart';
 import 'projectile.dart';
 import 'whisperwarrior.dart';
+import 'powerup.dart';
+import 'healingnumber.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
-  final double speed = 120;
-  final double firingCooldown = 1.0;
+  double speed = 120;
+  double firingCooldown = 1.0;
   double timeSinceLastShot = 1.0;
   int health = 10;
   int maxHealth = 10;
@@ -22,6 +24,13 @@ class Player extends PositionComponent
   Vector2 joystickDelta = Vector2.zero();
   late WhisperWarrior whisperWarrior;
   Enemy? closestEnemy; // 🔹 Store closest enemy reference
+  List<PowerUp> powerUps = []; // Stores acquired power-ups
+  double vampiricHealing = 0;
+  double damageReduction = 0;
+  double magnetRange = 100;
+  double blackHoleCooldown = 10;
+  Map<PowerUpType, int> powerUpLevels = {}; // ✅ Track power-up levels
+  Map<PowerUpType, int> activePowerUps = {}; // ✅ Tracks power-ups for HUD
 
   Player() : super(size: Vector2(64, 64)) {
     add(RectangleHitbox());
@@ -49,6 +58,7 @@ class Player extends PositionComponent
   void update(double dt) {
     super.update(dt);
     timeSinceLastShot += dt;
+    print("🔹 PLAYER MOVEMENT | Pos: $position | HP: $health");
 
     // 🔹 Run closest enemy check more often
     if (timeSinceLastShot >= 0.2) {
@@ -103,6 +113,8 @@ class Player extends PositionComponent
   }
 
   void shootProjectile() {
+    print("🔹 SHOOTING ATTEMPT");
+
     whisperWarrior.playAnimation('idle'); // Play attack animation
 
     // 🔹 Define attack range
@@ -115,12 +127,17 @@ class Player extends PositionComponent
         .where((enemy) => (enemy.position - position).length <= attackRange)
         .toList();
 
-    if (enemies.isEmpty) return; // ✅ No enemies in range, don't fire
+    if (enemies.isEmpty) {
+      print("❌ NO ENEMIES TO SHOOT!");
+      return;
+    }
+    ; // ✅ No enemies in range, don't fire
 
     // 🔹 Sort enemies by distance
     enemies.sort((a, b) => (a.position - position).length.compareTo(
           (b.position - position).length,
         ));
+    print("✅ ENEMIES FOUND: ${enemies.length}");
 
     // 🔹 Get the closest enemy's distance
     double closestDistance = (enemies.first.position - position).length;
@@ -156,6 +173,7 @@ class Player extends PositionComponent
       ..velocity = direction * 300;
 
     gameRef.add(projectile);
+    print("🚀 PROJECTILE FIRED!");
   }
 
   int get damage => 1 + (level - 1) * 1;
@@ -179,6 +197,8 @@ class Player extends PositionComponent
 
     // Adjust current health proportionally to prevent full restore
     healthBar?.updateHealth(health, maxHealth);
+    gameRef.showPowerUpSelection();
+    gameRef.checkLevelUpScaling();
   }
 
   void takeDamage(int damage) {
@@ -190,6 +210,41 @@ class Player extends PositionComponent
       healthBar?.removeFromParent();
     } else {
       healthBar?.updateHealth(health, maxHealth);
+    }
+  }
+
+  void gainPowerUp(PowerUpType type) {
+    if (powerUpLevels.containsKey(type)) {
+      powerUpLevels[type] =
+          (powerUpLevels[type]! + 1).clamp(1, 6); // ✅ Max level 6
+    } else {
+      powerUpLevels[type] = 1; // ✅ Start at Level 1
+    }
+
+    // ✅ Keep track of active power-ups (ensures HUD overlay works)
+    activePowerUps[type] = powerUpLevels[type]!;
+
+    // Apply new effect
+    PowerUp(type, level: powerUpLevels[type]!).applyEffect(this);
+
+    // Show the updated buffs on screen
+    gameRef.overlays.add('powerUpBuffs');
+  }
+
+  void gainHealth(int amount) {
+    if (health < maxHealth && amount > 0) {
+      // ✅ Only heal if not at max HP
+      int healedAmount = ((health + amount) > maxHealth)
+          ? (maxHealth - health)
+          : amount; // ✅ Cap healing at max HP
+
+      health += healedAmount;
+
+      // ✅ Only spawn "+HP" text if healing actually happened
+      if (healedAmount > 0) {
+        final healingNumber = HealingNumber(healedAmount, position.clone());
+        gameRef.add(healingNumber);
+      }
     }
   }
 }
