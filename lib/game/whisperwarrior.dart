@@ -27,9 +27,12 @@ class WhisperWarrior extends SpriteAnimationComponent
 
     // Load animations
     animations = {
-      'idle': spriteSheet.createAnimation(row: 0, stepTime: 0.2),
-      // 'walk': spriteSheet.createAnimation(row: 1, stepTime: 0.15),
-      // 'attack': spriteSheet.createAnimation(row: 2, stepTime: 0.1),
+      'idle':
+          spriteSheet.createAnimation(row: 0, stepTime: 0.4, from: 0, to: 1),
+      // 'walk':
+      //     spriteSheet.createAnimation(row: 0, stepTime: 0.1, from: 2, to: 7),
+      'attack':
+          spriteSheet.createAnimation(row: 0, stepTime: 0.2, from: 8, to: 12),
       // 'hit': spriteSheet.createAnimation(row: 3, stepTime: 0.2),
 //'death': spriteSheet.createAnimation(row: 4, stepTime: 0.25),
     };

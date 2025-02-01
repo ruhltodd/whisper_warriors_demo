@@ -12,7 +12,7 @@ class Enemy extends SpriteAnimationComponent
     with CollisionCallbacks, HasGameRef<RogueShooterGame> {
   final Player player;
   final double speed = 100;
-  int health = 3;
+  int health = 100;
   VoidCallback? onRemoveCallback; // Add callback for removal
 
   Enemy(this.player)
@@ -71,9 +71,9 @@ class Enemy extends SpriteAnimationComponent
       // Drop an experience item
       final drop = DropItem(expValue: 10)..position = position.clone();
       gameRef.add(drop);
-      if (gameRef.player.vampiricHealing > 0) {
-        gameRef.player.gainHealth(gameRef.player.vampiricHealing.toInt());
-      }
+      gameRef.player.gainHealth(
+          gameRef.player.vampiricHealing.toInt()); // ✅ Triggers Healing!
+
       removeFromParent(); // Remove the enemy when health is depleted
     }
   }

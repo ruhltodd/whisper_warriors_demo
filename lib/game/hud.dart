@@ -3,6 +3,8 @@ import 'package:flame/components.dart';
 import 'experience.dart';
 import 'powerup.dart';
 import 'main.dart';
+import 'player.dart';
+import 'abilitybar.dart';
 
 class HUD extends StatelessWidget {
   final void Function(Vector2 delta) onJoystickMove;
@@ -51,6 +53,13 @@ class HUD extends StatelessWidget {
               painter: ExperienceBarPainter(experienceBar),
             ),
           ),
+        ),
+
+        // 🔥 Ability Bar (Top Left)
+        Positioned(
+          top: safeTop + 10,
+          left: 10,
+          child: AbilityBar(player: game.player),
         ),
 
         // Joystick (Bottom Left)
@@ -248,7 +257,7 @@ class PowerUpSelectionOverlay extends StatelessWidget {
 
                 return ElevatedButton.icon(
                   onPressed: () {
-                    game.selectPowerUp(type);
+                    //  game.selectPowerUp(type);
                     game.overlays.remove('powerUpSelection');
                     game.overlays.add('powerUpBuffs'); // Update buff UI
                   },

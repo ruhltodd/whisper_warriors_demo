@@ -65,7 +65,19 @@ flutter:
     - assets/images/main_menu_background.png
     - assets/images/start_button.png
     - assets/images/options_button.png
+    - assets/images/revenants_stride.png
+    - assets/images/chrono_echo.png
+    - assets/images/fading_crescent.png
+    - assets/images/soul_fracture.png
+    - assets/images/spectral_chain.png
+    - assets/images/time_dilation.png
+    - assets/images/unholy_fortitude.png
+    - assets/images/vampiric_touch.png
+    - assets/images/whispering_flames.png
+    - assets/images/will_of_the_forgotten.png
+    - assets/images/fire_aura.png
     - assets/music/mystical-winds.mp3
+    - assets/music/soft_etheral.mp3
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -102,3 +114,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+  fonts:
+    - family: MyCustomFont
+      fonts:
+        - asset: assets/fonts/LeagueGothic_SemiCondensed-Regular.ttf
+        - asset: assets/fonts/LeagueGothic-Regular-VariableFont_wdth.ttf
+          weight: 700
+        - asset: assets/fonts/LeagueGothic_Condensed-Regular.ttf

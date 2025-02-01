@@ -13,7 +13,7 @@ class Projectile extends SpriteComponent
   late Vector2 spawnPosition; // 🔹 Track where it was fired
 
   Projectile({required this.damage, this.maxRange = 200}) // 🔹 De
-      : super(size: Vector2(16, 16)); // Adjust size as needed
+      : super(size: Vector2(50, 50)); // Adjust size as needed
 
   @override
   Future<void> onLoad() async {

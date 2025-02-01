@@ -74,8 +74,8 @@ class _MainMenuState extends State<MainMenu> {
                     onTapDown: (_) => setState(() => startButtonOpacity = 0.6),
                     onTapUp: (_) {
                       setState(() => startButtonOpacity = 1.0);
-                      _stopMusic(); // ✅ Stop music before starting game
-                      widget.startGame();
+                      _stopMusic(); // ✅ Stop menu music
+                      widget.startGame(); // ✅ Move to Ability Selection
                     },
                     child: AnimatedOpacity(
                       duration: Duration(milliseconds: 150),
@@ -87,7 +87,6 @@ class _MainMenuState extends State<MainMenu> {
                     ),
                   ),
                 ),
-
                 SizedBox(height: 30),
 
                 // ✅ Animated Options Button

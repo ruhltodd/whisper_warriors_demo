@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/game.dart';
 import 'healthbar.dart';
@@ -10,6 +13,7 @@ import 'projectile.dart';
 import 'whisperwarrior.dart';
 import 'powerup.dart';
 import 'healingnumber.dart';
+import 'abilities.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
@@ -26,6 +30,9 @@ class Player extends PositionComponent
   late WhisperWarrior whisperWarrior;
   Enemy? closestEnemy; // 🔹 Store closest enemy reference
   List<PowerUp> powerUps = []; // Stores acquired power-ups
+  List<Ability> abilities = [];
+  final ValueNotifier<List<Ability>> abilityNotifier =
+      ValueNotifier<List<Ability>>([]);
   double vampiricHealing = 0;
   double damageReduction = 0;
   double magnetRange = 100;
@@ -69,6 +76,12 @@ class Player extends PositionComponent
     // Move player using joystick input
     if (joystickDelta.length > 0) {
       position += joystickDelta.normalized() * speed * dt;
+      // Flip sprite based on movement direction (left or right)
+      if (joystickDelta.x > 0) {
+        whisperWarrior.scale.x = -1; // Face left
+      } else if (joystickDelta.x < 0) {
+        whisperWarrior.scale.x = 1; // Face right
+      }
       whisperWarrior.playAnimation('walk');
     } else {
       whisperWarrior.playAnimation('idle');
@@ -86,6 +99,26 @@ class Player extends PositionComponent
       healthBar!.position = position +
           Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
     }
+    // ✅ Add this to update abilities every frame
+    for (var ability in abilities) {
+      ability.onUpdate(this, dt);
+    }
+  }
+// Abilities
+
+  void burnNearbyEnemies() {
+    for (var ability in abilities) {
+      if (ability is WhisperingFlames) {
+        ability.onUpdate(this, 1.0); // Apply 1 second of burning effect
+      }
+    }
+  }
+// Abilities
+
+  void addAbility(Ability ability) {
+    abilities.add(ability);
+    abilityNotifier.value = List.from(abilities); // ✅ Notify UI of change
+    ability.applyEffect(this); // Apply the ability to the player
   }
 
   void updateClosestEnemy() {
@@ -116,7 +149,7 @@ class Player extends PositionComponent
   void shootProjectile() {
     print("🔹 SHOOTING ATTEMPT");
 
-    whisperWarrior.playAnimation('idle'); // Play attack animation
+    whisperWarrior.playAnimation('attack'); // Play attack animation
 
     // 🔹 Define attack range
     const double attackRange = 300.0;
@@ -172,7 +205,7 @@ class Player extends PositionComponent
 
     final projectile = Projectile(damage: damage)
       ..position = position.clone()
-      ..size = Vector2(10, 10)
+      ..size = Vector2(50, 50)
       ..anchor = Anchor.center
       ..velocity = direction * 300;
 
@@ -201,8 +234,8 @@ class Player extends PositionComponent
 
     // Adjust current health proportionally to prevent full restore
     healthBar?.updateHealth(health, maxHealth);
-    gameRef.showPowerUpSelection();
-    gameRef.checkLevelUpScaling();
+    //   gameRef.showPowerUpSelection();
+    //   gameRef.checkLevelUpScaling();
   }
 
   void takeDamage(int damage) {
@@ -250,5 +283,11 @@ class Player extends PositionComponent
         gameRef.add(healingNumber);
       }
     }
+  }
+
+  @override
+  void onRemove() {
+    abilityNotifier.dispose(); // ✅ Clean up memory when Player is removed
+    super.onRemove();
   }
 }
