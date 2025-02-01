@@ -57,15 +57,15 @@ class Enemy extends SpriteAnimationComponent
     }
   }
 
-  void takeDamage(int damage) {
+  void takeDamage(int damage, {bool showDamageNumber = true}) {
     health -= damage;
 
-    // Spawn damage number
-    final damageNumber = DamageNumber(
-        damage,
-        position.clone() +
-            Vector2(0, -10)); // Adjusted position above the enemy
-    gameRef.add(damageNumber);
+    // ✅ Only show number if requested (e.g., from Whispering Flames cooldown)
+    if (showDamageNumber) {
+      final damageNumber =
+          DamageNumber(damage, position.clone() + Vector2(0, -10));
+      gameRef.add(damageNumber);
+    }
 
     if (health <= 0) {
       // Drop an experience item

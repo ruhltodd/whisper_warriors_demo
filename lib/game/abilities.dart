@@ -33,6 +33,8 @@ class Ability {
 class WhisperingFlames extends Ability {
   double damagePerSecond = 10.0;
   double range = 100.0;
+  double numberDisplayCooldown = 0.5; // ✅ Only show numbers every 0.5s
+  double timeSinceLastNumber = 0.0;
 
   WhisperingFlames()
       : super(
@@ -42,33 +44,24 @@ class WhisperingFlames extends Ability {
         );
 
   @override
-  void applyEffect(Player player) {
-    super.applyEffect(player);
-    player.gameRef.add(FireAura(player: player)); // ✅ Add Fire Aura Effect
-  }
-
-  @override
   void onUpdate(Player player, double dt) {
-    if (player.parent == null || player.position == null) return;
+    if (player.parent == null) return;
+
+    timeSinceLastNumber += dt;
 
     for (var enemy in player.parent!.children.whereType<Enemy>()) {
-      if (enemy.position != null) {
-        double distance = (enemy.position! - player.position!).length;
+      double distance = (enemy.position - player.position).length;
 
-        if (distance < range) {
-          int damage = (damagePerSecond * dt)
-              .toInt()
-              .clamp(1, 9999); // ✅ Ensures at least 1 damage
-          enemy.takeDamage(damage);
+      if (distance < range) {
+        int damage = (damagePerSecond * dt).toInt().clamp(1, 9999);
+        enemy.takeDamage(damage);
 
-          // ✅ Add a floating damage number
+        // ✅ Show a floating damage number only if the cooldown has passed
+        if (timeSinceLastNumber >= numberDisplayCooldown) {
           final damageNumber =
               DamageNumber(damage, enemy.position.clone() + Vector2(0, -10));
-          player.gameRef
-              .add(damageNumber); // ✅ Ensure it's added to the game world
-
-          print(
-              "🔥🔥 Enemy hit for $damage damage! Damage number added!"); // Debugging
+          player.gameRef.add(damageNumber);
+          timeSinceLastNumber = 0.0; // ✅ Reset cooldown **only when shown**
         }
       }
     }
