@@ -41,8 +41,6 @@ class _MyAppState extends State<MyApp> {
       selectedAbilities = abilities;
       _gameStarted = true;
       _selectingAbilities = false; // ✅ Move to actual game
-      print(
-          "✅ Abilities received in MyApp: $selectedAbilities"); // 🔍 Debugging
     });
   }
 
@@ -160,7 +158,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   }
 
   void spawnDebugWave() {
-    spawnEnemyWave(20); // ✅ Spawn 20 enemies instantly
+    spawnEnemyWave(100); // ✅ Spawn 20 enemies instantly
   }
 
   void _applyAbilitiesToPlayer() {
@@ -168,36 +166,26 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       Ability? ability = AbilityFactory.createAbility(abilityName);
       if (ability != null) {
         player.addAbility(ability);
-        print("🔥 Ability Added: ${ability.name}"); // 🔍 Debugging
-      } else {
-        print("❌ ERROR: Ability not found in factory!"); // 🔍 Debugging
-      }
+      } else {}
     }
-    spawnDebugWave();
+    //  spawnDebugWave();
   }
 
   void triggerEvent() {
-    print("🔹 EVENT TRIGGERED at ${formatTime(remainingTime)}");
-
     if (remainingTime == 1140 && !enemy2Spawned) {
-      print("✅ 19:00 HIT! Spawning Enemy2...");
       spawnEnemy2Wave();
       enemy2Spawned = true;
     } else if (remainingTime == 1080) {
       maxEnemies += 5;
       spawnEnemyWave(20); // ✅ Spawn 20 enemies
-      print("⚔ Increased max enemies to $maxEnemies!");
     } else if (remainingTime == 600) {
       maxEnemies += 10;
       spawnEnemyWave(20); // ✅ Spawn 20 enemies
-      print("🔥 Further increased max enemies to $maxEnemies!");
     } else if (remainingTime == 300) {
       maxEnemies += 15;
       spawnEnemyWave(20); // ✅ Spawn 20 enemies
-      print("💀 Final difficulty increase! Max enemies: $maxEnemies");
     } else if (remainingTime == 60) {
       spawnEnemyWave(20); // ✅ Keep spawning 20 per wave
-      print("🕛 FINAL MINUTE! Prepare for chaos!");
     }
   }
 
@@ -212,8 +200,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       repeat: true,
       onTick: () {
         if (remainingTime > 0) {
-          print("🕒 Timer Tick! Remaining Time: $remainingTime"); // ✅ Debugging
-
           remainingTime--;
           gameHudNotifier.value = remainingTime;
 
@@ -241,6 +227,16 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       },
     );
     add(enemySpawnerTimer);
+
+    // ✅ Add a new timer for mass enemy waves every 5 seconds
+    TimerComponent debugWaveSpawner = TimerComponent(
+      period: 5.0, // ✅ Spawns every 5 seconds
+      repeat: true,
+      onTick: () {
+        spawnEnemyWave(100); // ✅ Spawn 100 enemies
+      },
+    );
+    add(debugWaveSpawner);
   }
 
   void addEnemy() {
@@ -255,8 +251,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   }
 
   void spawnEnemyWave(int count) {
-    print("🔥 Spawning $count enemies at once!");
-
     for (int i = 0; i < count; i++) {
       final spawnPosition = _getRandomSpawnPosition();
       final enemy = Enemy(player)
@@ -270,8 +264,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   }
 
   void spawnEnemy2Wave() {
-    print("🆕 Spawning initial wave of Enemy2");
-
     for (int i = 0; i < 3; i++) {
       addEnemy2();
     }
@@ -280,7 +272,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       period: 20.0,
       repeat: true,
       onTick: () {
-        print("🆕 Enemy2 Spawned");
         addEnemy2();
       },
     );

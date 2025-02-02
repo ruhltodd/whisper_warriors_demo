@@ -4,6 +4,7 @@ import 'enemy.dart';
 import 'dart:math';
 import 'damagenumber.dart';
 import 'fireaura.dart';
+import 'dart:collection';
 
 /// Enum for ability types (optional, for categorization)
 enum AbilityType { Passive, OnHit, OnKill, Aura, Scaling }
@@ -33,8 +34,6 @@ class Ability {
 class WhisperingFlames extends Ability {
   double damagePerSecond = 10.0;
   double range = 100.0;
-  double numberDisplayCooldown = 0.5; // ✅ Only show numbers every 0.5s
-  double timeSinceLastNumber = 0.0;
 
   WhisperingFlames()
       : super(
@@ -44,25 +43,22 @@ class WhisperingFlames extends Ability {
         );
 
   @override
+  void applyEffect(Player player) {
+    super.applyEffect(player);
+    player.gameRef.add(FireAura(player: player)); // ✅ Add Fire Aura Effect
+  }
+
+  @override
   void onUpdate(Player player, double dt) {
     if (player.parent == null) return;
-
-    timeSinceLastNumber += dt;
 
     for (var enemy in player.parent!.children.whereType<Enemy>()) {
       double distance = (enemy.position - player.position).length;
 
       if (distance < range) {
         int damage = (damagePerSecond * dt).toInt().clamp(1, 9999);
-        enemy.takeDamage(damage);
-
-        // ✅ Show a floating damage number only if the cooldown has passed
-        if (timeSinceLastNumber >= numberDisplayCooldown) {
-          final damageNumber =
-              DamageNumber(damage, enemy.position.clone() + Vector2(0, -10));
-          player.gameRef.add(damageNumber);
-          timeSinceLastNumber = 0.0; // ✅ Reset cooldown **only when shown**
-        }
+        enemy
+            .takeDamage(damage); // ✅ Let the enemy handle damage number display
       }
     }
   }
@@ -139,4 +135,10 @@ class WillOfTheForgotten extends Ability {
     player.lessAbilitiesStrongerBase();
   }
 }
+
+  @override
+  void applyEffect(Player player) {
+    super.applyEffect(player);
+    player.gameRef.add(FireAura(player: player)); // ✅ Add Fire Aura Effect
+  }
 */

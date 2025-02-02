@@ -13,74 +13,72 @@ class Enemy extends SpriteAnimationComponent
   final Player player;
   final double speed = 100;
   int health = 100;
-  VoidCallback? onRemoveCallback; // Add callback for removal
+  VoidCallback? onRemoveCallback;
+
+  double timeSinceLastDamageNumber = 0.0; // ⏳ Controls visual effect timing
+  final double damageNumberInterval = 0.5; // ⏳ Display every 0.5s
 
   Enemy(this.player)
       : super(
-          size: Vector2(32, 32), // Match the sprite size
-          anchor: Anchor.center, // Center the sprite
+          size: Vector2(32, 32),
+          anchor: Anchor.center,
         );
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    // Load the sprite sheet
     final spriteSheet = SpriteSheet(
-      image: await gameRef.images.load('mob1.png'), // The sprite sheet file
-      srcSize: Vector2(32, 32), // Size of each frame in the sprite sheet
+      image: await gameRef.images.load('mob1.png'),
+      srcSize: Vector2(32, 32),
     );
 
-    // Create a walking animation
     animation = spriteSheet.createAnimation(
-      row: 0, // Assuming the walking frames are in the first row
-      stepTime: 0.2, // Duration of each frame in seconds
-      to: 2, // Number of frames in the animation
+      row: 0,
+      stepTime: 0.2,
+      to: 2,
     );
 
-    // Add a collision hitbox
     add(RectangleHitbox());
   }
 
   @override
   void update(double dt) {
     super.update(dt);
+    timeSinceLastDamageNumber += dt; // ✅ Increment damage number timer
 
-    // Move toward the player
     final direction = (player.position - position).normalized();
     position += direction * speed * dt;
 
-    // Damage the player if too close
     if ((player.position - position).length < 10) {
-      player.takeDamage(1); // Deal 1 damage to the player
-      removeFromParent(); // Remove the enemy after dealing damage
+      player.takeDamage(1);
+      removeFromParent();
     }
   }
 
-  void takeDamage(int damage, {bool showDamageNumber = true}) {
+  void takeDamage(int damage) {
     health -= damage;
 
-    // ✅ Only show number if requested (e.g., from Whispering Flames cooldown)
-    if (showDamageNumber) {
+    // ✅ Only show damage number if the interval has passed
+    if (timeSinceLastDamageNumber >= damageNumberInterval) {
       final damageNumber =
           DamageNumber(damage, position.clone() + Vector2(0, -10));
       gameRef.add(damageNumber);
+      timeSinceLastDamageNumber = 0.0; // ✅ Reset timer
     }
 
     if (health <= 0) {
-      // Drop an experience item
       final drop = DropItem(expValue: 10)..position = position.clone();
       gameRef.add(drop);
-      gameRef.player.gainHealth(
-          gameRef.player.vampiricHealing.toInt()); // ✅ Triggers Healing!
+      gameRef.player.gainHealth(gameRef.player.vampiricHealing.toInt());
 
-      removeFromParent(); // Remove the enemy when health is depleted
+      removeFromParent();
     }
   }
 
   @override
   void onRemove() {
     super.onRemove();
-    onRemoveCallback?.call(); // Trigger the callback on removal
+    onRemoveCallback?.call();
   }
 }

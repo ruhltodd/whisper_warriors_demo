@@ -82,7 +82,7 @@ class Player extends PositionComponent
       } else if (joystickDelta.x < 0) {
         whisperWarrior.scale.x = 1; // Face right
       }
-      whisperWarrior.playAnimation('walk');
+      whisperWarrior.playAnimation('idle');
     } else {
       whisperWarrior.playAnimation('idle');
     }
@@ -149,7 +149,7 @@ class Player extends PositionComponent
   void shootProjectile() {
     print("🔹 SHOOTING ATTEMPT");
 
-    whisperWarrior.playAnimation('attack'); // Play attack animation
+    whisperWarrior.playAnimation('idle'); // Play attack animation
 
     // 🔹 Define attack range
     const double attackRange = 300.0;
