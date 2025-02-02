@@ -1,51 +1,40 @@
-import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart'; // Import for VoidCallback
-import 'package:flame/sprite.dart';
 import 'player.dart';
 import 'main.dart';
 import 'damagenumber.dart';
 import 'dropitem.dart';
+import 'abilities.dart';
+import 'explosion.dart';
 
-class Enemy extends SpriteAnimationComponent
+class BaseEnemy extends SpriteAnimationComponent
     with CollisionCallbacks, HasGameRef<RogueShooterGame> {
   final Player player;
-  final double speed = 100;
-  int health = 100;
+  final double speed;
+  int health;
   VoidCallback? onRemoveCallback;
 
-  double timeSinceLastDamageNumber = 0.0; // ⏳ Controls visual effect timing
-  final double damageNumberInterval = 0.5; // ⏳ Display every 0.5s
+  double timeSinceLastDamageNumber = 0.0;
+  final double damageNumberInterval = 0.5;
 
-  Enemy(this.player)
-      : super(
-          size: Vector2(32, 32),
+  bool hasExploded = false; // ✅ Prevent multiple explosions
+  bool hasDroppedItem = false; // ✅ Prevent multiple drops
+
+  BaseEnemy({
+    required this.player,
+    required this.speed,
+    required this.health,
+    required Vector2 size,
+  }) : super(
+          size: size,
           anchor: Anchor.center,
         );
 
   @override
-  Future<void> onLoad() async {
-    super.onLoad();
-
-    final spriteSheet = SpriteSheet(
-      image: await gameRef.images.load('mob1.png'),
-      srcSize: Vector2(32, 32),
-    );
-
-    animation = spriteSheet.createAnimation(
-      row: 0,
-      stepTime: 0.2,
-      to: 2,
-    );
-
-    add(RectangleHitbox());
-  }
-
-  @override
   void update(double dt) {
     super.update(dt);
-    timeSinceLastDamageNumber += dt; // ✅ Increment damage number timer
+    timeSinceLastDamageNumber += dt;
 
     final direction = (player.position - position).normalized();
     position += direction * speed * dt;
@@ -59,26 +48,28 @@ class Enemy extends SpriteAnimationComponent
   void takeDamage(int damage) {
     health -= damage;
 
-    // ✅ Only show damage number if the interval has passed
     if (timeSinceLastDamageNumber >= damageNumberInterval) {
       final damageNumber =
           DamageNumber(damage, position.clone() + Vector2(0, -10));
       gameRef.add(damageNumber);
-      timeSinceLastDamageNumber = 0.0; // ✅ Reset timer
+      timeSinceLastDamageNumber = 0.0;
     }
 
     if (health <= 0) {
-      final drop = DropItem(expValue: 10)..position = position.clone();
-      gameRef.add(drop);
-      gameRef.player.gainHealth(gameRef.player.vampiricHealing.toInt());
+      if (!hasExploded && gameRef.player.hasAbility<SoulFracture>()) {
+        hasExploded = true;
+        gameRef.add(Explosion(position)); // ✅ Add explosion animation
+        gameRef.player.triggerExplosion(position);
+      }
+
+      if (!hasDroppedItem) {
+        hasDroppedItem = true;
+        final drop = DropItem(expValue: 10)..position = position.clone();
+        gameRef.add(drop);
+        gameRef.player.gainHealth(gameRef.player.vampiricHealing.toInt());
+      }
 
       removeFromParent();
     }
-  }
-
-  @override
-  void onRemove() {
-    super.onRemove();
-    onRemoveCallback?.call();
   }
 }

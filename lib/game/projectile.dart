@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'enemy.dart';
-import 'enemy2.dart';
+import 'wave2Enemy.dart';
 import 'main.dart';
 
 class Projectile extends SpriteComponent
@@ -50,10 +50,10 @@ class Projectile extends SpriteComponent
 
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
-    if (other is Enemy) {
+    if (other is BaseEnemy) {
       other.takeDamage(damage); // ✅ Now correctly recognized as an Enemy
       removeFromParent();
-    } else if (other is Enemy2) {
+    } else if (other is Wave2Enemy) {
       other.takeDamage(damage); // ✅ Now correctly recognized as an Enemy2
       removeFromParent();
     }

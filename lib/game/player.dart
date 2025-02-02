@@ -8,12 +8,13 @@ import 'package:flame/game.dart';
 import 'healthbar.dart';
 import 'main.dart';
 import 'enemy.dart';
-import 'enemy2.dart';
+import 'wave2Enemy.dart';
 import 'projectile.dart';
 import 'whisperwarrior.dart';
 import 'powerup.dart';
 import 'healingnumber.dart';
 import 'abilities.dart';
+import 'explosion.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
@@ -28,7 +29,7 @@ class Player extends PositionComponent
   HealthBar? healthBar;
   Vector2 joystickDelta = Vector2.zero();
   late WhisperWarrior whisperWarrior;
-  Enemy? closestEnemy; // 🔹 Store closest enemy reference
+  BaseEnemy? closestEnemy; // 🔹 Store closest enemy reference
   List<PowerUp> powerUps = []; // Stores acquired power-ups
   List<Ability> abilities = [];
   final ValueNotifier<List<Ability>> abilityNotifier =
@@ -106,10 +107,45 @@ class Player extends PositionComponent
   }
 // Abilities
 
+// ✅ Check if the player has a specific ability
+  bool hasAbility<T extends Ability>() {
+    return abilities.any((ability) => ability is T);
+  }
+
   void burnNearbyEnemies() {
     for (var ability in abilities) {
       if (ability is WhisperingFlames) {
         ability.onUpdate(this, 1.0); // Apply 1 second of burning effect
+      }
+    }
+  }
+
+// Add this variable to Player
+  double lastExplosionTime = 0.0;
+  double explosionCooldown = 0.5; // Prevent excessive explosions (every 0.2s)
+
+// Modify the `triggerExplosion` method
+  void triggerExplosion(Vector2 position) {
+    if (gameRef.currentTime() - lastExplosionTime < explosionCooldown) {
+      return; // ✅ Prevent excessive explosions
+    }
+
+    lastExplosionTime = gameRef.currentTime(); // ✅ Update last explosion time
+
+    gameRef.add(Explosion(position));
+    print("💥 Explosion triggered at $position");
+
+    // ✅ Apply damage to nearby enemies
+    for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
+      double distance = (enemy.position - position).length;
+
+      if (distance < 100.0) {
+        // Explosion range
+        int damage = (enemy.health * 0.25)
+            .toInt()
+            .clamp(1, 9999); // ✅ Cap at 25% of health
+        enemy.takeDamage(damage);
+        print("🔥 Explosion hit enemy for $damage damage!");
       }
     }
   }
@@ -122,14 +158,14 @@ class Player extends PositionComponent
   }
 
   void updateClosestEnemy() {
-    final enemies = gameRef.children.whereType<Enemy>().toList();
+    final enemies = gameRef.children.whereType<BaseEnemy>().toList();
 
     if (enemies.isEmpty) {
       closestEnemy = null;
       return;
     }
 
-    Enemy? newClosest;
+    BaseEnemy? newClosest;
     double closestDistance = double.infinity;
 
     for (final enemy in enemies) {
@@ -160,8 +196,8 @@ class Player extends PositionComponent
     final List<PositionComponent> enemies = gameRef.children
         .whereType<
             PositionComponent>() // ✅ Ensures we get only PositionComponents
-        .where(
-            (entity) => entity is Enemy || entity is Enemy2) // ✅ Filter enemies
+        .where((entity) =>
+            entity is BaseEnemy || entity is Wave2Enemy) // ✅ Filter enemies
         .toList();
 
     if (enemies.isEmpty) {

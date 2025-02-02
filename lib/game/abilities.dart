@@ -52,7 +52,7 @@ class WhisperingFlames extends Ability {
   void onUpdate(Player player, double dt) {
     if (player.parent == null) return;
 
-    for (var enemy in player.parent!.children.whereType<Enemy>()) {
+    for (var enemy in player.parent!.children.whereType<BaseEnemy>()) {
       double distance = (enemy.position - player.position).length;
 
       if (distance < range) {
@@ -63,7 +63,7 @@ class WhisperingFlames extends Ability {
     }
   }
 }
-/*
+
 class SoulFracture extends Ability {
   SoulFracture()
       : super(
@@ -78,7 +78,7 @@ class SoulFracture extends Ability {
     player.triggerExplosion(enemyPosition);
   }
 }
-
+/*
 class FadingCrescent extends Ability {
   FadingCrescent()
       : super(

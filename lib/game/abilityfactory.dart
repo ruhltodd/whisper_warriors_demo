@@ -6,15 +6,22 @@ class AbilityFactory {
       case 'Whispering Flames':
         print("🔥 Creating Whispering Flames"); // 🔍 Debugging
         return WhisperingFlames();
+      case 'Soul Fracture':
+        return SoulFracture();
       default:
         print("❌ ERROR: Unknown ability '$abilityName'"); // 🔍 Debugging
+    }
+  }
+}
+  /*  case 'Soul Fracture':
+        return SoulFracture();
         return null;
     }
   }
 }
 
 
-  /*  case 'Soul Fracture':
+   case 'Soul Fracture':
         return SoulFracture();
       case 'Fading Crescent':
         return FadingCrescent();
@@ -34,6 +41,4 @@ class AbilityFactory {
         return RevenantsStride();*/
       default:
         return null;
-    }
-  }
-}*/
+    } */

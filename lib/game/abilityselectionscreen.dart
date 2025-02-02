@@ -15,7 +15,7 @@ class AbilitySelectionScreen extends StatefulWidget {
 
 class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   List<String> selectedAbilities = [];
-  final int maxAbilities = 1;
+  final int maxAbilities = 2;
   late AudioPlayer _audioPlayer; // ✅ Background music instance
 
   final Map<String, String> abilities = {

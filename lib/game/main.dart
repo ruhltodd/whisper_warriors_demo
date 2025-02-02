@@ -5,12 +5,13 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'experience.dart';
-import 'enemy.dart';
 import 'customcamera.dart';
 import 'hud.dart';
 import 'player.dart';
 import 'powerup.dart';
-import 'enemy2.dart';
+import 'enemy.dart';
+import 'wave1Enemy.dart';
+import 'wave2Enemy.dart';
 import 'mainmenu.dart';
 import 'abilityselectionscreen.dart';
 import 'abilityfactory.dart';
@@ -32,7 +33,7 @@ class _MyAppState extends State<MyApp> {
 
   void startGame() {
     setState(() {
-      _selectingAbilities = true; // ✅ Move to ability selection first
+      _selectingAbilities = true;
     });
   }
 
@@ -40,12 +41,12 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       selectedAbilities = abilities;
       _gameStarted = true;
-      _selectingAbilities = false; // ✅ Move to actual game
+      _selectingAbilities = false;
     });
   }
 
   void openOptions() {
-    print("⚙ Options menu clicked!"); // ✅ Placeholder for options menu
+    print("⚙ Options menu clicked!");
   }
 
   @override
@@ -59,13 +60,11 @@ class _MyAppState extends State<MyApp> {
               MainMenu(
                 startGame: startGame,
                 openOptions: openOptions,
-              ), // ✅ Show Main Menu first
-
+              ),
             if (_selectingAbilities)
               AbilitySelectionScreen(
                 onAbilitiesSelected: onAbilitiesSelected,
-              ), // ✅ Show Ability Selection next
-
+              ),
             if (_gameStarted)
               GameWidget(
                 game: RogueShooterGame(selectedAbilities: selectedAbilities),
@@ -99,7 +98,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   late SpriteComponent grassMap;
   late TimerComponent enemySpawnerTimer;
   late TimerComponent gameTimer;
-  late TimerComponent enemy2SpawnerTimer;
   late final AudioPlayer _bgmPlayer;
   late ValueNotifier<int> gameHudNotifier;
   int enemyCount = 0;
@@ -109,7 +107,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
 
   bool isPaused = false;
   int remainingTime = 1200; // 20 minutes in seconds
-  bool enemy2Spawned = false; // ✅ Track if Enemy2 has been spawned
 
   RogueShooterGame({required this.selectedAbilities});
 
@@ -118,15 +115,14 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     super.onLoad();
 
     _bgmPlayer = AudioPlayer();
-
-    await _bgmPlayer.setReleaseMode(ReleaseMode.loop); // ✅ Loop the music
+    await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
     await _bgmPlayer.play(AssetSource('music/soft_etheral.mp3'));
     await _bgmPlayer.setVolume(.2);
     gameHudNotifier = ValueNotifier<int>(remainingTime);
 
     customCamera = CustomCamera(
-      screenSize: size,
-      worldSize: Vector2(1280, 1280),
+      screenSize: size, // Ensure screen size is passed
+      worldSize: Vector2(1280, 1280), // Set the world size
     );
 
     grassMap = SpriteComponent(
@@ -151,14 +147,24 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     startGameTimer();
   }
 
-  String formatTime(int seconds) {
-    int minutes = seconds ~/ 60;
-    int secs = seconds % 60;
-    return "$minutes:${secs.toString().padLeft(2, '0')}";
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    // ✅ Ensure the camera follows the player
+    customCamera.follow(player.position, dt);
   }
 
-  void spawnDebugWave() {
-    spawnEnemyWave(100); // ✅ Spawn 20 enemies instantly
+  @override
+  void render(Canvas canvas) {
+    canvas.save();
+
+    // ✅ Apply custom camera transformation
+    customCamera.applyTransform(canvas);
+
+    super.render(canvas);
+
+    canvas.restore();
   }
 
   void _applyAbilitiesToPlayer() {
@@ -166,32 +172,8 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       Ability? ability = AbilityFactory.createAbility(abilityName);
       if (ability != null) {
         player.addAbility(ability);
-      } else {}
+      }
     }
-    //  spawnDebugWave();
-  }
-
-  void triggerEvent() {
-    if (remainingTime == 1140 && !enemy2Spawned) {
-      spawnEnemy2Wave();
-      enemy2Spawned = true;
-    } else if (remainingTime == 1080) {
-      maxEnemies += 5;
-      spawnEnemyWave(20); // ✅ Spawn 20 enemies
-    } else if (remainingTime == 600) {
-      maxEnemies += 10;
-      spawnEnemyWave(20); // ✅ Spawn 20 enemies
-    } else if (remainingTime == 300) {
-      maxEnemies += 15;
-      spawnEnemyWave(20); // ✅ Spawn 20 enemies
-    } else if (remainingTime == 60) {
-      spawnEnemyWave(20); // ✅ Keep spawning 20 per wave
-    }
-  }
-
-  void endGame() {
-    overlays.add('gameOver');
-    pauseEngine();
   }
 
   void startGameTimer() {
@@ -202,8 +184,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
         if (remainingTime > 0) {
           remainingTime--;
           gameHudNotifier.value = remainingTime;
-
-          // ✅ Call `triggerEvent()` every second to check conditions
           triggerEvent();
         }
 
@@ -221,94 +201,84 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       repeat: true,
       onTick: () {
         checkLevelUpScaling();
-        if (enemyCount < maxEnemies) {
-          addEnemy();
-        }
+        spawnEnemyWave(10);
       },
     );
     add(enemySpawnerTimer);
 
-    // ✅ Add a new timer for mass enemy waves every 5 seconds
     TimerComponent debugWaveSpawner = TimerComponent(
-      period: 5.0, // ✅ Spawns every 5 seconds
+      period: 5.0, // ✅ Adjusted to 5 seconds
       repeat: true,
       onTick: () {
-        spawnEnemyWave(100); // ✅ Spawn 100 enemies
+        spawnEnemyWave(50);
       },
     );
     add(debugWaveSpawner);
   }
 
-  void addEnemy() {
-    final spawnPosition = _getRandomSpawnPosition();
-    final enemy = Enemy(player)
-      ..position = spawnPosition
-      ..onRemoveCallback = () {
-        enemyCount--;
-      };
-    enemyCount++;
-    add(enemy);
-  }
-
   void spawnEnemyWave(int count) {
     for (int i = 0; i < count; i++) {
       final spawnPosition = _getRandomSpawnPosition();
-      final enemy = Enemy(player)
-        ..position = spawnPosition
-        ..onRemoveCallback = () {
-          enemyCount--;
-        };
+
+      BaseEnemy enemy = (i % 2 == 0)
+          ? Wave1Enemy(
+              player: player,
+              speed: 100,
+              health: 100,
+              size: Vector2(32, 32),
+            )
+          : Wave2Enemy(
+              player: player,
+              speed: 120,
+              health: 80,
+              size: Vector2(32, 32),
+            );
+
+      enemy.position = spawnPosition;
+      enemy.onRemoveCallback = () {
+        enemyCount--;
+      };
+
       enemyCount++;
       add(enemy);
     }
+
+    print("🔥 Spawned $count enemies!");
   }
 
-  void spawnEnemy2Wave() {
-    for (int i = 0; i < 3; i++) {
-      addEnemy2();
+  String formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int secs = seconds % 60;
+    return "$minutes:${secs.toString().padLeft(2, '0')}"; // Ensures two-digit seconds
+  }
+
+  void triggerEvent() {
+    print("🔹 EVENT TRIGGERED at ${formatTime(remainingTime)}");
+
+    if (remainingTime == 1140) {
+      spawnEnemyWave(20);
+      print("⚔ 19:00 - Spawned 20 enemies!");
+    } else if (remainingTime == 1080) {
+      maxEnemies += 5;
+      spawnEnemyWave(20);
+      print("🔥 18:00 - Increased max enemies to $maxEnemies!");
+    } else if (remainingTime == 600) {
+      maxEnemies += 10;
+      spawnEnemyWave(20);
+      print("💀 10:00 - Further increased max enemies!");
+    } else if (remainingTime == 300) {
+      maxEnemies += 15;
+      spawnEnemyWave(20);
+      print("⚡ 5:00 - Max enemies: $maxEnemies");
+    } else if (remainingTime == 60) {
+      spawnEnemyWave(30);
+      print("🚨 1:00 - Final chaos wave!");
     }
-
-    enemy2SpawnerTimer = TimerComponent(
-      period: 20.0,
-      repeat: true,
-      onTick: () {
-        addEnemy2();
-      },
-    );
-
-    add(enemy2SpawnerTimer);
   }
 
-  void addEnemy2() {
-    final spawnPosition = _getRandomSpawnPosition();
-    final enemy2 = Enemy2(player)..position = spawnPosition;
-
-    enemyCount++;
-    add(enemy2);
-  }
-
-  void showPowerUpSelection() {
-    pauseGame();
-    List<PowerUpType> allPowerUps = PowerUpType.values.toList();
-    allPowerUps.shuffle();
-    powerUpOptions = allPowerUps.take(3).toList();
-    overlays.add('powerUpSelection');
-  }
-
-  void selectPowerUp(PowerUpType selectedType) {
-    player.gainPowerUp(selectedType);
-    overlays.remove('powerUpSelection');
-    resumeGame();
-  }
-
-  void pauseGame() {
-    isPaused = true;
+  void endGame() {
+    overlays.add('gameOver');
     pauseEngine();
-  }
-
-  void resumeGame() {
-    isPaused = false;
-    resumeEngine();
   }
 
   void checkLevelUpScaling() {
@@ -320,7 +290,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
         repeat: true,
         onTick: () {
           if (enemyCount < maxEnemies) {
-            addEnemy();
+            spawnEnemyWave(10);
           }
         },
       );
@@ -356,26 +326,5 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     } while ((spawnPosition - player.position).length < 100.0);
 
     return spawnPosition;
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-    customCamera.follow(player.position, dt);
-  }
-
-  @override
-  void render(Canvas canvas) {
-    canvas.save();
-    customCamera.applyTransform(canvas);
-    super.render(canvas);
-    canvas.restore();
-  }
-
-  @override
-  void onRemove() {
-    super.onRemove();
-    enemySpawnerTimer.timer.stop();
-    _bgmPlayer.stop(); // ✅ Stop music when leaving menu
   }
 }
