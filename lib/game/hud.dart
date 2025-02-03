@@ -4,16 +4,20 @@ import 'experience.dart';
 import 'main.dart';
 import 'player.dart';
 import 'abilitybar.dart';
+import 'bosshealthbar.dart';
+import 'dart:ui' as ui;
 
 class HUD extends StatelessWidget {
   final void Function(Vector2 delta) onJoystickMove;
   final SpiritBar experienceBar;
   final RogueShooterGame game; // ✅ Reference to game for timer
+  final ValueNotifier<double?> bossHealthNotifier;
 
   HUD({
     required this.onJoystickMove,
     required this.experienceBar,
     required this.game,
+    required this.bossHealthNotifier,
   });
 
   @override
@@ -41,7 +45,7 @@ class HUD extends StatelessWidget {
           ),
         ),
 
-        // Experience Bar (Top Center)
+        // Spirit Bar (Top Center)
         Positioned(
           top: safeTop + 10, // Moves it below the notch
           left: MediaQuery.of(context).size.width / 2 - 100, // Centered
@@ -51,6 +55,43 @@ class HUD extends StatelessWidget {
             child: CustomPaint(
               painter: SpiritBarPainter(experienceBar),
             ),
+          ),
+        ),
+
+        // ⚡ Boss Health Bar (Appears only during boss fights)
+        Positioned(
+          top: safeTop + 40, // ✅ Positioned right below Spirit Bar
+          left: MediaQuery.of(context).size.width / 2 - 100, // Centered
+          child: ValueListenableBuilder<double?>(
+            valueListenable: game.bossHealthNotifier,
+            builder: (context, bossHealth, _) {
+              if (bossHealth == null)
+                return const SizedBox(); // ✅ Hide when no boss
+
+              return Column(
+                children: [
+                  // 👑 Boss Name
+                  Text(
+                    'Umbrathos, The Fading King',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'MyCustomFont',
+                    ),
+                  ),
+                  const SizedBox(
+                      height: 5), // ✅ Small gap between name and health bar
+
+                  // 🔴 Boss Health Bar
+                  BossHealthBar(
+                    bossHealth: bossHealth,
+                    maxBossHealth: 5000,
+                    //✅ Adjust if bosses have different HP
+                  ),
+                ],
+              );
+            },
           ),
         ),
 
@@ -245,6 +286,62 @@ class SpiritBarPainter extends CustomPainter {
         Colors.purpleAccent
       ]; // 🔵 High Spirit = Blue-Purple
     }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class BossHealthBarPainter extends CustomPainter {
+  final double health;
+
+  BossHealthBarPainter(this.health);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paintBackground = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill;
+
+    final paintHealth = Paint()
+      ..color = Colors.red
+      ..style = PaintingStyle.fill;
+
+    // Draw background bar
+    canvas.drawRect(
+        Rect.fromLTWH(0, 0, size.width, size.height), paintBackground);
+
+    // Draw health bar
+    double healthWidth = (health / 5000) * size.width; // ✅ Scale health bar
+    canvas.drawRect(Rect.fromLTWH(0, 0, healthWidth, size.height), paintHealth);
+
+    // Draw boss name "Umbrathos, The Fading King"
+    final textStyle = TextStyle(
+      color: Colors.white,
+      fontSize: size.height * 0.7, // Scale text size to fit
+      fontWeight: FontWeight.bold,
+    );
+
+    final textSpan = TextSpan(
+      text: "Umbrathos, The Fading King",
+      style: textStyle,
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textAlign: TextAlign.center,
+      textDirection: ui.TextDirection.ltr,
+    );
+
+    textPainter.layout(
+      minWidth: 0,
+      maxWidth: size.width,
+    );
+
+    final textX = (size.width - textPainter.width) / 2;
+    final textY = (size.height - textPainter.height) / 2;
+
+    textPainter.paint(canvas, Offset(textX, textY));
   }
 
   @override

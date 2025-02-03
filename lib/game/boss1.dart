@@ -1,4 +1,5 @@
 import 'dart:math'; // ✅ Fix for cos and sin
+import 'dart:ui'; // ✅ Fix for VoidCallback
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/collisions.dart';
@@ -16,6 +17,9 @@ class Boss1 extends BaseEnemy {
   double timeSinceLastAttack = 0.0;
   final double damageNumberInterval = 0.5;
   bool hasDroppedItem = false;
+  final Function(double) onHealthChanged; // ✅ Tracks boss health
+  final VoidCallback onDeath; // ✅ Handles boss death
+  late final double maxHealth; // ✅ Store original max health
 
   late final SpriteAnimation idleAnimation;
   late final SpriteAnimation walkAnimation;
@@ -23,15 +27,19 @@ class Boss1 extends BaseEnemy {
 
   Boss1({
     required Player player,
-    required int health,
+    required int health, // ✅ Keep int but convert to double internally
     required double speed,
     required Vector2 size,
+    required this.onHealthChanged, // ✅ Track health changes
+    required this.onDeath, // ✅ Handle boss death
   }) : super(
           player: player,
-          health: health,
-          speed: speed, // ✅ Speed is mutable now
+          health: health, // ✅ Convert to double
+          speed: speed,
           size: size,
-        );
+        ) {
+    maxHealth = health.toDouble(); // ✅ Store max health for scaling
+  }
 
   @override
   Future<void> onLoad() async {
@@ -99,7 +107,7 @@ class Boss1 extends BaseEnemy {
       double angle = (i * 60) * (pi / 180);
 
       Vector2 projectileVelocity =
-          Vector2(cos(angle), sin(angle)) * 800; // ✅ Increase Speed
+          Vector2(cos(angle), sin(angle)) * 800; // ✅ Increased Speed
 
       final bossProjectile = Projectile.bossProjectile(
         damage: 20,
@@ -119,7 +127,8 @@ class Boss1 extends BaseEnemy {
     int finalDamage =
         isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
 
-    health -= finalDamage;
+    health -= finalDamage; // ✅ Ensure health remains double
+    onHealthChanged(health.toDouble()); // ✅ Ensure correct type is passed
 
     if (timeSinceLastDamageNumber >= damageNumberInterval) {
       final damageNumber = DamageNumber(
@@ -131,7 +140,8 @@ class Boss1 extends BaseEnemy {
       timeSinceLastDamageNumber = 0.0;
     }
 
-    if (health <= (health * 0.3) && !enraged) {
+    // ✅ Fix: Check against `maxHealth`, not current `health`
+    if (health <= (maxHealth * 0.3) && !enraged) {
       enraged = true;
       _enterEnrageMode();
     }
@@ -166,6 +176,7 @@ class Boss1 extends BaseEnemy {
       gameRef.add(drop);
     }
 
+    onDeath(); // ✅ Notify game that boss died
     gameRef.add(Explosion(position));
     removeFromParent();
   }

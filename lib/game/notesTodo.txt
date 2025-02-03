@@ -1,3 +1,14 @@
+	1.	Eclipse Warden – A powerful spectral guardian overseeing the fading of lost warriors.
+	2.	Umbrathos, The Fading King – A legendary warrior whose spirit is nearly gone, clinging to power.
+	3.	Tenebris, Harbinger of Silence – “Tenebris” means “darkness” in Latin, symbolizing the final battle.
+	4.	Nyxoth, The Last Whisper – A being born from the last echoes of fallen warriors.
+	5.	Oblivor, The Forgotten Phantom – A ghost who consumes the memories of lost warriors.
+	6.	Morvael, Keeper of the Veil – A shadowy guardian between life and the afterlife.
+	7.	Vexaris, The Eclipsed Tyrant – A fallen warrior king cursed to rule the void.
+	8.	Duskborn Omen – A being that signals the end of all things.
+	9.	Zephiron, The Hollow Wind – A spectral force that devours all sound, leaving only silence.
+	10.	Shadebound Tyrant – A warlord whose soul is tethered to the void.
+
 Mechanic + Story Integration Ideas
 	1.	Whispering Echoes of Power
 	•	At the start, the Warrior still hears the whispers of his past power, guiding him.
@@ -115,7 +126,6 @@ Beyond these, we can also introduce random mutations for more unique combination
 	•	You’ve lost so much… but you’ve adapted.
 	•	Strategy: The powers you kept shape how you fight.
 
-
 🛠 What We Need to Implement
 
 ✅ 🖼️ New Spirit Bar UI:
@@ -138,7 +148,6 @@ Beyond these, we can also introduce random mutations for more unique combination
 	•	Adapts to your remaining abilities to counter you.
 	•	If you kept movement, the boss is slower but stronger.
 	•	If you kept attack power, the boss is fast but weaker.
-
 
 ✨ Next Steps
 

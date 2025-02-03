@@ -18,6 +18,7 @@ import 'abilities.dart';
 import 'boss1.dart';
 import 'package:flame/effects.dart';
 import 'explosion.dart';
+import 'bosshealthbar.dart';
 
 void main() {
   runApp(MyApp());
@@ -77,6 +78,8 @@ class _MyAppState extends State<MyApp> {
                             .updateJoystick(delta),
                         experienceBar: (game as RogueShooterGame).experienceBar,
                         game: game as RogueShooterGame,
+                        bossHealthNotifier: (game as RogueShooterGame)
+                            .bossHealthNotifier, // ✅ Add this
                       ),
                 },
               ),
@@ -96,6 +99,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   late TimerComponent gameTimer;
   late final AudioPlayer _bgmPlayer;
   late ValueNotifier<int> gameHudNotifier;
+  late ValueNotifier<double?> bossHealthNotifier;
   int enemyCount = 0;
   int maxEnemies = 30;
   final List<String> selectedAbilities;
@@ -104,7 +108,9 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   bool isPaused = false;
   int remainingTime = 1200; // 20 minutes in seconds
 
-  RogueShooterGame({required this.selectedAbilities});
+  RogueShooterGame({required this.selectedAbilities}) {
+    bossHealthNotifier = ValueNotifier<double?>(null); // ✅ Initialize as null
+  }
 
   @override
   Future<void> onLoad() async {
@@ -279,6 +285,9 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       speed: 20,
       health: 5000,
       size: Vector2(128, 128),
+      onHealthChanged: (double health) =>
+          bossHealthNotifier.value = health, // ✅ Update health bar
+      onDeath: () => bossHealthNotifier.value = null, // ✅ Hide when boss dies
     )
       ..position = Vector2(size.x / 2, -300)
       ..anchor = Anchor.center;
@@ -289,7 +298,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       _shakeScreen(customCamera); // ✅ Trigger screen shake
       _triggerBossImpactEffect(boss.position);
     });
-
+    bossHealthNotifier.value = 5000; // ✅ Show Boss HP
     print("🔥 BOSS HAS ENTERED THE ARENA!");
   }
 
