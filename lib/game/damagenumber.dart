@@ -1,17 +1,18 @@
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
-import 'package:flutter/material.dart';
+import 'package:flame/effects.dart';
 import 'main.dart';
 
 class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
   final Vector2 initialPosition;
   final int damage;
+  final bool isCritical; // ✅ Detect if it's a crit hit
   double timer = 1.0; // Display time in seconds
   late List<SpriteComponent> digitSprites = [];
 
   static final Map<int, Sprite> numberSprites = {}; // Store loaded sprites
 
-  DamageNumber(this.damage, this.initialPosition) {
+  DamageNumber(this.damage, this.initialPosition, {this.isCritical = false}) {
     position = initialPosition;
   }
 
@@ -21,8 +22,20 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
     anchor = Anchor.center;
 
     await _loadSpritesIfNeeded();
-
     _createDamageNumberSprites();
+
+    // ✅ Floating Effect (moves upward)
+    add(MoveEffect.by(Vector2(0, -30), EffectController(duration: 0.5)));
+
+    if (isCritical) {
+      // ✅ Magnify & Shrink Effect for Crits
+      add(ScaleEffect.to(Vector2.all(2.5), EffectController(duration: 0.1))
+        ..onComplete = () => add(
+            ScaleEffect.to(Vector2.all(1.2), EffectController(duration: 0.1))));
+    }
+
+    // ✅ Auto-remove after timer ends
+    add(RemoveEffect(delay: 1.0));
   }
 
   /// Loads sprites into a map if they haven't been loaded yet
@@ -44,7 +57,9 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
 
       SpriteComponent digitSprite = SpriteComponent(
         sprite: numberSprites[digit],
-        size: Vector2(16, 16), // Adjust size as needed
+        size: isCritical
+            ? Vector2(24, 24)
+            : Vector2(16, 16), // ✅ Bigger for crits
         position: Vector2(offsetX, 0),
         anchor: Anchor.center,
       );
@@ -52,19 +67,7 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
       digitSprites.add(digitSprite);
       add(digitSprite);
 
-      offsetX += 12; // Adjust spacing between numbers
-    }
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    position += Vector2(0, -20 * dt); // Move upward
-    timer -= dt;
-
-    if (timer <= 0) {
-      removeFromParent();
+      offsetX += isCritical ? 18 : 14; // ✅ Slightly larger spacing for crits
     }
   }
 }

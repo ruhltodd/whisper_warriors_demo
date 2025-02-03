@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'experience.dart';
-import 'powerup.dart';
 import 'main.dart';
 import 'player.dart';
 import 'abilitybar.dart';
 
 class HUD extends StatelessWidget {
   final void Function(Vector2 delta) onJoystickMove;
-  final ExperienceBar experienceBar;
+  final SpiritBar experienceBar;
   final RogueShooterGame game; // ✅ Reference to game for timer
 
   HUD({
@@ -50,7 +49,7 @@ class HUD extends StatelessWidget {
             width: 200,
             height: 20,
             child: CustomPaint(
-              painter: ExperienceBarPainter(experienceBar),
+              painter: SpiritBarPainter(experienceBar),
             ),
           ),
         ),
@@ -147,30 +146,30 @@ class JoystickPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-class ExperienceBarOverlay extends StatelessWidget {
-  final ExperienceBar experienceBar;
+class SpiritBarOverlay extends StatelessWidget {
+  final SpiritBar spiritBar; // ✅ Renamed ExperienceBar to SpiritBar
 
-  ExperienceBarOverlay({required this.experienceBar});
+  SpiritBarOverlay({required this.spiritBar});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: SizedBox(
-        width: experienceBar.barWidth,
-        height: experienceBar.barHeight,
+        width: spiritBar.barWidth,
+        height: spiritBar.barHeight,
         child: CustomPaint(
-          painter: ExperienceBarPainter(experienceBar),
+          painter: SpiritBarPainter(spiritBar), // ✅ Updated Painter
         ),
       ),
     );
   }
 }
 
-class ExperienceBarPainter extends CustomPainter {
-  final ExperienceBar experienceBar;
+class SpiritBarPainter extends CustomPainter {
+  final SpiritBar spiritBar;
 
-  ExperienceBarPainter(this.experienceBar);
+  SpiritBarPainter(this.spiritBar);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -190,14 +189,15 @@ class ExperienceBarPainter extends CustomPainter {
 
     // Draw progress bar
     final progressWidth =
-        (experienceBar.currentExp / experienceBar.expToLevel) * size.width;
+        (spiritBar.spiritExp / spiritBar.spiritExpToNextLevel) * size.width;
     canvas.drawRect(
       Rect.fromLTWH(0, 0, progressWidth, size.height),
       progressPaint,
     );
-    // Draw Level Text
+
+    // Draw Spirit Level Text
     final textSpan = TextSpan(
-      text: "Spirit Level ${experienceBar.playerLevel}",
+      text: "Spirit Level ${spiritBar.spiritLevel}", // ✅ Updated variable
       style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
@@ -218,180 +218,4 @@ class ExperienceBarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
-class PowerUpSelectionOverlay extends StatelessWidget {
-  final RogueShooterGame game;
-
-  PowerUpSelectionOverlay({required this.game});
-
-  @override
-  Widget build(BuildContext context) {
-    List<PowerUpType> options = game.powerUpOptions;
-
-    return Center(
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.black87,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white, width: 2),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Choose a Power-Up!",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 10),
-            Column(
-              children: options.map((type) {
-                int currentLevel = game.player.powerUpLevels[type] ?? 0;
-// Get power-up level
-                int nextLevel =
-                    (currentLevel + 1).clamp(1, 6); // ✅ Show NEXT level
-
-                return ElevatedButton.icon(
-                  onPressed: () {
-                    //  game.selectPowerUp(type);
-                    game.overlays.remove('powerUpSelection');
-                    game.overlays.add('powerUpBuffs'); // Update buff UI
-                  },
-                  icon: Icon(_getPowerUpIcon(type),
-                      size: 24, color: Colors.white),
-                  label: Text(
-                    "${_getPowerUpName(type)} (Lvl $nextLevel)", // ✅ Show next level
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurpleAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _getPowerUpIcon(PowerUpType type) {
-    switch (type) {
-      case PowerUpType.vampiricTouch:
-        return Icons.favorite;
-      case PowerUpType.armorUpgrade:
-        return Icons.shield;
-      case PowerUpType.magnetism:
-        return Icons.autorenew;
-      case PowerUpType.blackHole:
-        return Icons.circle;
-      case PowerUpType.attackSpeedBoost: // ✅ New Icon
-        return Icons.flash_on;
-      case PowerUpType.movementSpeedBoost: // ✅ New Icon
-        return Icons.directions_run;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  String _getPowerUpName(PowerUpType type) {
-    switch (type) {
-      case PowerUpType.vampiricTouch:
-        return "Vampiric Touch";
-      case PowerUpType.armorUpgrade:
-        return "Armor Upgrade";
-      case PowerUpType.magnetism:
-        return "Magnetism";
-      case PowerUpType.blackHole:
-        return "Black Hole";
-      case PowerUpType.attackSpeedBoost: // ✅ New Name
-        return "Attack Speed";
-      case PowerUpType.movementSpeedBoost: // ✅
-      default:
-        return "Unknown Power";
-    }
-  }
-}
-
-class PowerUpBuffsOverlay extends StatelessWidget {
-  final RogueShooterGame game;
-
-  PowerUpBuffsOverlay({required this.game});
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      top: 10,
-      left: 10,
-      child: Row(
-        children: game.player.activePowerUps.entries.map((entry) {
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              // Power-up icon
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black.withOpacity(0.7), // Dark background
-                ),
-                child: Icon(
-                  _getPowerUpIcon(entry.key),
-                  size: 24,
-                  color: Colors.white,
-                ),
-              ),
-              // Level number overlay
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.redAccent, // Background for level number
-                  ),
-                  child: Center(
-                    child: Text(
-                      "${entry.value}", // Display power-up level
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  IconData _getPowerUpIcon(PowerUpType type) {
-    switch (type) {
-      case PowerUpType.vampiricTouch:
-        return Icons.favorite; // Heart for healing
-      case PowerUpType.armorUpgrade:
-        return Icons.shield;
-      case PowerUpType.magnetism:
-        return Icons.autorenew; // Magnet for item pull
-      case PowerUpType.blackHole:
-        return Icons.circle; // Placeholder for black hole
-      default:
-        return Icons.help_outline;
-    }
-  }
 }

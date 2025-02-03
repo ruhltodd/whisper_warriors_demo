@@ -45,37 +45,51 @@ class BaseEnemy extends SpriteAnimationComponent
     }
   }
 
-  void takeDamage(int damage) {
-    health -= damage;
+  // ✅ Updated to handle Critical Hits
+  void takeDamage(int baseDamage, {bool isCritical = false}) {
+    // ✅ If the attack doesn't specify a crit (like abilities), roll for a crit chance
+    if (!isCritical) {
+      isCritical = gameRef.random.nextDouble() < player.critChance / 100;
+    }
+
+    // ✅ Apply critical multiplier if crit occurs
+    int finalDamage =
+        isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
+
+    health -= finalDamage;
 
     // ✅ Ensure at least one damage number appears per hit
     if (timeSinceLastDamageNumber >= damageNumberInterval ||
         timeSinceLastDamageNumber == 0.0) {
-      final damageNumber =
-          DamageNumber(damage, position.clone() + Vector2(0, -10));
+      final damageNumber = DamageNumber(
+        finalDamage,
+        position.clone() + Vector2(0, -10),
+        isCritical: isCritical, // ✅ Flag critical damage
+      );
       gameRef.add(damageNumber);
       timeSinceLastDamageNumber = 0.0; // ✅ Reset the timer
     }
 
+    // ✅ Handle Death
     if (health <= 0) {
-      removeFromParent();
+      die();
+    }
+  }
+
+  void die() {
+    if (!hasExploded && gameRef.player.hasAbility<SoulFracture>()) {
+      hasExploded = true;
+      gameRef.add(Explosion(position)); // ✅ Explosion animation
+      gameRef.player.triggerExplosion(position);
     }
 
-    if (health <= 0) {
-      if (!hasExploded && gameRef.player.hasAbility<SoulFracture>()) {
-        hasExploded = true;
-        gameRef.add(Explosion(position)); // ✅ Add explosion animation
-        gameRef.player.triggerExplosion(position);
-      }
-
-      if (!hasDroppedItem) {
-        hasDroppedItem = true;
-        final drop = DropItem(expValue: 10)..position = position.clone();
-        gameRef.add(drop);
-        gameRef.player.gainHealth(gameRef.player.vampiricHealing.toInt());
-      }
-
-      removeFromParent();
+    if (!hasDroppedItem) {
+      hasDroppedItem = true;
+      final drop = DropItem(expValue: 10)..position = position.clone();
+      gameRef.add(drop);
+      gameRef.player.gainHealth(gameRef.player.vampiricHealing.toInt());
     }
+
+    removeFromParent();
   }
 }

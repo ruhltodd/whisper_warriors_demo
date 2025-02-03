@@ -6,9 +6,10 @@ import 'damagenumber.dart';
 import 'fireaura.dart';
 import 'dart:collection';
 import 'explosion.dart';
+import 'experience.dart';
 
 /// Enum for ability types (optional, for categorization)
-enum AbilityType { Passive, OnHit, OnKill, Aura, Scaling }
+enum AbilityType { passive, onHit, onKill, aura, scaling }
 
 /// Base class for all abilities
 abstract class Ability {
@@ -28,14 +29,14 @@ abstract class Ability {
 }
 
 class WhisperingFlames extends Ability {
-  double damagePerSecond = 10.0;
+  double baseDamagePerSecond = 10.0; // 🔥 Base value (scaled by Spirit)
   double range = 100.0;
 
   WhisperingFlames()
       : super(
           name: "Whispering Flames",
           description: "A fire aura that burns enemies near you.",
-          type: AbilityType.Aura,
+          type: AbilityType.aura,
         );
 
   @override
@@ -48,13 +49,29 @@ class WhisperingFlames extends Ability {
   void onUpdate(Player player, double dt) {
     if (player.gameRef == null) return;
 
+    // ✅ Scale damage with Spirit Level
+    double scaledDamage = baseDamagePerSecond * player.spiritMultiplier;
+
     for (var enemy in player.gameRef.children.whereType<BaseEnemy>()) {
       double distance = (enemy.position - player.position).length;
+
       if (distance < range) {
-        int damage = (damagePerSecond * dt).toInt().clamp(1, 9999);
-        enemy.takeDamage(damage);
+        // ✅ Calculate Critical Strike
+        bool isCritical =
+            player.gameRef.random.nextDouble() < player.critChance / 100;
+        int finalDamage = isCritical
+            ? (scaledDamage * player.critMultiplier).toInt()
+            : scaledDamage.toInt();
+
+        enemy.takeDamage(finalDamage,
+            isCritical: isCritical); // ✅ Pass crit info
       }
     }
+  }
+
+  /// Rolls to determine if this hit is a critical strike
+  bool _rollCriticalStrike(Player player) {
+    return (player.gameRef.random.nextDouble() * 100) < player.critChance;
   }
 }
 
@@ -63,30 +80,52 @@ class SoulFracture extends Ability {
       : super(
           name: "Soul Fracture",
           description: "Enemies explode into ghostly shrapnel on death.",
-          type: AbilityType.OnKill,
+          type: AbilityType.onKill,
         );
 
   @override
   void onKill(Player player, Vector2 enemyPosition) {
     if (!player.hasTriggeredExplosionRecently()) {
-      // ✅ Prevent excessive explosions
       player.triggerExplosion(enemyPosition);
     }
   }
 }
 
-// ✅ Add cooldown tracking to prevent multiple explosions at once
+// ✅ Explosion now scales with Spirit Level
 extension ExplosionCooldown on Player {
   bool hasTriggeredExplosionRecently() {
     double currentTime = gameRef.currentTime();
 
-    if (currentTime - lastExplosionTime < Player.explosionCooldown) {
-      // ✅ Correct usage of static field
-      return true; // ✅ Prevent excessive explosions
+    if (currentTime - lastExplosionTime < explosionCooldown) {
+      return true;
     }
 
     lastExplosionTime = currentTime;
     return false;
+  }
+
+  void triggerExplosion(Vector2 position) {
+    double currentTime = gameRef.currentTime();
+
+    if (currentTime - lastExplosionTime < explosionCooldown) {
+      return;
+    }
+
+    lastExplosionTime = currentTime;
+
+    gameRef.add(Explosion(position));
+    print("💥 Spirit Explosion triggered at $position");
+
+    // ✅ Explosion damage scales with Spirit Level
+    for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
+      double distance = (enemy.position - position).length;
+
+      if (distance < 100.0) {
+        int damage = (10.0 * spiritMultiplier).toInt().clamp(1, 9999);
+        enemy.takeDamage(damage);
+        print("🔥 Explosion hit enemy for $damage damage!");
+      }
+    }
   }
 }
 /*

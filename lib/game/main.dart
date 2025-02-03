@@ -8,7 +8,6 @@ import 'experience.dart';
 import 'customcamera.dart';
 import 'hud.dart';
 import 'player.dart';
-import 'powerup.dart';
 import 'enemy.dart';
 import 'wave1Enemy.dart';
 import 'wave2Enemy.dart';
@@ -76,12 +75,6 @@ class _MyAppState extends State<MyApp> {
                         experienceBar: (game as RogueShooterGame).experienceBar,
                         game: game as RogueShooterGame,
                       ),
-                  'powerUpSelection': (_, game) => PowerUpSelectionOverlay(
-                        game: game as RogueShooterGame,
-                      ),
-                  'powerUpBuffs': (_, game) => PowerUpBuffsOverlay(
-                        game: game as RogueShooterGame,
-                      ),
                 },
               ),
           ],
@@ -94,7 +87,7 @@ class _MyAppState extends State<MyApp> {
 class RogueShooterGame extends FlameGame with HasCollisionDetection {
   late CustomCamera customCamera;
   late Player player;
-  late ExperienceBar experienceBar;
+  late SpiritBar experienceBar;
   late SpriteComponent grassMap;
   late TimerComponent enemySpawnerTimer;
   late TimerComponent gameTimer;
@@ -102,8 +95,8 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   late ValueNotifier<int> gameHudNotifier;
   int enemyCount = 0;
   int maxEnemies = 30;
-  List<PowerUpType> powerUpOptions = [];
   final List<String> selectedAbilities;
+  final Random random = Random(); // ✅ Define Random instance
 
   bool isPaused = false;
   int remainingTime = 1200; // 20 minutes in seconds
@@ -139,7 +132,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
 
     _applyAbilitiesToPlayer();
 
-    experienceBar = ExperienceBar();
+    experienceBar = SpiritBar();
     customCamera.follow(player.position, 0);
     overlays.add('hud');
 
@@ -294,7 +287,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   }
 
   void checkLevelUpScaling() {
-    if (player.level >= 3 && maxEnemies != 20) {
+    if (player.spiritLevel >= 3 && maxEnemies != 20) {
       maxEnemies = 20;
       remove(enemySpawnerTimer);
       enemySpawnerTimer = TimerComponent(

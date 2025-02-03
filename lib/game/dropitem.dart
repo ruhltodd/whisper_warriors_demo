@@ -24,7 +24,7 @@ class DropItem extends SpriteComponent
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is Player) {
-      other.gainExperience(expValue); // Player gains experience
+      other.gainSpiritExp(expValue.toDouble()); // ✅ Updated to Spirit EXP
       removeFromParent(); // Remove the drop after collection
     }
     super.onCollision(intersectionPoints, other);
