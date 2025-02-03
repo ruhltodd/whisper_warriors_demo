@@ -48,11 +48,17 @@ class BaseEnemy extends SpriteAnimationComponent
   void takeDamage(int damage) {
     health -= damage;
 
-    if (timeSinceLastDamageNumber >= damageNumberInterval) {
+    // ✅ Ensure at least one damage number appears per hit
+    if (timeSinceLastDamageNumber >= damageNumberInterval ||
+        timeSinceLastDamageNumber == 0.0) {
       final damageNumber =
           DamageNumber(damage, position.clone() + Vector2(0, -10));
       gameRef.add(damageNumber);
-      timeSinceLastDamageNumber = 0.0;
+      timeSinceLastDamageNumber = 0.0; // ✅ Reset the timer
+    }
+
+    if (health <= 0) {
+      removeFromParent();
     }
 
     if (health <= 0) {
