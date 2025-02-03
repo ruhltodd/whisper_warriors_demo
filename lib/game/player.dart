@@ -41,7 +41,7 @@ class Player extends PositionComponent
   Map<PowerUpType, int> powerUpLevels = {}; // ✅ Track power-up levels
   Map<PowerUpType, int> activePowerUps = {}; // ✅ Tracks power-ups for HUD
 
-  Player() : super(size: Vector2(64, 64)) {
+  Player() : super(size: Vector2(128, 128)) {
     add(RectangleHitbox());
   }
 
@@ -83,7 +83,7 @@ class Player extends PositionComponent
       } else if (joystickDelta.x < 0) {
         whisperWarrior.scale.x = 1; // Face right
       }
-      whisperWarrior.playAnimation('idle');
+      whisperWarrior.playAnimation('attack');
     } else {
       whisperWarrior.playAnimation('idle');
     }
@@ -122,15 +122,18 @@ class Player extends PositionComponent
 
 // Add this variable to Player
   double lastExplosionTime = 0.0;
-  double explosionCooldown = 0.5; // Prevent excessive explosions (every 0.2s)
+  static const double explosionCooldown = 0.5; // ✅ Every 0.5s max
 
 // Modify the `triggerExplosion` method
   void triggerExplosion(Vector2 position) {
-    if (gameRef.currentTime() - lastExplosionTime < explosionCooldown) {
-      return; // ✅ Prevent excessive explosions
+    double currentTime = gameRef.currentTime();
+
+    // ✅ Prevent excessive explosions
+    if (currentTime - lastExplosionTime < explosionCooldown) {
+      return;
     }
 
-    lastExplosionTime = gameRef.currentTime(); // ✅ Update last explosion time
+    lastExplosionTime = currentTime; // ✅ Update last explosion time
 
     gameRef.add(Explosion(position));
     print("💥 Explosion triggered at $position");
@@ -140,10 +143,9 @@ class Player extends PositionComponent
       double distance = (enemy.position - position).length;
 
       if (distance < 100.0) {
-        // Explosion range
-        int damage = (enemy.health * 0.25)
-            .toInt()
-            .clamp(1, 9999); // ✅ Cap at 25% of health
+        // ✅ Explosion range
+        int damage =
+            (enemy.health * 0.25).toInt().clamp(1, 9999); // ✅ 25% of health
         enemy.takeDamage(damage);
         print("🔥 Explosion hit enemy for $damage damage!");
       }

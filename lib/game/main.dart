@@ -197,7 +197,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
 
   void startEnemySpawner() {
     enemySpawnerTimer = TimerComponent(
-      period: 2.0,
+      period: 5.0,
       repeat: true,
       onTick: () {
         checkLevelUpScaling();
@@ -207,10 +207,10 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     add(enemySpawnerTimer);
 
     TimerComponent debugWaveSpawner = TimerComponent(
-      period: 5.0, // ✅ Adjusted to 5 seconds
+      period: 5, // ✅ Adjusted to 5 seconds
       repeat: true,
       onTick: () {
-        spawnEnemyWave(50);
+        spawnEnemyWave(10);
       },
     );
     add(debugWaveSpawner);
@@ -220,19 +220,31 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     for (int i = 0; i < count; i++) {
       final spawnPosition = _getRandomSpawnPosition();
 
-      BaseEnemy enemy = (i % 2 == 0)
-          ? Wave1Enemy(
-              player: player,
-              speed: 100,
-              health: 100,
-              size: Vector2(32, 32),
-            )
-          : Wave2Enemy(
-              player: player,
-              speed: 120,
-              health: 80,
-              size: Vector2(32, 32),
-            );
+      BaseEnemy enemy;
+      if (remainingTime <= 1140) {
+        // ✅ After 60 seconds, allow Wave2Enemy to spawn
+        enemy = (i % 2 == 0)
+            ? Wave1Enemy(
+                player: player,
+                speed: 70,
+                health: 100,
+                size: Vector2(64, 64),
+              )
+            : Wave2Enemy(
+                player: player,
+                speed: 50,
+                health: 400,
+                size: Vector2(128, 128),
+              );
+      } else {
+        // ✅ Before 60 seconds, only spawn Wave1Enemy
+        enemy = Wave1Enemy(
+          player: player,
+          speed: 100,
+          health: 100,
+          size: Vector2(64, 64),
+        );
+      }
 
       enemy.position = spawnPosition;
       enemy.onRemoveCallback = () {

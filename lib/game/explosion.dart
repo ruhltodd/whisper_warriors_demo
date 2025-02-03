@@ -25,7 +25,7 @@ class Explosion extends SpriteAnimationComponent with HasGameRef {
     animation = spriteSheet.createAnimation(
       row: 0, // Adjust if necessary
       stepTime: 0.02, // Speed of explosion animation (adjust as needed)
-      to: 50, // Use all 50 frames
+      to: 9, // Use all 50 frames
       loop: false, // ✅ Only plays once
     );
 

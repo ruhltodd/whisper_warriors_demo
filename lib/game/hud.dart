@@ -33,10 +33,10 @@ class HUD extends StatelessWidget {
               return Text(
                 game.formatTime(time), // ✅ Live updating countdown
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'MyCustomFont'),
               );
             },
           ),
@@ -175,7 +175,8 @@ class ExperienceBarPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final backgroundPaint = Paint()..color = Colors.black26;
-    final progressPaint = Paint()..color = Colors.green;
+    final progressPaint = Paint()
+      ..color = const Color.fromARGB(255, 175, 76, 152);
     final textPaint = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
@@ -196,12 +197,12 @@ class ExperienceBarPainter extends CustomPainter {
     );
     // Draw Level Text
     final textSpan = TextSpan(
-      text: "Level ${experienceBar.playerLevel}",
+      text: "Spirit Level ${experienceBar.playerLevel}",
       style: const TextStyle(
-        color: Colors.white,
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-      ),
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'MyCustomFont'),
     );
 
     textPaint.text = textSpan;

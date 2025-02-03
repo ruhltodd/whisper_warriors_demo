@@ -12,7 +12,7 @@ class WhisperWarrior extends SpriteAnimationComponent
 
   WhisperWarrior()
       : super(
-          size: Vector2(64, 64),
+          size: Vector2(128, 128),
           paint: Paint()..blendMode = BlendMode.srcOver,
         );
 
@@ -20,28 +20,53 @@ class WhisperWarrior extends SpriteAnimationComponent
   Future<void> onLoad() async {
     print("Loading WhisperWarrior...");
 
-    final spriteSheet = SpriteSheet(
-      image: await gameRef.images.load('whisper_warrior_spritesheet.png'),
-      srcSize: Vector2(64, 64),
+    animations = {};
+
+    // ✅ Load the idle animation from `whisper_warrior_idle.png`
+    final idleSpriteSheet = SpriteSheet(
+      image: await gameRef.images.load('whisper_warrior_idle.png'),
+      srcSize: Vector2(128, 128),
     );
+    animations['idle'] =
+        idleSpriteSheet.createAnimation(row: 0, stepTime: 0.4, from: 0, to: 5);
 
-    // Load animations
-    animations = {
-      'idle':
-          spriteSheet.createAnimation(row: 0, stepTime: 0.4, from: 0, to: 2),
-      // 'walk':
-      //     spriteSheet.createAnimation(row: 0, stepTime: 0.1, from: 2, to: 7),
-      // 'attack':
-      //   spriteSheet.createAnimation(row: 0, stepTime: 0.2, from: 8, to: 12),
-      // 'hit': spriteSheet.createAnimation(row: 3, stepTime: 0.2),
-//'death': spriteSheet.createAnimation(row: 4, stepTime: 0.25),
-    };
+    /* // ✅ Load the walk animation from `whisper_warrior_walk.png`
+    final walkSpriteSheet = SpriteSheet(
+      image: await gameRef.images.load('whisper_warrior_idle.png'),
+      srcSize: Vector2(128, 128),
+    );
+    animations['walk'] =
+        walkSpriteSheet.createAnimation(row: 0, stepTime: 0.1, from: 0, to: 5); */
 
-    // Set initial animation
+    // ✅ Load the attack animation from `whisper_warrior_attack.png`
+    final attackSpriteSheet = SpriteSheet(
+      image: await gameRef.images.load('whisper_warrior_attack.png'),
+      srcSize: Vector2(128, 128),
+    );
+    animations['attack'] = attackSpriteSheet.createAnimation(
+        row: 0, stepTime: 0.15, from: 0, to: 10);
+/*
+    // ✅ Load the hit animation from `whisper_warrior_hit.png`
+    final hitSpriteSheet = SpriteSheet(
+      image: await gameRef.images.load('whisper_warrior_hit.png'),
+      srcSize: Vector2(128, 128),
+    );
+    animations['hit'] =
+        hitSpriteSheet.createAnimation(row: 0, stepTime: 0.2, from: 0, to: 3);
+
+    // ✅ Load the death animation from `whisper_warrior_death.png`
+    final deathSpriteSheet = SpriteSheet(
+      image: await gameRef.images.load('whisper_warrior_death.png'),
+      srcSize: Vector2(128, 128),
+    );
+    animations['death'] = deathSpriteSheet.createAnimation(
+        row: 0, stepTime: 0.25, from: 0, to: 5);
+*/
+    // Set the default animation
     animation = animations['idle'];
     isLoaded = true;
 
-    print("WhisperWarrior loaded successfully!");
+    print("WhisperWarrior loaded successfully with multiple animations!");
   }
 
   void playAnimation(String animationName) {

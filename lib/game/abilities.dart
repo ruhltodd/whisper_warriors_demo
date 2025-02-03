@@ -5,12 +5,13 @@ import 'dart:math';
 import 'damagenumber.dart';
 import 'fireaura.dart';
 import 'dart:collection';
+import 'explosion.dart';
 
 /// Enum for ability types (optional, for categorization)
 enum AbilityType { Passive, OnHit, OnKill, Aura, Scaling }
 
 /// Base class for all abilities
-class Ability {
+abstract class Ability {
   final String name;
   final String description;
   final AbilityType type;
@@ -21,13 +22,8 @@ class Ability {
     required this.type,
   });
 
-  /// This function will be overridden for specific abilities
   void applyEffect(Player player) {}
-
-  /// If an ability triggers on kill
   void onKill(Player player, Vector2 enemyPosition) {}
-
-  /// If an ability triggers passively (e.g., aura)
   void onUpdate(Player player, double dt) {}
 }
 
@@ -50,15 +46,13 @@ class WhisperingFlames extends Ability {
 
   @override
   void onUpdate(Player player, double dt) {
-    if (player.parent == null) return;
+    if (player.gameRef == null) return;
 
-    for (var enemy in player.parent!.children.whereType<BaseEnemy>()) {
+    for (var enemy in player.gameRef.children.whereType<BaseEnemy>()) {
       double distance = (enemy.position - player.position).length;
-
       if (distance < range) {
         int damage = (damagePerSecond * dt).toInt().clamp(1, 9999);
-        enemy
-            .takeDamage(damage); // ✅ Let the enemy handle damage number display
+        enemy.takeDamage(damage);
       }
     }
   }
@@ -74,8 +68,25 @@ class SoulFracture extends Ability {
 
   @override
   void onKill(Player player, Vector2 enemyPosition) {
-    // Trigger explosion effect when an enemy dies
-    player.triggerExplosion(enemyPosition);
+    if (!player.hasTriggeredExplosionRecently()) {
+      // ✅ Prevent excessive explosions
+      player.triggerExplosion(enemyPosition);
+    }
+  }
+}
+
+// ✅ Add cooldown tracking to prevent multiple explosions at once
+extension ExplosionCooldown on Player {
+  bool hasTriggeredExplosionRecently() {
+    double currentTime = gameRef.currentTime();
+
+    if (currentTime - lastExplosionTime < Player.explosionCooldown) {
+      // ✅ Correct usage of static field
+      return true; // ✅ Prevent excessive explosions
+    }
+
+    lastExplosionTime = currentTime;
+    return false;
   }
 }
 /*

@@ -10,7 +10,7 @@ class DamageNumber extends TextComponent with HasGameRef<RogueShooterGame> {
 
   DamageNumber(this.damage, this.initialPosition)
       : super(
-          text: '-$damage',
+          text: '$damage',
           textRenderer: TextPaint(
             style: const TextStyle(
               fontSize: 14,

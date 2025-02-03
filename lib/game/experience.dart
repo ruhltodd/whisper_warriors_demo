@@ -7,7 +7,7 @@ class ExperienceBar extends PositionComponent
   final double barWidth = 200; // Width of the experience bar
   final double barHeight = 10; // Height of the experience bar
   double currentExp = 0;
-  double expToLevel = 100;
+  double expToLevel = 1000;
   int playerLevel = 1;
 
   ExperienceBar() {
@@ -35,18 +35,20 @@ class ExperienceBar extends PositionComponent
     final filledWidth = (currentExp / expToLevel) * barWidth;
     canvas.drawRect(
       Rect.fromLTWH(0, 0, filledWidth, barHeight),
-      Paint()..color = const Color(0xFF00FF00), // Green for experience
+      Paint()
+        ..color =
+            const Color.fromARGB(255, 255, 0, 247), // Green for experience
     );
 
     // Draw the player level text
     final textPaint = TextPaint(
       style: const TextStyle(
-        fontSize: 14,
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-      ),
+          fontSize: 14,
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'MyCustomFont'),
     );
-    textPaint.render(canvas, 'Level: $playerLevel', Vector2(5, -20));
+    textPaint.render(canvas, 'Spirit: $playerLevel', Vector2(5, -20));
   }
 
   @override
