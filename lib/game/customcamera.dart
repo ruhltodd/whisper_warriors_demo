@@ -23,8 +23,6 @@ class CustomCamera {
   }
 
   void applyTransform(Canvas canvas) {
-    print('Applying camera transform: $position');
-
     canvas.translate(-position.x, -position.y);
   }
 }

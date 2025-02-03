@@ -91,7 +91,10 @@ class Player extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    timeSinceLastShot += dt; // ✅ Ensure cooldown timer increases
+
     updateSpiritMultiplier();
+    updateClosestEnemy(); // 🔥 This ensures `closestEnemy` is updated
 
     if (joystickDelta.length > 0) {
       position += joystickDelta.normalized() * movementSpeed * dt;
@@ -102,6 +105,13 @@ class Player extends PositionComponent
     }
 
     whisperWarrior.position = position.clone();
+
+    // ✅ Ensure an enemy is targeted before shooting
+    if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
+      print("🛑 Projectile removed: Max range exceeded");
+      shootProjectile();
+      timeSinceLastShot = 0.0; // ✅ Reset cooldown
+    }
 
     if (healthBar != null) {
       healthBar!.position = position +
@@ -165,18 +175,26 @@ class Player extends PositionComponent
   }
 
   void shootProjectile() {
-    if (closestEnemy == null) return;
+    if (closestEnemy == null) {
+      print("⚠️ No enemy targeted - projectile not fired!");
+      return;
+    }
+
+    print("🚀 shootProjectile() called!");
 
     final direction = (closestEnemy!.position - position).normalized();
-    final projectile =
-        Projectile(damage: damage.toInt()) // ✅ Ensure `damage` is an int
-          ..position = position.clone()
-          ..size = Vector2(50, 50)
-          ..anchor = Anchor.center
-          ..velocity = direction * 300;
+
+    final projectile = Projectile(
+      damage: damage.toInt(), // ✅ Ensure `damage` is an int
+      velocity: direction * 500, // ✅ Now correctly passing velocity
+      maxRange: 1600, // ✅ Player projectiles should have a range
+    )
+      ..position = position.clone()
+      ..size = Vector2(50, 50)
+      ..anchor = Anchor.center;
 
     gameRef.add(projectile);
-    print("🚀 PROJECTILE FIRED!");
+    print("🚀 PLAYER PROJECTILE FIRED!");
   }
 
   void addAbility(Ability ability) {
@@ -193,6 +211,7 @@ class Player extends PositionComponent
     final enemies = gameRef.children.whereType<BaseEnemy>().toList();
     if (enemies.isEmpty) {
       closestEnemy = null;
+      print("No enemies found.");
       return;
     }
 
@@ -208,6 +227,7 @@ class Player extends PositionComponent
 
     if (newClosest != closestEnemy) {
       closestEnemy = newClosest;
+      print("🎯 New closest enemy assigned at ${closestEnemy?.position}");
     }
   }
 

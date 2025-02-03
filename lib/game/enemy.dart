@@ -11,7 +11,7 @@ import 'explosion.dart';
 class BaseEnemy extends SpriteAnimationComponent
     with CollisionCallbacks, HasGameRef<RogueShooterGame> {
   final Player player;
-  final double speed;
+  double _baseSpeed; // ✅ Store base speed internally
   int health;
   VoidCallback? onRemoveCallback;
 
@@ -23,14 +23,14 @@ class BaseEnemy extends SpriteAnimationComponent
 
   BaseEnemy({
     required this.player,
-    required this.speed,
     required this.health,
+    required double speed, // ✅ Accept initial speed as parameter
     required Vector2 size,
-  }) : super(
-          size: size,
-          anchor: Anchor.center,
-        );
+  })  : _baseSpeed = speed,
+        super(size: size, anchor: Anchor.center);
 
+  double get speed => _baseSpeed; // ✅ Now `speed` can be modified in subclasses
+  set speed(double value) => _baseSpeed = value; // ✅ Al
   @override
   void update(double dt) {
     super.update(dt);

@@ -15,6 +15,7 @@ import 'mainmenu.dart';
 import 'abilityselectionscreen.dart';
 import 'abilityfactory.dart';
 import 'abilities.dart';
+import 'boss1.dart';
 
 void main() {
   runApp(MyApp());
@@ -198,15 +199,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       },
     );
     add(enemySpawnerTimer);
-
-    TimerComponent debugWaveSpawner = TimerComponent(
-      period: 5, // ✅ Adjusted to 5 seconds
-      repeat: true,
-      onTick: () {
-        spawnEnemyWave(10);
-      },
-    );
-    add(debugWaveSpawner);
   }
 
   void spawnEnemyWave(int count) {
@@ -251,6 +243,32 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     print("🔥 Spawned $count enemies!");
   }
 
+  void _spawnBoss() {
+    print("💀 BOSS ARRIVING!");
+
+    // ✅ Remove all existing enemies
+    final enemies = children.whereType<BaseEnemy>().toList();
+    for (var enemy in enemies) {
+      enemy.removeFromParent();
+    }
+
+    // ✅ Stop the enemy spawner
+    remove(enemySpawnerTimer);
+
+    // ✅ Spawn the Boss
+    final boss = Boss1(
+      player: player,
+      speed: 30, // Adjust as needed
+      health: 5000, // Adjust as needed
+      size: Vector2(128, 128),
+    );
+
+    boss.position = Vector2(size.x / 2, size.y / 4); // Spawn position
+    add(boss);
+
+    print("🔥 BOSS HAS ENTERED THE ARENA!");
+  }
+
   String formatTime(int seconds) {
     int minutes = seconds ~/ 60;
     int secs = seconds % 60;
@@ -260,24 +278,30 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   void triggerEvent() {
     print("🔹 EVENT TRIGGERED at ${formatTime(remainingTime)}");
 
-    if (remainingTime == 1140) {
+    if (remainingTime == 1180) {
       spawnEnemyWave(20);
       print("⚔ 19:00 - Spawned 20 enemies!");
-    } else if (remainingTime == 1080) {
-      maxEnemies += 5;
-      spawnEnemyWave(20);
-      print("🔥 18:00 - Increased max enemies to $maxEnemies!");
-    } else if (remainingTime == 600) {
-      maxEnemies += 10;
-      spawnEnemyWave(20);
-      print("💀 10:00 - Further increased max enemies!");
-    } else if (remainingTime == 300) {
-      maxEnemies += 15;
-      spawnEnemyWave(20);
-      print("⚡ 5:00 - Max enemies: $maxEnemies");
-    } else if (remainingTime == 60) {
-      spawnEnemyWave(30);
-      print("🚨 1:00 - Final chaos wave!");
+    } else if (remainingTime == 1140) {
+      // ✅ Change to your boss spawn time
+      print("💀 Boss is arriving, removing all enemies!");
+
+      // ✅ Stop all enemy spawners
+      remove(enemySpawnerTimer);
+
+      // ✅ Remove all existing enemies
+      for (var enemy in children.whereType<BaseEnemy>()) {
+        enemy.removeFromParent();
+      }
+
+      // ✅ Spawn the Boss
+      final boss = Boss1(
+        player: player,
+        health: 5000,
+        speed: 50,
+        size: Vector2(256, 256), // ✅ Big boss
+      )..position = Vector2(size.x / 2, size.y / 4); // Spawn location
+
+      add(boss);
     }
   }
 

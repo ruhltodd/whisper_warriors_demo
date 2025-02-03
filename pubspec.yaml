@@ -78,6 +78,9 @@ flutter:
     - assets/images/will_of_the_forgotten.png
     - assets/images/fire_aura.png
     - assets/images/explosion.png
+    - assets/images/boss1_idle.png
+    - assets/images/boss1_walk.png
+    - assets/images/boss_projectile.png
     - assets/images/0.png
     - assets/images/1.png
     - assets/images/2.png

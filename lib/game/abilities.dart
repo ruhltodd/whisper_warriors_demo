@@ -29,7 +29,7 @@ abstract class Ability {
 }
 
 class WhisperingFlames extends Ability {
-  double baseDamagePerSecond = 10.0; // 🔥 Base value (scaled by Spirit)
+  double baseDamagePerSecond = 3.0; // 🔥 Base value (scaled by Spirit)
   double range = 100.0;
 
   WhisperingFlames()

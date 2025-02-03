@@ -173,47 +173,78 @@ class SpiritBarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final backgroundPaint = Paint()..color = Colors.black26;
-    final progressPaint = Paint()
-      ..color = const Color.fromARGB(255, 175, 76, 152);
-    final textPaint = TextPainter(
+    final Paint backgroundPaint = Paint()
+      ..color = Colors.black26
+      ..style = PaintingStyle.fill
+      ..strokeCap = StrokeCap.round;
+
+    // ✅ Dynamic Gradient based on Spirit Level
+    final Paint progressPaint = Paint()
+      ..shader = LinearGradient(
+        colors: _getGradientColors(spiritBar.spiritLevel),
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..style = PaintingStyle.fill;
+
+    final RRect backgroundRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(size.height / 2),
+    );
+
+    // ✅ Draw background
+    canvas.drawRRect(backgroundRect, backgroundPaint);
+
+    // ✅ Draw progress bar with rounded edges
+    final double progressWidth =
+        (spiritBar.spiritExp / spiritBar.spiritExpToNextLevel) * size.width;
+
+    final RRect progressRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, progressWidth, size.height),
+      Radius.circular(size.height / 2),
+    );
+
+    canvas.drawRRect(progressRect, progressPaint);
+
+    // ✅ Draw Spirit Level Text
+    final TextSpan textSpan = TextSpan(
+      text: "Spirit Level ${spiritBar.spiritLevel}",
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        fontFamily: 'MyCustomFont',
+      ),
+    );
+
+    final TextPainter textPainter = TextPainter(
+      text: textSpan,
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
     );
 
-    // Draw background bar
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      backgroundPaint,
+    textPainter.layout(minWidth: size.width, maxWidth: size.width);
+
+    final Offset textOffset = Offset(
+      (size.width - textPainter.width) / 2,
+      (size.height - textPainter.height) / 2,
     );
 
-    // Draw progress bar
-    final progressWidth =
-        (spiritBar.spiritExp / spiritBar.spiritExpToNextLevel) * size.width;
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, progressWidth, size.height),
-      progressPaint,
-    );
+    textPainter.paint(canvas, textOffset);
+  }
 
-    // Draw Spirit Level Text
-    final textSpan = TextSpan(
-      text: "Spirit Level ${spiritBar.spiritLevel}", // ✅ Updated variable
-      style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'MyCustomFont'),
-    );
-
-    textPaint.text = textSpan;
-    textPaint.layout(minWidth: size.width, maxWidth: size.width);
-
-    final textOffset = Offset(
-      (size.width - textPaint.width) / 2,
-      (size.height - textPaint.height) / 2,
-    );
-
-    textPaint.paint(canvas, textOffset);
+  /// ✅ Dynamic Gradient Based on Spirit Level
+  List<Color> _getGradientColors(int level) {
+    if (level < 3) {
+      return [Colors.redAccent, Colors.orange]; // 🔥 Low Spirit = Red-Orange
+    } else if (level < 6) {
+      return [Colors.yellow, Colors.green]; // 🌿 Mid Spirit = Yellow-Green
+    } else {
+      return [
+        const Color.fromARGB(255, 255, 68, 224),
+        Colors.purpleAccent
+      ]; // 🔵 High Spirit = Blue-Purple
+    }
   }
 
   @override
