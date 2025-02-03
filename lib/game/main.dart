@@ -16,6 +16,8 @@ import 'abilityselectionscreen.dart';
 import 'abilityfactory.dart';
 import 'abilities.dart';
 import 'boss1.dart';
+import 'package:flame/effects.dart';
+import 'explosion.dart';
 
 void main() {
   runApp(MyApp());
@@ -243,30 +245,57 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     print("🔥 Spawned $count enemies!");
   }
 
+  void _shakeScreen(CustomCamera camera) {
+    print("🌪 SCREEN SHAKE!");
+
+    Vector2 originalPosition = camera.position.clone();
+
+    for (int i = 0; i < 6; i++) {
+      Future.delayed(Duration(milliseconds: i * 50), () {
+        camera.position += Vector2(
+            5 - random.nextDouble() * 10, // Random horizontal shake
+            5 - random.nextDouble() * 10 // Random vertical shake
+            );
+      });
+    }
+
+    Future.delayed(Duration(milliseconds: 300), () {
+      camera.position = originalPosition; // ✅ Reset position after shake
+    });
+  }
+
   void _spawnBoss() {
     print("💀 BOSS ARRIVING!");
 
-    // ✅ Remove all existing enemies
     final enemies = children.whereType<BaseEnemy>().toList();
     for (var enemy in enemies) {
       enemy.removeFromParent();
     }
 
-    // ✅ Stop the enemy spawner
     remove(enemySpawnerTimer);
 
-    // ✅ Spawn the Boss
     final boss = Boss1(
       player: player,
-      speed: 30, // Adjust as needed
-      health: 5000, // Adjust as needed
+      speed: 20,
+      health: 5000,
       size: Vector2(128, 128),
-    );
-
-    boss.position = Vector2(size.x / 2, size.y / 4); // Spawn position
+    )
+      ..position = Vector2(size.x / 2, -300)
+      ..anchor = Anchor.center;
     add(boss);
 
+    Future.delayed(Duration(milliseconds: 1500), () {
+      boss.position = Vector2(size.x / 2, size.y / 3); // ✅ Boss lands
+      _shakeScreen(customCamera); // ✅ Trigger screen shake
+      _triggerBossImpactEffect(boss.position);
+    });
+
     print("🔥 BOSS HAS ENTERED THE ARENA!");
+  }
+
+  void _triggerBossImpactEffect(Vector2 position) {
+    print("💥 Boss slammed into the ground!");
+    add(Explosion(position)); // ✅ Explosion at impact location
   }
 
   String formatTime(int seconds) {
@@ -293,15 +322,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
         enemy.removeFromParent();
       }
 
-      // ✅ Spawn the Boss
-      final boss = Boss1(
-        player: player,
-        health: 5000,
-        speed: 50,
-        size: Vector2(256, 256), // ✅ Big boss
-      )..position = Vector2(size.x / 2, size.y / 4); // Spawn location
-
-      add(boss);
+      _spawnBoss();
     }
   }
 
