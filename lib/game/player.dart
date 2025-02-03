@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
@@ -7,13 +6,11 @@ import 'package:flame/game.dart';
 import 'healthbar.dart';
 import 'main.dart';
 import 'enemy.dart';
-import 'wave2Enemy.dart';
 import 'projectile.dart';
 import 'whisperwarrior.dart';
 import 'healingnumber.dart';
 import 'abilities.dart';
 import 'explosion.dart';
-import 'experience.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {

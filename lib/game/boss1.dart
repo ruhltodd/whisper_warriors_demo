@@ -9,7 +9,7 @@ import 'projectile.dart';
 import 'damagenumber.dart';
 import 'explosion.dart';
 import 'dropitem.dart';
-import 'main.dart';
+import 'fireaura.dart';
 
 class Boss1 extends BaseEnemy {
   bool enraged = false; // ✅ Enrage mode flag
@@ -20,7 +20,6 @@ class Boss1 extends BaseEnemy {
   final Function(double) onHealthChanged; // ✅ Tracks boss health
   final VoidCallback onDeath; // ✅ Handles boss death
   late final double maxHealth; // ✅ Store original max health
-
   late final SpriteAnimation idleAnimation;
   late final SpriteAnimation walkAnimation;
   final Random random = Random(); // ✅ Fix: Use local random instance
@@ -179,5 +178,17 @@ class Boss1 extends BaseEnemy {
     onDeath(); // ✅ Notify game that boss died
     gameRef.add(Explosion(position));
     removeFromParent();
+  }
+
+  @override
+  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollision(intersectionPoints, other);
+
+    if (other is FireAura) {
+      // ✅ FireAura is the component that actually collides
+      print("🔥 Umbrathos hit by Whispering Flames!");
+
+      takeDamage(other.damage.toInt()); // ✅ Apply damage from FireAura
+    }
   }
 }

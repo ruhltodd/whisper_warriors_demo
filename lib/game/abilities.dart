@@ -1,12 +1,8 @@
 import 'package:flame/components.dart';
 import 'player.dart';
 import 'enemy.dart';
-import 'dart:math';
-import 'damagenumber.dart';
 import 'fireaura.dart';
-import 'dart:collection';
 import 'explosion.dart';
-import 'experience.dart';
 
 /// Enum for ability types (optional, for categorization)
 enum AbilityType { passive, onHit, onKill, aura, scaling }
@@ -31,6 +27,8 @@ abstract class Ability {
 class WhisperingFlames extends Ability {
   double baseDamagePerSecond = 3.0; // 🔥 Base value (scaled by Spirit)
   double range = 100.0;
+
+  double get damage => baseDamagePerSecond; // ✅ Add damage getter
 
   WhisperingFlames()
       : super(

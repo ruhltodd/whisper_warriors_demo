@@ -1,6 +1,5 @@
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
-import 'package:flutter/material.dart';
 
 class Explosion extends SpriteAnimationComponent with HasGameRef {
   Explosion(Vector2 position)

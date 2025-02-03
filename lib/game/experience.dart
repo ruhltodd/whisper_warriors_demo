@@ -1,7 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'main.dart';
-import 'customcamera.dart';
 
 class SpiritBar extends PositionComponent with HasGameRef<RogueShooterGame> {
   final double barWidth = 200;

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flame/game.dart';
 import 'package:audioplayers/audioplayers.dart'; // ✅ Audio support
-import 'main.dart';
 
 class AbilitySelectionScreen extends StatefulWidget {
   final Function(List<String>) onAbilitiesSelected;

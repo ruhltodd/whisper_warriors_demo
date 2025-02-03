@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'experience.dart';
 import 'main.dart';
-import 'player.dart';
 import 'abilitybar.dart';
 import 'bosshealthbar.dart';
 import 'dart:ui' as ui;

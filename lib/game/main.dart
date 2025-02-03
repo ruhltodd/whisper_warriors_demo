@@ -16,9 +16,7 @@ import 'abilityselectionscreen.dart';
 import 'abilityfactory.dart';
 import 'abilities.dart';
 import 'boss1.dart';
-import 'package:flame/effects.dart';
 import 'explosion.dart';
-import 'bosshealthbar.dart';
 
 void main() {
   runApp(MyApp());
