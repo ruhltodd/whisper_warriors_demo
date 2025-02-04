@@ -46,7 +46,6 @@ class Projectile extends SpriteComponent
     spawnPosition = position.clone(); // ✅ Track initial position
 
     if (isBossProjectile) {
-      print("🎯 Boss Projectile Spawned at $position");
       sprite = await gameRef.loadSprite('boss_projectile.png');
     } else {
       sprite = await gameRef.loadSprite('projectile_normal.png');
@@ -59,12 +58,10 @@ class Projectile extends SpriteComponent
   void update(double dt) {
     super.update(dt);
     position += velocity * dt;
-    print("🔹 Projectile moving to ${position}");
 
     // 🔹 **Remove player projectiles after max range**
     if (!isBossProjectile && (position - spawnPosition).length > maxRange) {
-      print("❌ Player Projectile removed - Max range reached!");
-      removeFromParent();
+      removeFromParent(); // ✅ Ensures only the projectile is removed
     }
 
     // 🔹 **Boss Projectiles travel indefinitely**
@@ -73,8 +70,10 @@ class Projectile extends SpriteComponent
             position.x > gameRef.size.x + 500 ||
             position.y < -500 ||
             position.y > gameRef.size.y + 500)) {
-      print("❌ Boss Projectile removed - Off-screen!");
-      removeFromParent();
+      // ✅ Ensure only the projectile is removed, not the boss
+      if (this is Projectile) {
+        removeFromParent();
+      }
     }
   }
 
@@ -82,17 +81,14 @@ class Projectile extends SpriteComponent
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (!isBossProjectile) {
       if (other is BaseEnemy) {
-        print("💥 Player Projectile hit Enemy!");
         other.takeDamage(damage);
         removeFromParent();
       } else if (other is Wave2Enemy) {
-        print("💥 Player Projectile hit Wave2 Enemy!");
         other.takeDamage(damage);
         removeFromParent();
       }
     } else {
       if (other is Player) {
-        print("💥 Boss Projectile hit PLAYER!");
         other.takeDamage(damage);
         removeFromParent();
       }

@@ -4,47 +4,62 @@ import 'player.dart';
 
 class HealthBar extends PositionComponent {
   final Player player;
-  final double barWidth = 50; // Fixed width of the health bar
-  final double barHeight = 5; // Fixed height of the health bar
-  late Paint greenPaint;
-  late Paint redPaint;
+  final double barWidth = 50; // Fixed width
+  final double barHeight = 6; // Slightly taller for better visibility
+  double healthPercentage = 1.0; // Start full
 
   HealthBar(this.player) {
-    greenPaint = Paint()..color = const Color(0xFF00FF00); // Green for health
-    redPaint = Paint()
-      ..color = const Color(0xFFFF0000); // Red for missing health
     size = Vector2(barWidth, barHeight);
   }
 
   void updateHealth(int currentHealth, int maxHealth) {
-    final healthPercentage = currentHealth / maxHealth;
-    size = Vector2(barWidth * healthPercentage, barHeight);
+    healthPercentage = (currentHealth / maxHealth).clamp(0.0, 1.0);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    // Calculate the position relative to the player's sprite anchor
-
-    // Center the health bar above the player's head and shift it to the right
-    const double xOffset = 0;
-    30; // Adjust this value to move the bar further right
-    const double yOffset = 10; // Adjust this value to move the bar up or down
-
+    // ✅ Keep health bar above the player
+    const double yOffset = 12; // Adjust height positioning
     position = player.position.clone() -
-        Vector2(barWidth / 2, player.size.y / 2 + yOffset) +
-        Vector2(xOffset, 0);
+        Vector2(barWidth / 2, player.size.y / 2 + yOffset);
   }
 
   @override
   void render(Canvas canvas) {
     super.render(canvas);
 
-    // Draw the red background
-    canvas.drawRect(Rect.fromLTWH(0, 0, barWidth, barHeight), redPaint);
+    // ✅ Transparent background (no red)
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, barWidth, barHeight),
+        Radius.circular(4),
+      ),
+      Paint()..color = Colors.transparent, // No background
+    );
 
-    // Draw the green health bar
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.x, barHeight), greenPaint);
+    // ✅ Choose solid color based on health thresholds
+    Color healthColor;
+    if (healthPercentage > 0.75) {
+      healthColor = Colors.green; // 75% - 100%
+    } else if (healthPercentage > 0.5) {
+      healthColor = Color.lerp(
+          Colors.green, Colors.orange, (healthPercentage - 0.5) * 4)!;
+    } else if (healthPercentage > 0.25) {
+      healthColor =
+          Color.lerp(Colors.orange, Colors.red, (healthPercentage - 0.25) * 4)!;
+    } else {
+      healthColor = Colors.red; // 0% - 25%
+    }
+
+    // ✅ Draw rounded health bar with dynamic color
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, barWidth * healthPercentage, barHeight),
+        Radius.circular(4),
+      ),
+      Paint()..color = healthColor,
+    );
   }
 }

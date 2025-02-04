@@ -79,6 +79,8 @@ class _MyAppState extends State<MyApp> {
                         bossHealthNotifier: (game as RogueShooterGame)
                             .bossHealthNotifier, // ✅ Add this
                       ),
+                  'retryOverlay': (_, game) => RetryOverlay(
+                      game: game as RogueShooterGame), // ✅ Add this
                 },
               ),
           ],
@@ -95,7 +97,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   late SpriteComponent grassMap;
   late TimerComponent enemySpawnerTimer;
   late TimerComponent gameTimer;
-  late final AudioPlayer _bgmPlayer;
+  late final AudioPlayer bgmPlayer;
   late ValueNotifier<int> gameHudNotifier;
   late ValueNotifier<double?> bossHealthNotifier;
   int enemyCount = 0;
@@ -109,15 +111,25 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   RogueShooterGame({required this.selectedAbilities}) {
     bossHealthNotifier = ValueNotifier<double?>(null); // ✅ Initialize as null
   }
+  // ✅ Stops background music
+  Future<void> stopBackgroundMusic() async {
+    await bgmPlayer.stop();
+  }
+
+  Future<void> playGameOverMusic() async {
+    await Future.delayed(Duration(milliseconds: 500)); // Small delay
+    await bgmPlayer.setReleaseMode(ReleaseMode.stop); // ✅ Ensure it plays once
+    await bgmPlayer.play(AssetSource('music/game_over.mp3'));
+  }
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    _bgmPlayer = AudioPlayer();
-    await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
-    await _bgmPlayer.play(AssetSource('music/soft_etheral.mp3'));
-    await _bgmPlayer.setVolume(.2);
+    bgmPlayer = AudioPlayer();
+    await bgmPlayer.setReleaseMode(ReleaseMode.loop);
+    await bgmPlayer.play(AssetSource('music/soft_etheral.mp3'));
+    await bgmPlayer.setVolume(.2);
     gameHudNotifier = ValueNotifier<int>(remainingTime);
 
     customCamera = CustomCamera(
@@ -245,8 +257,6 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       enemyCount++;
       add(enemy);
     }
-
-    print("🔥 Spawned $count enemies!");
   }
 
   void _shakeScreen(CustomCamera camera) {
@@ -312,6 +322,10 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   }
 
   void triggerEvent() {
+    if (player.isDead) {
+      print("Player is dead");
+      return;
+    }
     print("🔹 EVENT TRIGGERED at ${formatTime(remainingTime)}");
 
     if (remainingTime == 1180) {
@@ -336,6 +350,68 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   void endGame() {
     overlays.add('gameOver');
     pauseEngine();
+  }
+
+  Future<void> restartGame(BuildContext context) async {
+    print("🔄 Restarting game with fade effect...");
+
+    // ✅ 1. Show Fade-To-Black Effect
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => FadeTransitionOverlay(
+        onFadeComplete: () async {
+          Navigator.of(context).pop(); // Remove black overlay after fading in
+
+          // ✅ 2. Clear Game Objects
+          removeAll(children);
+          overlays.clear();
+          overlays.add('hud'); // Show HUD again
+
+          // ✅ 3. Reset Timers & Variables
+          remainingTime = 1200;
+          enemyCount = 0;
+          bossHealthNotifier.value = null;
+          player.spiritLevel = 1;
+          player.spiritExp = 0;
+          player.spiritExpToNextLevel = 100;
+
+          experienceBar.updateSpirit(
+            player.spiritExp,
+            player.spiritExpToNextLevel,
+            player.spiritLevel,
+          );
+
+          // ✅ 4. Reset Background
+          grassMap = SpriteComponent(
+            sprite: await loadSprite('grass_map.png'),
+            size: Vector2(1280, 1280),
+            position: Vector2.zero(),
+          );
+          add(grassMap);
+
+          // ✅ 5. Reset Player
+          player = Player()
+            ..position = Vector2(size.x / 2, size.y / 2)
+            ..size = Vector2(64, 64);
+          add(player);
+          _applyAbilitiesToPlayer();
+
+          // ✅ 6. Restart Background Music
+          await bgmPlayer.stop();
+          await bgmPlayer.setReleaseMode(ReleaseMode.loop);
+          await bgmPlayer.play(AssetSource('music/soft_etheral.mp3'));
+          await bgmPlayer.setVolume(.2);
+          print("🎵 Background music restarted.");
+
+          // ✅ 7. Restart Game Timers
+          startEnemySpawner();
+          startGameTimer();
+
+          // ✅ 8. Fade-Back To Game (Triggered by `FadeTransitionOverlay`)
+        },
+      ),
+    );
   }
 
   void checkLevelUpScaling() {

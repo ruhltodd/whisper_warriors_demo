@@ -58,6 +58,8 @@ flutter:
   assets:
     - assets/images/whisper_warrior_idle.png
     - assets/images/whisper_warrior_attack.png
+    - assets/images/whisper_warrior_hit.png
+    - assets/images/whisper_warrior_death.png
     - assets/images/projectile_normal.png
     - assets/images/grass_map.png
     - assets/images/mob1.png
@@ -93,6 +95,7 @@ flutter:
     - assets/images/9.png
     - assets/music/mystical-winds.mp3
     - assets/music/soft_etheral.mp3
+    - assets/music/game_over.mp3
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

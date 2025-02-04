@@ -45,14 +45,14 @@ class WhisperWarrior extends SpriteAnimationComponent
     );
     animations['attack'] = attackSpriteSheet.createAnimation(
         row: 0, stepTime: 0.15, from: 0, to: 10);
-/*
+
     // ✅ Load the hit animation from `whisper_warrior_hit.png`
     final hitSpriteSheet = SpriteSheet(
       image: await gameRef.images.load('whisper_warrior_hit.png'),
       srcSize: Vector2(128, 128),
     );
     animations['hit'] =
-        hitSpriteSheet.createAnimation(row: 0, stepTime: 0.2, from: 0, to: 3);
+        hitSpriteSheet.createAnimation(row: 0, stepTime: 0.15, from: 0, to: 5);
 
     // ✅ Load the death animation from `whisper_warrior_death.png`
     final deathSpriteSheet = SpriteSheet(
@@ -61,7 +61,7 @@ class WhisperWarrior extends SpriteAnimationComponent
     );
     animations['death'] = deathSpriteSheet.createAnimation(
         row: 0, stepTime: 0.25, from: 0, to: 5);
-*/
+
     // Set the default animation
     animation = animations['idle'];
     isLoaded = true;
@@ -77,6 +77,25 @@ class WhisperWarrior extends SpriteAnimationComponent
 
     if (animations.containsKey(animationName)) {
       animation = animations[animationName];
+
+      if (animationName == 'death') {
+        print("☠️ Playing death animation...");
+
+        // ✅ Prevent looping by setting `loop` to false
+        animation!.loop = false;
+
+        // ✅ Get animation duration correctly
+        final double duration =
+            animation!.frames.length * animation!.frames.first.stepTime;
+
+        Future.delayed(Duration(milliseconds: (duration * 1000).toInt()), () {
+          print("☠️ Death animation finished, freezing on last frame.");
+          animation = SpriteAnimation.spriteList(
+            [animation!.frames.last.sprite], // ✅ Freeze on last frame
+            stepTime: double.infinity,
+          );
+        });
+      }
     } else {
       print('Animation "$animationName" not found.');
     }

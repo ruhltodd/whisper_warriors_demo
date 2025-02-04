@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
@@ -11,6 +12,7 @@ import 'whisperwarrior.dart';
 import 'healingnumber.dart';
 import 'abilities.dart';
 import 'explosion.dart';
+import 'fireaura.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
@@ -50,6 +52,7 @@ class Player extends PositionComponent
   List<Ability> abilities = [];
   final ValueNotifier<List<Ability>> abilityNotifier =
       ValueNotifier<List<Ability>>([]);
+  bool isDead = false;
 
   // ✅ Special Player Stats
   double vampiricHealing = 0;
@@ -141,33 +144,56 @@ class Player extends PositionComponent
     print("✨ Spirit Level Up! New Spirit Level: $spiritLevel");
   }
 
-  // ✅ Take Damage & Reduce Spirit Level
-  void takeDamage(int damage) {
+  void takeDamage(int damage) async {
+    // ✅ Make it async
+    if (isDead) return; // Prevent extra damage when player dies
+
     double reducedDamage = damage * (1 - (defense / 100));
     currentHealth -=
         reducedDamage.clamp(1, maxHealth).toInt(); // ✅ Explicit cast
 
     // ✅ Lose Spirit EXP instead of instantly dropping a level
     double expLoss =
-        spiritExpToNextLevel * 0.05; // Lose 10% of current level EXP
+        spiritExpToNextLevel * 0.05; // Lose 5% of current level EXP
     spiritExp -= expLoss;
-
-    if (spiritExp < 0) {
-      spiritExp = 0; // Prevent negative EXP
-    }
+    if (spiritExp < 0) spiritExp = 0; // Prevent negative EXP
 
     gameRef.experienceBar
         .updateSpirit(spiritExp, spiritExpToNextLevel, spiritLevel);
-
     whisperWarrior.playAnimation('hit');
 
-    if (currentHealth <= 0) {
+    if (currentHealth <= 0 && !isDead) {
+      isDead = true;
       whisperWarrior.playAnimation('death');
-      removeFromParent();
-      healthBar?.removeFromParent();
+
+      // ✅ Get animation duration correctly
+      final double animationDuration = whisperWarrior.animation!.frames.length *
+          whisperWarrior.animation!.frames.first.stepTime;
+
+      print("☠️ Death animation will play for ${animationDuration}s");
+
+      Future.delayed(Duration(milliseconds: (animationDuration * 100).toInt()),
+          () {
+        print("☠️ Player death animation complete, now removing...");
+        whisperWarrior.playAnimation('death');
+        removeFromParent();
+        healthBar?.removeFromParent();
+      });
+
+      Future.delayed(Duration(seconds: 2), () {
+        gameRef.overlays.add('retryOverlay');
+      });
+
+      final fireAura = gameRef.children.whereType<FireAura>().firstOrNull;
+      if (fireAura != null) {
+        print("🔥 Removing FireAura because player is dead.");
+        fireAura.removeFromParent();
+      }
+
+      await gameRef.stopBackgroundMusic();
+      await gameRef.playGameOverMusic();
     } else {
-      healthBar?.updateHealth(
-          currentHealth.toInt(), maxHealth.toInt()); // ✅ Explicit cast
+      healthBar?.updateHealth(currentHealth.toInt(), maxHealth.toInt());
     }
   }
 

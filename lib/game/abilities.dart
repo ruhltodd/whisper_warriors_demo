@@ -26,7 +26,7 @@ abstract class Ability {
 
 class WhisperingFlames extends Ability {
   double baseDamagePerSecond = 3.0; // 🔥 Base value (scaled by Spirit)
-  double range = 100.0;
+  double range = 200.0;
 
   double get damage => baseDamagePerSecond; // ✅ Add damage getter
 

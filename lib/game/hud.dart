@@ -346,3 +346,88 @@ class BossHealthBarPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
+
+class RetryOverlay extends StatelessWidget {
+  final RogueShooterGame game;
+
+  const RetryOverlay({Key? key, required this.game}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            "Game Over",
+            style: TextStyle(
+                fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              game.restartGame(context); // ✅ Pass `context` argument
+              game.overlays.remove('retryOverlay'); // ✅ Hide overlay
+            },
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+              textStyle: TextStyle(fontSize: 20),
+              backgroundColor: const Color.fromARGB(255, 6, 6, 6),
+            ),
+            child: Text("Retry"),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class FadeTransitionOverlay extends StatefulWidget {
+  final VoidCallback onFadeComplete;
+
+  const FadeTransitionOverlay({Key? key, required this.onFadeComplete})
+      : super(key: key);
+
+  @override
+  _FadeTransitionOverlayState createState() => _FadeTransitionOverlayState();
+}
+
+class _FadeTransitionOverlayState extends State<FadeTransitionOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800), // Adjust fade duration
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(_controller);
+
+    _controller.forward().then((_) {
+      Future.delayed(Duration(milliseconds: 500), () {
+        widget.onFadeComplete(); // Call restart function after fade-in
+        _controller.reverse(); // Fade back out
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Container(
+        color: Colors.black,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}

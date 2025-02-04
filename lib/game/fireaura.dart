@@ -54,7 +54,6 @@ class FireAura extends SpriteAnimationComponent
 
     if (other is BaseEnemy) {
       // ✅ Ensure damage is applied to all enemies, including bosses
-      print("🔥 FireAura hit ${other.runtimeType}!");
       other.takeDamage(damage.toInt()); // ✅ Apply damage
     }
   }
