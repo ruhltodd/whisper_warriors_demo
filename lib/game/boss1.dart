@@ -113,7 +113,7 @@ class Boss1 extends BaseEnemy {
         velocity: projectileVelocity, // ✅ Ensure velocity is applied
       )
         ..position = position.clone()
-        ..size = Vector2(80, 80) // ✅ Bigger size for visibility
+        ..size = Vector2(65, 65) // ✅ Bigger size for visibility
         ..anchor = Anchor.center;
 
       gameRef.add(bossProjectile);

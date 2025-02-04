@@ -39,16 +39,16 @@ class HealthBar extends PositionComponent {
       Paint()..color = Colors.transparent, // No background
     );
 
-    // ✅ Choose solid color based on health thresholds
+    // ✅ Ensure smooth color transition
     Color healthColor;
     if (healthPercentage > 0.75) {
       healthColor = Colors.green; // 75% - 100%
     } else if (healthPercentage > 0.5) {
       healthColor = Color.lerp(
-          Colors.green, Colors.orange, (healthPercentage - 0.5) * 4)!;
+          Colors.green, Colors.orange, 2 * (healthPercentage - 0.5))!;
     } else if (healthPercentage > 0.25) {
       healthColor =
-          Color.lerp(Colors.orange, Colors.red, (healthPercentage - 0.25) * 4)!;
+          Color.lerp(Colors.orange, Colors.red, 2 * (healthPercentage - 0.25))!;
     } else {
       healthColor = Colors.red; // 0% - 25%
     }

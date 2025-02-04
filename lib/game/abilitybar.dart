@@ -12,10 +12,22 @@ class AbilityBar extends StatelessWidget {
     return ValueListenableBuilder<List<Ability>>(
       valueListenable: player.abilityNotifier, // ✅ Live updating abilities
       builder: (context, abilities, _) {
-        return Row(
-          children: abilities.map((ability) {
-            return _buildAbilityIcon(ability);
-          }).toList(),
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color:
+                Colors.black.withOpacity(0.6), // ✅ Semi-transparent background
+            borderRadius: BorderRadius.circular(15), // ✅ Rounded edges
+            border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1), // ✅ Optional border
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: abilities.map((ability) {
+              return _buildAbilityIcon(ability);
+            }).toList(),
+          ),
         );
       },
     );
@@ -24,17 +36,23 @@ class AbilityBar extends StatelessWidget {
   Widget _buildAbilityIcon(Ability ability) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
-      child: Column(
-        children: [
-          Image.asset(
-            'assets/images/${ability.name.toLowerCase().replaceAll(" ", "_")}.png',
-            width: 32,
-            height: 32,
-            errorBuilder: (context, error, stackTrace) {
-              return Icon(Icons.flash_on, size: 32, color: Colors.white);
-            },
-          ),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8), // ✅ Makes the icon rounded
+        child: Image.asset(
+          'assets/images/${ability.name.toLowerCase().replaceAll(" ", "_")}.png',
+          width: 32,
+          height: 32,
+          fit:
+              BoxFit.cover, // ✅ Ensures the image fits within the rounded frame
+          errorBuilder: (context, error, stackTrace) {
+            return CircleAvatar(
+              backgroundColor:
+                  Colors.white.withOpacity(0.2), // ✅ Placeholder background
+              radius: 16,
+              child: Icon(Icons.flash_on, size: 20, color: Colors.white),
+            );
+          },
+        ),
       ),
     );
   }
