@@ -27,6 +27,7 @@ abstract class Ability {
 class WhisperingFlames extends Ability {
   double baseDamagePerSecond = 3.0; // 🔥 Base value (scaled by Spirit)
   double range = 200.0;
+  double _elapsedTime = 0.0;
 
   double get damage => baseDamagePerSecond; // ✅ Add damage getter
 
@@ -47,22 +48,29 @@ class WhisperingFlames extends Ability {
   void onUpdate(Player player, double dt) {
     if (player.gameRef == null) return;
 
-    // ✅ Scale damage with Spirit Level
-    double scaledDamage = baseDamagePerSecond * player.spiritMultiplier;
+    _elapsedTime += dt; // ✅ Accumulate time
 
-    for (var enemy in player.gameRef.children.whereType<BaseEnemy>()) {
-      double distance = (enemy.position - player.position).length;
+    if (_elapsedTime >= 1.0) {
+      // 🔥 Apply damage **only once per second**
+      _elapsedTime = 0.0; // ✅ Reset timer
 
-      if (distance < range) {
-        // ✅ Calculate Critical Strike
-        bool isCritical =
-            player.gameRef.random.nextDouble() < player.critChance / 100;
-        int finalDamage = isCritical
-            ? (scaledDamage * player.critMultiplier).toInt()
-            : scaledDamage.toInt();
+      // ✅ Scale damage with Spirit Level
+      double scaledDamage = baseDamagePerSecond * player.spiritMultiplier;
 
-        enemy.takeDamage(finalDamage,
-            isCritical: isCritical); // ✅ Pass crit info
+      for (var enemy in player.gameRef.children.whereType<BaseEnemy>()) {
+        double distance = (enemy.position - player.position).length;
+
+        if (distance < range) {
+          // ✅ Calculate Critical Strike
+          bool isCritical =
+              player.gameRef.random.nextDouble() < player.critChance / 100;
+          int finalDamage = isCritical
+              ? (scaledDamage * player.critMultiplier).toInt()
+              : scaledDamage.toInt();
+
+          enemy.takeDamage(finalDamage,
+              isCritical: isCritical); // ✅ Now correctly applied every second
+        }
       }
     }
   }
