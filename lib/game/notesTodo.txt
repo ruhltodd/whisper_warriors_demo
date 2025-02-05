@@ -1,3 +1,73 @@
+Items?
+These two legendary items will have extremely low drop chances (1% or lower) and provide game-changing abilities fitting the Whisper Warriors theme.
+🗡️ Legendary Weapon: “Epitaph, Greatsword of Whispers”
+
+“A sword forged from the echoes of a thousand final words. It sings the dirge of all who wield it.”
+💀 Effect:
+	•	Every 5th attack releases a phantasmal wave, dealing double damage and piercing all enemies.
+	•	Cursed Echo Chance +15%.
+	•	Veil of the Lost – While wielding Epitaph, the wielder becomes semi-ethereal, reducing incoming damage by 20% when below 50% HP.
+
+🩸 Lore: “Those who bear the Epitaph do not fear death—for it always lingers at their side.”
+
+📿 Legendary Accessory: “Omen of the Forgotten”
+
+“A talisman whispered into existence by voices long erased from time.”
+👁️ Effect:
+	•	Enemies that die have a 10% chance to resurrect as a wraith that fights for the player for 10 seconds before fading.
+	•	Increases Spirit Multiplier by 25%.
+	•	Every 30 seconds, gain an ethereal shield that negates one hit.
+
+🕯️ Lore: “To wear the Omen is to hear the voices of the lost… and to know that you, too, will one day join them.”
+
+🗡️ Weapons (Increase Damage & Attack Mechanics)
+	1.	Umbral Fang – “A dagger formed from pure shadow, phasing through enemies.”
+🔹 Effect: Increases attack speed by 15% and allows piercing projectiles.
+	2.	Voidrender – “A greatsword that shreds reality itself.”
+🔹 Effect: Increases base damage by 30% but reduces attack speed slightly.
+	3.	Echoing Crescent – “A scythe that echoes its swings across dimensions.”
+🔹 Effect: Grants a 10% chance to trigger Cursed Echo twice.
+	4.	Lamenting Wail – “A bow that whispers the final cries of fallen souls.”
+🔹 Effect: Projectiles seek out the closest enemy.
+	5.	Soulpiercer – “A cursed spear that leaves wounds that never close.”
+🔹 Effect: Attacks inflict Bleed (2% HP per second for 5 seconds).
+
+🛡️ Armor (Increase Defense & Resistances)
+	1.	Veil of the Forgotten – “A spectral robe woven from lost memories.”
+🔹 Effect: Reduces incoming damage by 20% when HP is below 50%.
+	2.	Abyssforged Plate – “Armor smelted from the blackened remains of fallen kings.”
+🔹 Effect: Increases defense by 40%, but slightly reduces movement speed.
+	3.	Eclipse Shroud – “A cloak that shifts between light and darkness.”
+🔹 Effect: 50% chance to dodge projectiles.
+	4.	Hollowed Husk – “Armor that feeds on pain, growing stronger with each wound.”
+🔹 Effect: Gain +2% damage per missing 10% HP.
+	5.	Sable Ward – “A barrier of pure void energy, absorbing impacts before shattering.”
+🔹 Effect: Generates a shield every 20 seconds that absorbs one hit.
+
+1.	Ring of Fading Echoes – “A relic that amplifies the whispers of the past.”
+🔹 Effect: Increases Cursed Echo’s proc chance by 10%.
+	2.	Lifebound Locket – “A pendant containing a shard of your own soul.”
+🔹 Effect: Heals 5% HP upon landing a critical hit.
+	3.	Twilight Sigil – “An ancient symbol that resonates with the in-between.”
+🔹 Effect: Grants +10% crit chance but reduces base damage by 5%.
+	4.	Shard of Umbrathos – “A fragment of the Fading King’s power, still pulsing with energy.”
+🔹 Effect: Boosts Spirit Multiplier by 15%.
+	5.	Wraithbind Chains – “Chains that tether the lost to the living.”
+🔹 Effect: Enemies killed explode, dealing AoE damage.
+
+Consumables (One-Time Use Items)
+	1.	Elixir of Whispered Souls – “A bottle filled with lost voices, begging to be heard.”
+🔹 Effect: Restores 50% HP instantly.
+	2.	Phantom Draught – “A shimmering, spectral fluid that flows like mist.”
+🔹 Effect: Gain temporary invincibility for 3 seconds.
+	3.	Black Lotus Essence – “The last bloom of a flower that never truly lived.”
+🔹 Effect: Doubles attack speed for 10 seconds.
+	4.	Echoing Ember – “A coal that burns without fire, feeding off the past.”
+🔹 Effect: Triggers a powerful AoE explosion upon use.
+	5.	Soulwine Flask – “A cursed brew that steals time from the dead.”
+🔹 Effect: Rewinds player HP to 5 seconds ago.
+
+Boss names?
 	1.	Eclipse Warden – A powerful spectral guardian overseeing the fading of lost warriors.
 	2.	Umbrathos, The Fading King – A legendary warrior whose spirit is nearly gone, clinging to power.
 	3.	Tenebris, Harbinger of Silence – “Tenebris” means “darkness” in Latin, symbolizing the final battle.

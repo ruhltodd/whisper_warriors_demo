@@ -1,4 +1,7 @@
-import 'dart:async'; // Ensure this is imported
+import 'dart:async'; //
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:whisper_warriors/game/inventoryitem.dart';
+import 'inventory.dart'; // Ensure this is imported
 import 'package:flame/game.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/components.dart';
@@ -21,8 +24,17 @@ import 'boss1.dart';
 import 'explosion.dart';
 import 'dropitem.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // ✅ Required for async operations
+  await Hive.initFlutter(); // ✅ Initialize Hive database
+
+  // ✅ Register InventoryItem Adapter (Required for saving items)
+  Hive.registerAdapter(InventoryItemAdapter());
+
+  // ✅ Open a Hive box for storing inventory data
+  await Hive.openBox<InventoryItem>('inventoryBox');
+
+  runApp(MyApp()); // ✅ Start the app after initializing Hive
 }
 
 class MyApp extends StatefulWidget {
