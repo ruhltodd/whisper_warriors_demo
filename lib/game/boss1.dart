@@ -123,13 +123,18 @@ class Boss1 extends BaseEnemy {
 
   @override
   void takeDamage(int baseDamage, {bool isCritical = false}) {
+    if (!isCritical) {
+      isCritical = gameRef.random.nextDouble() < player.critChance / 100;
+    }
+
+    // ✅ Apply critical multiplier if crit occurs
     int finalDamage =
         isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
-
     health -= finalDamage; // ✅ Ensure health remains double
     onHealthChanged(health.toDouble()); // ✅ Ensure correct type is passed
 
-    if (timeSinceLastDamageNumber >= damageNumberInterval) {
+    if (timeSinceLastDamageNumber >= damageNumberInterval ||
+        timeSinceLastDamageNumber == 0.0) {
       final damageNumber = DamageNumber(
         finalDamage,
         position.clone() + Vector2(0, -20),

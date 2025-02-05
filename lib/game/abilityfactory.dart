@@ -4,7 +4,6 @@ class AbilityFactory {
   static Ability? createAbility(String abilityName) {
     switch (abilityName) {
       case 'Whispering Flames':
-        print("🔥 Creating Whispering Flames"); // 🔍 Debugging
         return WhisperingFlames();
       case 'Soul Fracture':
         return SoulFracture();

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'player.dart';
+import 'main.dart';
 import 'enemy.dart';
 import 'fireaura.dart';
 import 'explosion.dart';
@@ -75,53 +76,71 @@ class WhisperingFlames extends Ability {
 }
 
 /// 💀 **Shadow Blades Ability**
+
 class ShadowBlades extends Ability {
-  double cooldown = 2.0; // Cooldown between throws
+  double cooldown = 0.5; // ✅ Faster attack speed
   double elapsedTime = 0.0;
 
   ShadowBlades()
       : super(
           name: "Shadow Blades",
-          description: "Throws spectral blades that pierce through enemies.",
+          description:
+              "Auto-targets and throws a spectral blade at the closest enemy.",
           type: AbilityType.projectile,
         );
-
-  @override
-  void applyEffect(Player player) {
-    super.applyEffect(player);
-  }
 
   @override
   void onUpdate(Player player, double dt) {
     elapsedTime += dt;
     if (elapsedTime >= cooldown) {
       elapsedTime = 0.0; // ✅ Reset cooldown
-      _throwBlades(player);
+      _throwBlade(player);
     }
   }
 
-  void _throwBlades(Player player) {
-    print("🗡️ Throwing Shadow Blades!");
+  void _throwBlade(Player player) {
+    print("🗡️ Throwing Shadow Blade!");
 
-    int bladeCount = 3; // Number of blades
-    double spreadAngle = 15.0 * (pi / 180); // ✅ Convert degrees to radians
+    // ✅ Find the closest enemy or boss
+    BaseEnemy? target = _findClosestTarget(player);
 
-    for (int i = 0; i < bladeCount; i++) {
-      double angleOffset = (i - 1) * spreadAngle;
-      Vector2 direction = Vector2(1, 0)..rotate(player.angle + angleOffset);
-
-      final blade = ShadowBladeProjectile(
-        damage: (10 * player.spiritMultiplier).toInt(),
-        velocity: direction *
-            (500 + (player.spiritLevel * 50)), // ✅ Scales with Spirit Level
-        player: player,
-      )
-        ..position = player.position.clone()
-        ..size = Vector2(48, 16) // Blade sprite size
-        ..anchor = Anchor.center;
-
-      player.gameRef.add(blade);
+    if (target == null) {
+      print("⚠️ No enemies found - Shadow Blade not fired.");
+      return;
     }
+
+    // ✅ Direction towards the enemy
+    Vector2 direction = (target.position - player.position).normalized();
+    double rotationAngle = direction.angleTo(Vector2(1, 0));
+
+    final blade = ShadowBladeProjectile(
+      damage: (12 * player.spiritMultiplier).toInt(),
+      velocity: direction *
+          (750 + (player.spiritLevel * 20)), // ✅ Scales speed with Spirit Level
+      player: player,
+      rotationAngle: rotationAngle,
+    )
+      ..position = player.position.clone()
+      ..size = Vector2(48, 16)
+      ..anchor = Anchor.center;
+
+    player.gameRef.add(blade);
+  }
+
+  BaseEnemy? _findClosestTarget(Player player) {
+    final enemies = player.gameRef.children.whereType<BaseEnemy>().toList();
+    if (enemies.isEmpty) return null;
+
+    BaseEnemy? closest;
+    double closestDistance = double.infinity;
+    for (final enemy in enemies) {
+      double distance = (enemy.position - player.position).length;
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closest = enemy;
+      }
+    }
+    return closest;
   }
 }
 

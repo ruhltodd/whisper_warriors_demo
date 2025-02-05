@@ -1,72 +1,91 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
-import 'dart:async';
 import 'dart:math';
 import 'player.dart';
 import 'enemy.dart';
 import 'main.dart';
+import 'projectile.dart';
 
 class ShadowBlades extends PositionComponent with HasGameRef<RogueShooterGame> {
   final Player player;
-  final int baseDamage = 10;
-  final double bladeSpeed = 700;
-  final int maxBlades;
-  final double bladeCooldown = 1.5;
+  final int baseDamage = 12;
+  final double bladeSpeed = 750;
+  final double bladeCooldown = 0.5; // ✅ Faster attack speed
   double _elapsedTime = 0.0;
-  bool _canShoot = true;
 
-  ShadowBlades({required this.player}) : maxBlades = player.spiritLevel;
+  ShadowBlades({required this.player});
 
   @override
   void update(double dt) {
     super.update(dt);
     _elapsedTime += dt;
 
-    if (_elapsedTime >= bladeCooldown && _canShoot) {
-      _shootBlades();
+    if (_elapsedTime >= bladeCooldown) {
+      _shootBlade();
       _elapsedTime = 0.0;
-      _canShoot = false;
-      Future.delayed(Duration(milliseconds: 500), () => _canShoot = true);
     }
   }
 
-  void _shootBlades() {
-    print("⚔️ Throwing Shadow Blades!");
-    for (int i = 0; i < maxBlades; i++) {
-      double angleOffset =
-          (i - (maxBlades - 1) / 2) * (pi / 8); // Spread effect
-      Vector2 velocity =
-          Vector2(cos(angleOffset), sin(angleOffset)) * bladeSpeed;
-      _spawnBlade(velocity);
-    }
-  }
+  void _shootBlade() {
+    print("⚔️ Throwing Shadow Blade!");
 
-  void _spawnBlade(Vector2 velocity) {
-    if (!isMounted) return; // ✅ Prevent errors before mounting
+    // ✅ Find closest enemy or boss
+    BaseEnemy? target = _findClosestTarget();
+
+    if (target == null) {
+      print("⚠️ No enemies found - Shadow Blade not fired.");
+      return;
+    }
+
+    Vector2 direction = (target.position - player.position).normalized();
+    double rotationAngle = direction.angleTo(Vector2(1, 0));
 
     final blade = ShadowBladeProjectile(
-      damage: baseDamage * player.spiritMultiplier.toInt(),
-      velocity: velocity,
+      damage: (baseDamage * player.spiritMultiplier).toInt(),
+      velocity: direction * bladeSpeed,
       player: player,
+      rotationAngle: rotationAngle, // ✅ Ensures correct rotation
     )
       ..position = player.position.clone()
       ..size = Vector2(48, 16) // Blade sprite size
       ..anchor = Anchor.center;
 
-    gameRef.add(blade); // ✅ Ensures gameRef is available
+    gameRef.add(blade);
+  }
+
+  BaseEnemy? _findClosestTarget() {
+    final enemies = gameRef.children.whereType<BaseEnemy>().toList();
+    if (enemies.isEmpty) return null;
+
+    BaseEnemy? closest;
+    double closestDistance = double.infinity;
+    for (final enemy in enemies) {
+      double distance = (enemy.position - player.position).length;
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closest = enemy;
+      }
+    }
+    return closest;
   }
 }
 
 class ShadowBladeProjectile extends SpriteAnimationComponent
     with CollisionCallbacks, HasGameRef<RogueShooterGame> {
-  // ✅ Fix gameRef issue
-
   final int damage;
   final Vector2 velocity;
   final Player player;
+  final double rotationAngle;
+  double maxDistance = 1200;
+  Vector2 startPosition = Vector2.zero();
 
-  ShadowBladeProjectile(
-      {required this.damage, required this.velocity, required this.player}) {
+  ShadowBladeProjectile({
+    required this.damage,
+    required this.velocity,
+    required this.player,
+    required this.rotationAngle,
+  }) {
+    angle = rotationAngle; // ✅ Rotate in direction of movement
     add(RectangleHitbox());
   }
 
@@ -74,7 +93,7 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
   Future<void> onLoad() async {
     super.onLoad();
     animation = SpriteAnimation.fromFrameData(
-      await gameRef.images.load('shadow_blades.png'), // ✅ Use await
+      await gameRef.images.load('shadowblades.png'),
       SpriteAnimationData.sequenced(
         amount: 4,
         stepTime: 0.1,
@@ -82,6 +101,7 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
         loop: true,
       ),
     );
+    startPosition = position.clone();
   }
 
   @override
@@ -89,10 +109,7 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
     super.update(dt);
     position += velocity * dt;
 
-    if (position.x < -100 ||
-        position.x > gameRef.size.x + 100 ||
-        position.y < -100 ||
-        position.y > gameRef.size.y + 100) {
+    if ((position - startPosition).length >= maxDistance) {
       removeFromParent();
     }
   }
@@ -100,8 +117,21 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is BaseEnemy) {
-      other.takeDamage(damage, isCritical: false);
+      bool isCritical = gameRef.random.nextDouble() < (player.critChance / 100);
+      int finalDamage =
+          isCritical ? (damage * player.critMultiplier).toInt() : damage;
+
+      other.takeDamage(finalDamage, isCritical: isCritical);
+      print("🗡️ Shadow Blade hit! ${isCritical ? '🔥 CRIT!' : ''}");
+
+      // ✅ Pierces through enemies instead of disappearing immediately
     }
+
+    // ❌ Ignore **player's own** projectiles (except other Shadow Blades)
+    else if (other is Projectile && other is! ShadowBladeProjectile) {
+      return;
+    }
+
     super.onCollision(intersectionPoints, other);
   }
 }
