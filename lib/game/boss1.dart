@@ -102,22 +102,26 @@ class Boss1 extends BaseEnemy {
   void _shootProjectiles() {
     print("🔥 Boss is firing projectiles!");
 
-    for (int i = 0; i < 6; i++) {
-      double angle = (i * 60) * (pi / 180);
+    int numProjectiles = 4; // ✅ Reduced from 6 to 4
+    double spreadAngle = 360; // ✅ Increased spread to 90 degrees
 
-      Vector2 projectileVelocity =
-          Vector2(cos(angle), sin(angle)) * 800; // ✅ Increased Speed
+    for (int i = 0; i < numProjectiles; i++) {
+      double angle =
+          (-spreadAngle / 2) + (i * (spreadAngle / (numProjectiles - 1)));
+      double radians = angle * (pi / 180);
+
+      Vector2 projectileVelocity = Vector2(cos(radians), sin(radians)) * 800;
 
       final bossProjectile = Projectile.bossProjectile(
         damage: 20,
-        velocity: projectileVelocity, // ✅ Ensure velocity is applied
+        velocity: projectileVelocity,
       )
         ..position = position.clone()
-        ..size = Vector2(65, 65) // ✅ Bigger size for visibility
+        ..size = Vector2(65, 65)
         ..anchor = Anchor.center;
 
       gameRef.add(bossProjectile);
-      print("🔥 Boss Projectile fired at ${position}");
+      print("🔥 Boss Projectile fired at angle: $angle°");
     }
   }
 
