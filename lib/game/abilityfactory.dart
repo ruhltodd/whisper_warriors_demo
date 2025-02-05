@@ -9,6 +9,8 @@ class AbilityFactory {
         return SoulFracture();
       case 'Shadow Blades':
         return ShadowBlades();
+      case 'Cursed Echo':
+        return CursedEcho();
       default:
         print("❌ ERROR: Unknown ability '$abilityName'"); // 🔍 Debugging
     }

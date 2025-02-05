@@ -13,7 +13,7 @@ class AbilitySelectionScreen extends StatefulWidget {
 
 class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   List<String> selectedAbilities = [];
-  final int maxAbilities = 3;
+  final int maxAbilities = 4;
   late AudioPlayer _audioPlayer; // ✅ Background music instance
 
   final Map<String, String> abilities = {
@@ -22,6 +22,7 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
     'Soul Fracture':
         'Soul Fracture - Enemies explode into ghostly shrapnel on death.',
     'Shadow Blades': 'Throws shadow blades that pierce through enemies.',
+    'Cursed Echo': 'Every attack has a 20% chance to repeat itself.',
     'Fading Crescent':
         'Fading Crescent - Deals more damage with fewer abilities left.',
     'Vampiric Touch': 'Vampiric Touch - Heal 5% of enemy HP on kill.',

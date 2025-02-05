@@ -133,7 +133,8 @@ class Player extends PositionComponent
     // ✅ Ensure an enemy is targeted before shooting
     if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
       print("🛑 Projectile removed: Max range exceeded");
-      shootProjectile();
+      shootProjectile(
+          closestEnemy!, damage.toInt()); // ✅ Pass required arguments
       timeSinceLastShot = 0.0; // ✅ Reset cooldown
     }
 
@@ -228,7 +229,8 @@ class Player extends PositionComponent
     }
   }
 
-  void shootProjectile() {
+  void shootProjectile(PositionComponent target, int damage,
+      {bool isCritical = false}) {
     if (closestEnemy == null) {
       print("⚠️ No enemy targeted - projectile not fired!");
       return;
@@ -239,9 +241,17 @@ class Player extends PositionComponent
     final direction = (closestEnemy!.position - position).normalized();
 
     final projectile = Projectile(
-      damage: damage.toInt(), // ✅ Ensure `damage` is an int
+      damage: damage, // ✅ Ensure `damage` is an int
       velocity: direction * 500, // ✅ Now correctly passing velocity
       maxRange: 1600, // ✅ Player projectiles should have a range
+      onHit: (enemy) {
+        // ✅ Move Cursed Echo trigger here
+        if (hasAbility<CursedEcho>()) {
+          abilities
+              .firstWhere((a) => a is CursedEcho)
+              .onHit(this, enemy, damage, isCritical: isCritical);
+        }
+      },
     )
       ..position = position.clone()
       ..size = Vector2(50, 50)

@@ -13,22 +13,28 @@ class Projectile extends SpriteAnimationComponent
   final bool isBossProjectile;
   final double maxRange;
   late Vector2 spawnPosition;
+  final void Function(BaseEnemy)? onHit; // ✅ Callback for hit logic
 
   // 🔹 **General Constructor**
   Projectile({
     required this.damage,
     required this.velocity,
     this.isBossProjectile = false,
-    this.maxRange = 800, // ✅ Default range for player projectiles
+    this.maxRange = 800,
+    this.onHit, // ✅ Now optional (for abilities like Cursed Echo)
   }) : super(size: Vector2(50, 50)); // Adjust size as needed
 
   // 🔹 **Named Constructor for Player**
-  Projectile.playerProjectile({required int damage, required Vector2 velocity})
-      : this(
+  Projectile.playerProjectile({
+    required int damage,
+    required Vector2 velocity,
+    void Function(BaseEnemy)? onHit, // ✅ Pass `onHit` for abilities
+  }) : this(
           damage: damage,
           velocity: velocity,
           maxRange: 800,
           isBossProjectile: false,
+          onHit: onHit, // ✅ Ensure `onHit` is passed
         );
 
   // 🔹 **Named Constructor for Boss**
@@ -87,10 +93,7 @@ class Projectile extends SpriteAnimationComponent
             position.x > gameRef.size.x + 500 ||
             position.y < -500 ||
             position.y > gameRef.size.y + 500)) {
-      // ✅ Ensure only the projectile is removed, not the boss
-      if (this is Projectile) {
-        removeFromParent();
-      }
+      removeFromParent(); // ✅ Ensure only the projectile is removed, not the boss
     }
   }
 
@@ -99,9 +102,14 @@ class Projectile extends SpriteAnimationComponent
     if (!isBossProjectile) {
       if (other is BaseEnemy) {
         other.takeDamage(damage);
+
+        // ✅ Trigger `onHit` if it exists (Cursed Echo, special effects, etc.)
+        onHit?.call(other);
+
         removeFromParent();
       } else if (other is Wave2Enemy) {
         other.takeDamage(damage);
+        onHit?.call(other); // ✅ Apply `onHit` effect here too
         removeFromParent();
       }
     } else {

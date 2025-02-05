@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
+import 'package:whisper_warriors/game/abilities.dart';
 import 'dart:math';
 import 'player.dart';
 import 'enemy.dart';
@@ -40,6 +41,18 @@ class ShadowBlades extends PositionComponent with HasGameRef<RogueShooterGame> {
     Vector2 direction = (target.position - player.position).normalized();
     double rotationAngle = direction.angleTo(Vector2(1, 0));
 
+    _spawnBlade(direction, rotationAngle);
+
+    // ✅ **Roll Cursed Echo ONCE per blade thrown**
+    if (player.hasAbility<CursedEcho>() && gameRef.random.nextDouble() < 0.20) {
+      print("🔄 Cursed Echo triggered for Shadow Blade!");
+      Future.delayed(Duration(milliseconds: 100), () {
+        _spawnBlade(direction, rotationAngle);
+      });
+    }
+  }
+
+  void _spawnBlade(Vector2 direction, double rotationAngle) {
     final blade = ShadowBladeProjectile(
       damage: (baseDamage * player.spiritMultiplier).toInt(),
       velocity: direction * bladeSpeed,
@@ -124,7 +137,8 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
       other.takeDamage(finalDamage, isCritical: isCritical);
       print("🗡️ Shadow Blade hit! ${isCritical ? '🔥 CRIT!' : ''}");
 
-      // ✅ Pierces through enemies instead of disappearing immediately
+      // ✅ **No longer rolling Cursed Echo per enemy hit**
+      // ✅ **Now triggers per blade when first thrown**
     }
 
     // ❌ Ignore **player's own** projectiles (except other Shadow Blades)

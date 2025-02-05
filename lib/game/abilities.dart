@@ -25,6 +25,8 @@ abstract class Ability {
   void applyEffect(Player player) {}
   void onKill(Player player, Vector2 enemyPosition) {}
   void onUpdate(Player player, double dt) {}
+  void onHit(Player player, PositionComponent target, int damage,
+      {bool isCritical = false}) {}
 }
 
 class WhisperingFlames extends Ability {
@@ -141,6 +143,41 @@ class ShadowBlades extends Ability {
       }
     }
     return closest;
+  }
+}
+
+class CursedEcho extends Ability {
+  double baseProcChance = 0.2; // 20% base chance
+  double delayBetweenRepeats = 0.2; // Small delay before repeating
+
+  CursedEcho()
+      : super(
+          name: "Cursed Echo",
+          description:
+              "Every attack has a chance to repeat itself, increasing with Spirit Level.",
+          type: AbilityType.onHit,
+        );
+
+  double getProcChance(Player player) {
+    return (baseProcChance + (player.spiritLevel * 0.01))
+        .clamp(0, 1); // ✅ Scales with Spirit Level, max 100%
+  }
+
+  @override
+  void onHit(Player player, PositionComponent target, int damage,
+      {bool isCritical = false}) {
+    double procChance = getProcChance(player); // ✅ Get scaled proc chance
+
+    if (player.gameRef.random.nextDouble() < procChance) {
+      Future.delayed(
+          Duration(milliseconds: (delayBetweenRepeats * 1000).toInt()), () {
+        if (target.isMounted) {
+          print(
+              "🔁 Cursed Echo triggered at ${procChance * 100}% chance! Repeating attack...");
+          player.shootProjectile(target, damage, isCritical: isCritical);
+        }
+      });
+    }
   }
 }
 
