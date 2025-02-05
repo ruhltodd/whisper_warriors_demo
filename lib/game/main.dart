@@ -110,7 +110,7 @@ class RogueShooterGame extends FlameGame
   final Random random = Random(); // ✅ Define Random instance
 
   bool isPaused = false;
-  int remainingTime = 1200; // 20 minutes in seconds
+  int elapsedTime = 0;
 
   RogueShooterGame({required this.selectedAbilities}) {
     bossHealthNotifier = ValueNotifier<double?>(null); // ✅ Initialize as null
@@ -174,7 +174,7 @@ class RogueShooterGame extends FlameGame
     await bgmPlayer.setReleaseMode(ReleaseMode.loop);
     await bgmPlayer.play(AssetSource('music/soft_etheral.mp3'));
     await bgmPlayer.setVolume(.2);
-    gameHudNotifier = ValueNotifier<int>(remainingTime);
+    gameHudNotifier = ValueNotifier<int>(elapsedTime);
 
     customCamera = CustomCamera(
       screenSize: size, // Ensure screen size is passed
@@ -237,15 +237,9 @@ class RogueShooterGame extends FlameGame
       period: 1.0,
       repeat: true,
       onTick: () {
-        if (remainingTime > 0) {
-          remainingTime--;
-          gameHudNotifier.value = remainingTime;
-          triggerEvent();
-        }
-
-        if (remainingTime <= 0) {
-          endGame();
-        }
+        elapsedTime++; // ✅ Increment time instead of decrementing
+        gameHudNotifier.value = elapsedTime;
+        triggerEvent(); // ✅ Events now trigger based on elapsed time
       },
     );
     add(gameTimer);
@@ -268,7 +262,7 @@ class RogueShooterGame extends FlameGame
       final spawnPosition = _getRandomSpawnPosition();
 
       BaseEnemy enemy;
-      if (remainingTime <= 1140) {
+      if (elapsedTime >= 60) {
         // ✅ After 60 seconds, allow Wave2Enemy to spawn
         enemy = (i % 2 == 0)
             ? Wave1Enemy(
@@ -337,7 +331,9 @@ class RogueShooterGame extends FlameGame
     }
     remove(enemySpawnerTimer); // ✅ Stop enemy spawns
 
-    // ✅ Declare the boss first before using it
+    // ✅ Ensure the boss spawns at the **center of the game world**
+    Vector2 bossSpawnPosition = Vector2(640, 640); // Adjust for your map size
+
     final boss = Boss1(
       player: player,
       speed: 20,
@@ -348,33 +344,38 @@ class RogueShooterGame extends FlameGame
     );
 
     boss.onDeath = () {
-      // ✅ Assign after declaring
       bossHealthNotifier.value = null; // ✅ Hide Boss HP on death
       _postBossEnemySpawn();
 
       // ✅ Drop Gold Coin at Boss Position
       final goldCoin = DropItem(
-        expValue: 10000,
+        expValue: 5000,
         spriteName: 'gold_coin.png',
-      )..position = boss.position.clone(); // ✅ Now boss is properly declared
+      )..position = boss.position.clone();
 
       add(goldCoin);
       print("💰 Boss dropped a Gold Coin (5000 EXP)!");
     };
 
+    // ✅ Set **initial boss position** outside the screen
     boss.position = Vector2(size.x / 2, -300);
     boss.anchor = Anchor.center;
-
-    add(boss);
+    add(boss); // ✅ Add the boss to the game
 
     Future.delayed(Duration(milliseconds: 1500), () {
-      boss.position = Vector2(size.x / 2, size.y / 3); // ✅ Boss lands
-      _shakeScreen(customCamera); // ✅ Trigger screen shake
+      // ✅ Move the boss **into the center of the map**
+      boss.position = bossSpawnPosition;
+
+      // ✅ Apply a screen shake effect
+      _shakeScreen(customCamera);
+
+      // ✅ Trigger impact effect when the boss lands
       _triggerBossImpactEffect(boss.position);
+
+      print("🔥 BOSS LANDED IN CENTER AT $bossSpawnPosition!");
     });
 
     bossHealthNotifier.value = 5000; // ✅ Show Boss HP
-    print("🔥 BOSS HAS ENTERED THE ARENA!");
   }
 
   void _postBossEnemySpawn() {
@@ -405,19 +406,16 @@ class RogueShooterGame extends FlameGame
       print("Player is dead");
       return;
     }
-    print("🔹 EVENT TRIGGERED at ${formatTime(remainingTime)}");
+    print("🔹 EVENT TRIGGERED at ${formatTime(elapsedTime)}");
 
-    if (remainingTime == 1180) {
+    if (elapsedTime == 20) {
       spawnEnemyWave(20);
-      print("⚔ 19:00 - Spawned 20 enemies!");
-    } else if (remainingTime == 1140) {
-      // ✅ Change to your boss spawn time
+      print("⚔ 00:20 - Spawned 20 enemies!");
+    } else if (elapsedTime == 60) {
       print("💀 Boss is arriving, removing all enemies!");
 
-      // ✅ Stop all enemy spawners
       remove(enemySpawnerTimer);
 
-      // ✅ Remove all existing enemies
       for (var enemy in children.whereType<BaseEnemy>()) {
         enemy.removeFromParent();
       }
@@ -448,7 +446,7 @@ class RogueShooterGame extends FlameGame
           overlays.add('hud'); // Show HUD again
 
           // ✅ 3. Reset Timers & Variables
-          remainingTime = 1200;
+          elapsedTime = 0;
           enemyCount = 0;
           bossHealthNotifier.value = null;
           player.spiritLevel = 1;
