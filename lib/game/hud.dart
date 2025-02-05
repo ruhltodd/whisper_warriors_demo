@@ -85,7 +85,7 @@ class HUD extends StatelessWidget {
                   // 🔴 Boss Health Bar
                   BossHealthBar(
                     bossHealth: bossHealth,
-                    maxBossHealth: 5000,
+                    maxBossHealth: 10000,
                     //✅ Adjust if bosses have different HP
                   ),
                 ],
