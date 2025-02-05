@@ -337,7 +337,7 @@ class RogueShooterGame extends FlameGame
     final boss = Boss1(
       player: player,
       speed: 20,
-      health: 10000,
+      health: 50000,
       size: Vector2(128, 128),
       onHealthChanged: (double health) => bossHealthNotifier.value = health,
       onDeath: () {},
@@ -375,7 +375,7 @@ class RogueShooterGame extends FlameGame
       print("🔥 BOSS LANDED IN CENTER AT $bossSpawnPosition!");
     });
 
-    bossHealthNotifier.value = 10000; // ✅ Show Boss HP
+    bossHealthNotifier.value = 50000; // ✅ Show Boss HP
   }
 
   void _postBossEnemySpawn() {
