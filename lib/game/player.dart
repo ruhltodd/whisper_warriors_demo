@@ -123,15 +123,22 @@ class Player extends PositionComponent
     }
   }
 
-  // ✅ Gain Spirit Experience & Level Up
   void gainSpiritExp(double amount) {
-    // ✅ Ensure parameter is double
-    spiritExp += amount;
+    while (amount > 0) {
+      double remainingToLevel = spiritExpToNextLevel - spiritExp;
 
-    if (spiritExp >= spiritExpToNextLevel) {
-      spiritLevelUp();
+      if (amount >= remainingToLevel) {
+        // ✅ Prevents skipping multiple levels at once
+        spiritExp = spiritExpToNextLevel;
+        amount -= remainingToLevel;
+        spiritLevelUp(); // ✅ Level up BEFORE adding more XP
+      } else {
+        spiritExp += amount;
+        amount = 0;
+      }
     }
 
+    // ✅ Update bar AFTER all level-up calculations
     gameRef.experienceBar
         .updateSpirit(spiritExp, spiritExpToNextLevel, spiritLevel);
   }

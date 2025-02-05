@@ -18,7 +18,7 @@ class Boss1 extends BaseEnemy {
   final double damageNumberInterval = 0.5;
   bool hasDroppedItem = false;
   final Function(double) onHealthChanged; // ✅ Tracks boss health
-  final VoidCallback onDeath; // ✅ Handles boss death
+  VoidCallback onDeath; // ✅ Handles boss death
   late final double maxHealth; // ✅ Store original max health
   late final SpriteAnimation idleAnimation;
   late final SpriteAnimation walkAnimation;
@@ -176,7 +176,8 @@ class Boss1 extends BaseEnemy {
   void die() {
     if (!hasDroppedItem) {
       hasDroppedItem = true;
-      final drop = DropItem(expValue: 100)..position = position.clone();
+      final drop = DropItem(expValue: 100, spriteName: 'gold_coin.png')
+        ..position = position.clone();
       gameRef.add(drop);
     }
 

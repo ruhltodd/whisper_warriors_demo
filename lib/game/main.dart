@@ -17,6 +17,7 @@ import 'abilityfactory.dart';
 import 'abilities.dart';
 import 'boss1.dart';
 import 'explosion.dart';
+import 'dropitem.dart';
 
 void main() {
   runApp(MyApp());
@@ -219,7 +220,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     add(enemySpawnerTimer);
   }
 
-  void spawnEnemyWave(int count) {
+  void spawnEnemyWave(int count, {bool postBoss = false}) {
     for (int i = 0; i < count; i++) {
       final spawnPosition = _getRandomSpawnPosition();
 
@@ -230,13 +231,13 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
             ? Wave1Enemy(
                 player: player,
                 speed: 70,
-                health: 100,
+                health: 500,
                 size: Vector2(64, 64),
               )
             : Wave2Enemy(
                 player: player,
                 speed: 50,
-                health: 400,
+                health: 800,
                 size: Vector2(128, 128),
               );
       } else {
@@ -244,9 +245,15 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
         enemy = Wave1Enemy(
           player: player,
           speed: 100,
-          health: 100,
+          health: 300,
           size: Vector2(64, 64),
         );
+      }
+
+      // ✅ **Enhance Enemies After Boss Fight**
+      if (postBoss) {
+        enemy.health *= 2; // 🔥 **Double Health**
+        enemy.speed *= 1.5; // 🔥 **Faster Movement**
       }
 
       enemy.position = spawnPosition;
@@ -281,24 +288,40 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
   void _spawnBoss() {
     print("💀 BOSS ARRIVING!");
 
-    final enemies = children.whereType<BaseEnemy>().toList();
-    for (var enemy in enemies) {
+    // ✅ Remove all existing enemies
+    for (var enemy in children.whereType<BaseEnemy>()) {
       enemy.removeFromParent();
     }
+    remove(enemySpawnerTimer); // ✅ Stop enemy spawns
 
-    remove(enemySpawnerTimer);
-
+    // ✅ Declare the boss first before using it
     final boss = Boss1(
       player: player,
       speed: 20,
       health: 5000,
       size: Vector2(128, 128),
-      onHealthChanged: (double health) =>
-          bossHealthNotifier.value = health, // ✅ Update health bar
-      onDeath: () => bossHealthNotifier.value = null, // ✅ Hide when boss dies
-    )
-      ..position = Vector2(size.x / 2, -300)
-      ..anchor = Anchor.center;
+      onHealthChanged: (double health) => bossHealthNotifier.value = health,
+      onDeath: () {},
+    );
+
+    boss.onDeath = () {
+      // ✅ Assign after declaring
+      bossHealthNotifier.value = null; // ✅ Hide Boss HP on death
+      _postBossEnemySpawn();
+
+      // ✅ Drop Gold Coin at Boss Position
+      final goldCoin = DropItem(
+        expValue: 5000,
+        spriteName: 'gold_coin.png',
+      )..position = boss.position.clone(); // ✅ Now boss is properly declared
+
+      add(goldCoin);
+      print("💰 Boss dropped a Gold Coin (5000 EXP)!");
+    };
+
+    boss.position = Vector2(size.x / 2, -300);
+    boss.anchor = Anchor.center;
+
     add(boss);
 
     Future.delayed(Duration(milliseconds: 1500), () {
@@ -306,8 +329,21 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
       _shakeScreen(customCamera); // ✅ Trigger screen shake
       _triggerBossImpactEffect(boss.position);
     });
+
     bossHealthNotifier.value = 5000; // ✅ Show Boss HP
     print("🔥 BOSS HAS ENTERED THE ARENA!");
+  }
+
+  void _postBossEnemySpawn() {
+    print("🔥 Post-boss enemies now spawning!");
+
+    // ✅ Resume enemy spawner with a **faster rate & tougher enemies**
+    enemySpawnerTimer = TimerComponent(
+      period: 4.0, // ✅ Faster spawn rate after boss
+      repeat: true,
+      onTick: () => spawnEnemyWave(12, postBoss: true), // ✅ More enemies
+    );
+    add(enemySpawnerTimer);
   }
 
   void _triggerBossImpactEffect(Vector2 position) {

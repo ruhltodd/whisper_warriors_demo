@@ -7,7 +7,7 @@ class SpiritBar extends PositionComponent with HasGameRef<RogueShooterGame> {
   final double barHeight = 10;
 
   double spiritExp = 0.0;
-  double spiritExpToNextLevel = 1000.0;
+  double spiritExpToNextLevel = 500.0;
   int spiritLevel = 1;
 
   /// ✅ **New Notifier for UI updates**

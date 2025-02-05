@@ -85,7 +85,8 @@ class BaseEnemy extends SpriteAnimationComponent
 
     if (!hasDroppedItem) {
       hasDroppedItem = true;
-      final drop = DropItem(expValue: 10)..position = position.clone();
+      final drop = DropItem(expValue: 10, spriteName: 'blue_coin.png')
+        ..position = position.clone();
       gameRef.add(drop);
       gameRef.player.gainHealth(gameRef.player.vampiricHealing.toInt());
     }

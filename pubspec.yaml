@@ -65,6 +65,7 @@ flutter:
     - assets/images/mob1.png
     - assets/images/mob2.png
     - assets/images/blue_coin.png
+    - assets/images/gold_coin.png
     - assets/images/main_menu_background.png
     - assets/images/start_button.png
     - assets/images/options_button.png

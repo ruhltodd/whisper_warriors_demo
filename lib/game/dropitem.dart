@@ -7,25 +7,27 @@ import 'main.dart';
 class DropItem extends SpriteComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   final int expValue;
+  final String spriteName; // ✅ Fix: Ensure spriteName is stored
 
-  DropItem({required this.expValue}) : super(size: Vector2(15, 15)) {
-    add(CircleHitbox()); // Add a hitbox for collision
+  DropItem({required this.expValue, required this.spriteName})
+      : super(size: Vector2(15, 15)) {
+    add(CircleHitbox());
   }
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    // Load the sprite for the coin
-    sprite =
-        await gameRef.loadSprite('blue_coin.png'); // Ensure this file exists
+    // ✅ Fix: Load correct sprite based on `spriteName`
+    sprite = await gameRef.loadSprite(spriteName);
   }
 
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is Player) {
-      other.gainSpiritExp(expValue.toDouble()); // ✅ Updated to Spirit EXP
-      removeFromParent(); // Remove the drop after collection
+      other.gainSpiritExp(expValue.toDouble()); // ✅ Grants Spirit EXP
+      removeFromParent(); // ✅ Remove item after pickup
+      print("💰 Player collected $expValue EXP from $spriteName!");
     }
     super.onCollision(intersectionPoints, other);
   }
