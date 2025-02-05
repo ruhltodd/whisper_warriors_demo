@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/services.dart';
 import 'healthbar.dart';
 import 'main.dart';
 import 'enemy.dart';
@@ -13,6 +14,7 @@ import 'healingnumber.dart';
 import 'abilities.dart';
 import 'explosion.dart';
 import 'fireaura.dart';
+import 'package:flame/input.dart'; // ✅ Required for keyboard input
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
@@ -47,6 +49,7 @@ class Player extends PositionComponent
   // ✅ UI & Game Elements
   HealthBar? healthBar;
   Vector2 joystickDelta = Vector2.zero();
+  Vector2 movementDirection = Vector2.zero(); // ✅ Stores movement direction
   late WhisperWarrior whisperWarrior;
   BaseEnemy? closestEnemy;
   List<Ability> abilities = [];
@@ -88,6 +91,26 @@ class Player extends PositionComponent
     joystickDelta = delta;
   }
 
+  void moveUp() {
+    joystickDelta = Vector2(0, -1);
+  }
+
+  void moveDown() {
+    joystickDelta = Vector2(0, 1);
+  }
+
+  void moveLeft() {
+    joystickDelta = Vector2(-1, 0);
+  }
+
+  void moveRight() {
+    joystickDelta = Vector2(1, 0);
+  }
+
+  void stopMovement() {
+    joystickDelta = Vector2.zero(); // ✅ Stops movement when key is released
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -96,9 +119,10 @@ class Player extends PositionComponent
     updateSpiritMultiplier();
     updateClosestEnemy(); // 🔥 This ensures `closestEnemy` is updated
 
-    if (joystickDelta.length > 0) {
-      position += joystickDelta.normalized() * movementSpeed * dt;
-      whisperWarrior.scale.x = joystickDelta.x > 0 ? -1 : 1;
+    Vector2 totalMovement = movementDirection + joystickDelta;
+    if (totalMovement.length > 0) {
+      position += totalMovement.normalized() * movementSpeed * dt;
+      whisperWarrior.scale.x = totalMovement.x > 0 ? -1 : 1;
       whisperWarrior.playAnimation('attack');
     } else {
       whisperWarrior.playAnimation('idle');

@@ -2,7 +2,9 @@ import 'dart:async'; // Ensure this is imported
 import 'package:flame/game.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/components.dart';
+import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math';
 import 'experience.dart';
 import 'customcamera.dart';
@@ -91,7 +93,8 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class RogueShooterGame extends FlameGame with HasCollisionDetection {
+class RogueShooterGame extends FlameGame
+    with HasCollisionDetection, HasKeyboardHandlerComponents {
   late CustomCamera customCamera;
   late Player player;
   late SpiritBar experienceBar;
@@ -121,6 +124,46 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
     await Future.delayed(Duration(milliseconds: 500)); // Small delay
     await bgmPlayer.setReleaseMode(ReleaseMode.stop); // ✅ Ensure it plays once
     await bgmPlayer.play(AssetSource('music/game_over.mp3'));
+  }
+
+  Set<LogicalKeyboardKey> activeKeys = {}; // ✅ Track active keys
+
+  @override
+  KeyEventResult onKeyEvent(
+      KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+    if (event is KeyDownEvent) {
+      activeKeys.add(event.logicalKey);
+    } else if (event is KeyUpEvent) {
+      activeKeys.remove(event.logicalKey);
+    }
+
+    _updatePlayerMovement(); // ✅ Update movement based on active keys
+
+    return KeyEventResult.handled;
+  }
+
+// ✅ **Update Player Movement Based on Active Keys**
+  void _updatePlayerMovement() {
+    Vector2 movement = Vector2.zero();
+
+    if (activeKeys.contains(LogicalKeyboardKey.keyW)) {
+      movement.y -= 1;
+    }
+    if (activeKeys.contains(LogicalKeyboardKey.keyS)) {
+      movement.y += 1;
+    }
+    if (activeKeys.contains(LogicalKeyboardKey.keyA)) {
+      movement.x -= 1;
+    }
+    if (activeKeys.contains(LogicalKeyboardKey.keyD)) {
+      movement.x += 1;
+    }
+
+    if (movement.length > 0) {
+      movement.normalize(); // ✅ Prevent diagonal movement from being too fast
+    }
+
+    player.updateJoystick(movement);
   }
 
   @override
@@ -311,7 +354,7 @@ class RogueShooterGame extends FlameGame with HasCollisionDetection {
 
       // ✅ Drop Gold Coin at Boss Position
       final goldCoin = DropItem(
-        expValue: 5000,
+        expValue: 10000,
         spriteName: 'gold_coin.png',
       )..position = boss.position.clone(); // ✅ Now boss is properly declared
 
