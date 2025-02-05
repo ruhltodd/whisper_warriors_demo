@@ -4,24 +4,27 @@ import 'experience.dart';
 import 'main.dart';
 import 'abilitybar.dart';
 import 'bosshealthbar.dart';
+import 'staggerbar.dart';
 import 'dart:ui' as ui;
 
 class HUD extends StatelessWidget {
   final void Function(Vector2 delta) onJoystickMove;
   final SpiritBar experienceBar;
-  final RogueShooterGame game; // ✅ Reference to game for timer
+  final RogueShooterGame game;
   final ValueNotifier<double?> bossHealthNotifier;
+  final ValueNotifier<double?> bossStaggerNotifier; // ✅ Track stagger progress
 
   HUD({
     required this.onJoystickMove,
     required this.experienceBar,
     required this.game,
     required this.bossHealthNotifier,
+    required this.bossStaggerNotifier, // ✅ Track stagger bar
   });
 
   @override
   Widget build(BuildContext context) {
-    final double safeTop = MediaQuery.of(context).padding.top; // Detect notch
+    final double safeTop = MediaQuery.of(context).padding.top;
 
     return Stack(
       children: [
@@ -30,24 +33,25 @@ class HUD extends StatelessWidget {
           top: safeTop + 10,
           right: 20,
           child: ValueListenableBuilder<int>(
-            valueListenable: game.gameHudNotifier, // ✅ Timer updates here
+            valueListenable: game.gameHudNotifier,
             builder: (context, time, _) {
               return Text(
-                game.formatTime(time), // ✅ Live updating countdown
+                game.formatTime(time),
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'MyCustomFont'),
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'MyCustomFont',
+                ),
               );
             },
           ),
         ),
 
-        // Spirit Bar (Top Center)
+        // ⚡ Spirit Bar (Top Center)
         Positioned(
-          top: safeTop + 10, // Moves it below the notch
-          left: MediaQuery.of(context).size.width / 2 - 100, // Centered
+          top: safeTop + 10,
+          left: MediaQuery.of(context).size.width / 2 - 100, // ✅ Centered
           child: SizedBox(
             width: 200,
             height: 20,
@@ -57,21 +61,22 @@ class HUD extends StatelessWidget {
           ),
         ),
 
-        // ⚡ Boss Health Bar (Appears only during boss fights)
+        // 👑 Boss UI (Health Bar + Stagger Bar)
         Positioned(
-          top: safeTop + 40, // ✅ Positioned right below Spirit Bar
-          left: MediaQuery.of(context).size.width / 2 - 100, // Centered
+          top: safeTop + 40,
+          left: MediaQuery.of(context).size.width / 2 - 100, // ✅ Centered UI
           child: ValueListenableBuilder<double?>(
-            valueListenable: game.bossHealthNotifier,
+            valueListenable: bossHealthNotifier,
             builder: (context, bossHealth, _) {
-              if (bossHealth == null)
-                return const SizedBox(); // ✅ Hide when no boss
+              if (bossHealth == null) return const SizedBox.shrink();
 
               return Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // 👑 Boss Name
                   Text(
                     'Umbrathos, The Fading King',
+                    textAlign: TextAlign.center, // ✅ Centered text
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -79,14 +84,57 @@ class HUD extends StatelessWidget {
                       fontFamily: 'MyCustomFont',
                     ),
                   ),
-                  const SizedBox(
-                      height: 5), // ✅ Small gap between name and health bar
+                  const SizedBox(height: 5),
 
-                  // 🔴 Boss Health Bar
-                  BossHealthBar(
-                    bossHealth: bossHealth,
-                    maxBossHealth: 50000,
-                    //✅ Adjust if bosses have different HP
+                  // 🔴 **Boss Health Bar (Now Centered)**
+                  SizedBox(
+                    width: 200, // ✅ Fixed width for proper centering
+                    child: BossHealthBar(
+                      bossHealth: bossHealth,
+                      maxBossHealth: 50000,
+                    ),
+                  ),
+
+                  const SizedBox(height: 5), // ✅ Small spacing between bars
+
+                  // ⚡ **Stagger Bar (Perfectly Aligned Below Health Bar)**
+                  ValueListenableBuilder<double?>(
+                    valueListenable: bossStaggerNotifier,
+                    builder: (context, stagger, child) {
+                      if (stagger == null) return SizedBox.shrink();
+                      return SizedBox(
+                        width: 200, // ✅ Matches health bar width
+                        height: 8, // ✅ Slightly smaller than health bar
+                        child: ClipRRect(
+                          borderRadius:
+                              BorderRadius.circular(5), // ✅ Rounded Corners
+                          child: Stack(
+                            children: [
+                              // Background (Black Border)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  border:
+                                      Border.all(color: Colors.white, width: 2),
+                                ),
+                              ),
+
+                              // **Fill Bar** (Stagger Progress)
+                              FractionallySizedBox(
+                                widthFactor: stagger / 100, // ✅ Adjust per boss
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5),
+                                    color: Colors
+                                        .amber, // ✅ Gold Color for Stagger
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               );
@@ -101,7 +149,7 @@ class HUD extends StatelessWidget {
           child: AbilityBar(player: game.player),
         ),
 
-        // Joystick (Bottom Left)
+        // 🎮 Joystick (Bottom Left)
         Align(
           alignment: Alignment.bottomLeft,
           child: JoystickOverlay(onMove: onJoystickMove),

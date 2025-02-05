@@ -89,10 +89,10 @@ class Projectile extends SpriteAnimationComponent
 
     // 🔹 **Boss Projectiles travel indefinitely**
     if (isBossProjectile &&
-        (position.x < -500 ||
-            position.x > gameRef.size.x + 500 ||
-            position.y < -500 ||
-            position.y > gameRef.size.y + 500)) {
+        (position.x < -400 ||
+            position.x > gameRef.size.x + 400 ||
+            position.y < -400 ||
+            position.y > gameRef.size.y + 400)) {
       removeFromParent(); // ✅ Ensure only the projectile is removed, not the boss
     }
   }

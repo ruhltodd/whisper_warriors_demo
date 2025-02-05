@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
+import 'package:whisper_warriors/game/items.dart';
 import 'healthbar.dart';
 import 'main.dart';
 import 'enemy.dart';
@@ -66,8 +67,13 @@ class Player extends PositionComponent
   double explosionCooldown = 0.2;
 
   Player() : super(size: Vector2(128, 128)) {
-    add(RectangleHitbox());
+    add(RectangleHitbox.relative(
+      Vector2(0.6, 0.6), // 60% of the original size
+      parentSize: size,
+    ));
   }
+
+  get attackModifiers => null;
 
   @override
   Future<void> onLoad() async {
@@ -344,4 +350,8 @@ class Player extends PositionComponent
     abilityNotifier.dispose();
     super.onRemove();
   }
+
+  void addPassiveEffect(PassiveEffect passiveEffect) {}
+
+  void removePassiveEffect(String s) {}
 }

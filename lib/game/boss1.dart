@@ -3,6 +3,8 @@ import 'dart:ui'; // ✅ Fix for VoidCallback
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/collisions.dart';
+import 'package:flutter/foundation.dart';
+import 'package:whisper_warriors/game/staggerbar.dart';
 import 'player.dart';
 import 'enemy.dart';
 import 'projectile.dart';
@@ -10,34 +12,42 @@ import 'damagenumber.dart';
 import 'explosion.dart';
 import 'dropitem.dart';
 import 'fireaura.dart';
+import 'staggerable.dart';
 
-class Boss1 extends BaseEnemy {
-  bool enraged = false; // ✅ Enrage mode flag
-  double attackCooldown = 3.0;
+class Boss1 extends BaseEnemy with Staggerable {
+  bool enraged = false;
+  double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
   final double damageNumberInterval = 0.5;
   bool hasDroppedItem = false;
-  final Function(double) onHealthChanged; // ✅ Tracks boss health
+  final Function(double) onHealthChanged;
+  final ValueChanged<double>
+      onStaggerChanged; // ✅ Notify HUD of stagger changes
   VoidCallback onDeath; // ✅ Handles boss death
   late final double maxHealth; // ✅ Store original max health
   late final SpriteAnimation idleAnimation;
   late final SpriteAnimation walkAnimation;
-  final Random random = Random(); // ✅ Fix: Use local random instance
+  late StaggerBar staggerBar;
+  final Random random = Random();
+  final ValueNotifier<double> bossStaggerNotifier; // ✅ UI Notifier
 
   Boss1({
     required Player player,
-    required int health, // ✅ Keep int but convert to double internally
+    required int health,
     required double speed,
     required Vector2 size,
-    required this.onHealthChanged, // ✅ Track health changes
-    required this.onDeath, // ✅ Handle boss death
+    required this.onHealthChanged,
+    required this.onDeath,
+    required this.onStaggerChanged,
+    required this.bossStaggerNotifier,
   }) : super(
           player: player,
-          health: health, // ✅ Convert to double
+          health: health,
           speed: speed,
           size: size,
         ) {
-    maxHealth = health.toDouble(); // ✅ Store max health for scaling
+    maxHealth = health.toDouble();
+    staggerBar = StaggerBar(maxStagger: staggerThreshold);
   }
 
   @override
@@ -61,17 +71,45 @@ class Boss1 extends BaseEnemy {
     );
 
     animation = idleAnimation;
-    add(RectangleHitbox()); // ✅ Ensure the hitbox exists
+    add(RectangleHitbox()); // ✅ Ensure hitbox exists
   }
 
   @override
   void update(double dt) {
     super.update(dt);
+    updateStagger(dt); // ✅ Handles stagger logic
+
+    if (isStaggered) {
+      // ✅ Ensure stagger recovers after time passes
+      return;
+    }
     timeSinceLastAttack += dt;
     timeSinceLastDamageNumber += dt;
 
     _updateMovement(dt);
     _handleAttacks(dt);
+  }
+
+  @override
+  void _triggerStagger() {
+    if (isStaggered) return;
+
+    print("⚡ BOSS STAGGERED!");
+    isStaggered = true;
+    speed *= 0.2; // ✅ Slow down movement
+    attackCooldown *= 1.5; // ✅ Slow attack speed
+
+    add(OpacityEffect.to(
+        0.5, EffectController(duration: 0.2))); // ✅ Visual effect
+
+    Future.delayed(Duration(seconds: 3), () {
+      isStaggered = false;
+      speed /= 0.5;
+      attackCooldown /= 1.5;
+      staggerProgress = 0; // ✅ Reset stagger bar
+      bossStaggerNotifier.value = 0; // ✅ Update UI
+      add(OpacityEffect.to(1.0, EffectController(duration: 0.2)));
+    });
   }
 
   void _updateMovement(double dt) {
@@ -95,15 +133,15 @@ class Boss1 extends BaseEnemy {
 
     if (timeSinceLastAttack >= attackCooldown) {
       _shootProjectiles();
-      timeSinceLastAttack = 0.0; // ✅ Reset attack timer
+      timeSinceLastAttack = 0.0;
     }
   }
 
   void _shootProjectiles() {
     print("🔥 Boss is firing projectiles!");
 
-    int numProjectiles = 4; // ✅ Reduced from 6 to 4
-    double spreadAngle = 360; // ✅ Increased spread to 90 degrees
+    int numProjectiles = 4;
+    double spreadAngle = 360;
 
     for (int i = 0; i < numProjectiles; i++) {
       double angle =
@@ -112,11 +150,14 @@ class Boss1 extends BaseEnemy {
 
       Vector2 projectileVelocity = Vector2(cos(radians), sin(radians)) * 800;
 
+      Vector2 spawnOffset = projectileVelocity.normalized() * 50;
+      Vector2 spawnPosition = position.clone() + spawnOffset;
+
       final bossProjectile = Projectile.bossProjectile(
         damage: 20,
         velocity: projectileVelocity,
       )
-        ..position = position.clone()
+        ..position = spawnPosition
         ..size = Vector2(65, 65)
         ..anchor = Anchor.center;
 
@@ -131,11 +172,26 @@ class Boss1 extends BaseEnemy {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
 
-    // ✅ Apply critical multiplier if crit occurs
     int finalDamage =
         isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
-    health -= finalDamage; // ✅ Ensure health remains double
-    onHealthChanged(health.toDouble()); // ✅ Ensure correct type is passed
+
+    // ✅ **Double damage if staggered**
+    if (isStaggered) {
+      finalDamage *= 2;
+    }
+
+    health -= finalDamage;
+    onHealthChanged(health.toDouble());
+
+    // ✅ **Slower stagger accumulation**
+    staggerProgress += baseDamage * 0.04; // 🔥 Reduce accumulation rate
+    staggerProgress = staggerProgress.clamp(0, 100);
+    bossStaggerNotifier.value = staggerProgress;
+
+    // ✅ **Check if stagger should trigger**
+    if (staggerProgress >= 100) {
+      triggerStagger();
+    }
 
     if (timeSinceLastDamageNumber >= damageNumberInterval ||
         timeSinceLastDamageNumber == 0.0) {
@@ -148,7 +204,6 @@ class Boss1 extends BaseEnemy {
       timeSinceLastDamageNumber = 0.0;
     }
 
-    // ✅ Fix: Check against `maxHealth`, not current `health`
     if (health <= (maxHealth * 0.3) && !enraged) {
       enraged = true;
       _enterEnrageMode();
@@ -159,8 +214,36 @@ class Boss1 extends BaseEnemy {
     }
   }
 
+  @override
+  void triggerStagger() {
+    if (isStaggered) return;
+
+    print("⚡ BOSS STAGGERED!");
+    isStaggered = true;
+    speed *= 0.5;
+    attackCooldown *= 1.5;
+
+    // 🔥 **Apply Red Glow Effect**
+    add(ColorEffect(
+      const Color(0xFFFF0000), // Red Tint
+      EffectController(duration: 3.0, reverseDuration: 0.5),
+    ));
+
+    add(OpacityEffect.to(0.5, EffectController(duration: 0.2)));
+
+    Future.delayed(Duration(seconds: 3), () {
+      isStaggered = false;
+      speed /= 0.5;
+      attackCooldown /= 1.5;
+      staggerProgress = 0;
+      bossStaggerNotifier.value = 0;
+
+      add(OpacityEffect.to(1.0, EffectController(duration: 0.2)));
+    });
+  }
+
   void _enterEnrageMode() {
-    speed *= 1.5; // ✅ Mutability fixed
+    speed *= 1.5;
     attackCooldown *= 0.7;
 
     add(ScaleEffect.to(Vector2.all(1.2), EffectController(duration: 0.5))
@@ -185,7 +268,7 @@ class Boss1 extends BaseEnemy {
       gameRef.add(drop);
     }
 
-    onDeath(); // ✅ Notify game that boss died
+    onDeath();
     gameRef.add(Explosion(position));
     removeFromParent();
   }
@@ -195,10 +278,8 @@ class Boss1 extends BaseEnemy {
     super.onCollision(intersectionPoints, other);
 
     if (other is FireAura) {
-      // ✅ FireAura is the component that actually collides
       print("🔥 Umbrathos hit by Whispering Flames!");
-
-      takeDamage(other.damage.toInt()); // ✅ Apply damage from FireAura
+      takeDamage(other.damage.toInt());
     }
   }
 }

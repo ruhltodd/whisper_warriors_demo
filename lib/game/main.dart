@@ -93,6 +93,8 @@ class _MyAppState extends State<MyApp> {
                         game: game as RogueShooterGame,
                         bossHealthNotifier: (game as RogueShooterGame)
                             .bossHealthNotifier, // ✅ Add this
+                        bossStaggerNotifier: (game as RogueShooterGame)
+                            .bossStaggerNotifier, // ✅ Add Stagger Tracking
                       ),
                   'retryOverlay': (_, game) => RetryOverlay(
                       game: game as RogueShooterGame), // ✅ Add this
@@ -116,7 +118,9 @@ class RogueShooterGame extends FlameGame
   late final AudioPlayer bgmPlayer;
   late ValueNotifier<int> gameHudNotifier;
   late ValueNotifier<double?> bossHealthNotifier;
-  int enemyCount = 0;
+  late ValueNotifier<double>
+      bossStaggerNotifier; // ✅ Correct (Non-nullable) // ✅ Correct (Non-nullable)  int enemyCount = 0;
+  int enemyCount = 0; // ✅ Add this if missing
   int maxEnemies = 30;
   final List<String> selectedAbilities;
   final Random random = Random(); // ✅ Define Random instance
@@ -125,7 +129,9 @@ class RogueShooterGame extends FlameGame
   int elapsedTime = 0;
 
   RogueShooterGame({required this.selectedAbilities}) {
-    bossHealthNotifier = ValueNotifier<double?>(null); // ✅ Initialize as null
+    bossHealthNotifier = ValueNotifier<double?>(null);
+    bossStaggerNotifier = ValueNotifier<double>(0); // ✅ Initialize at 0
+// ✅ Initialize as null
   }
   // ✅ Stops background music
   Future<void> stopBackgroundMusic() async {
@@ -353,6 +359,9 @@ class RogueShooterGame extends FlameGame
       size: Vector2(128, 128),
       onHealthChanged: (double health) => bossHealthNotifier.value = health,
       onDeath: () {},
+      onStaggerChanged: (double stagger) => bossStaggerNotifier.value = stagger,
+      bossStaggerNotifier: bossStaggerNotifier, // ✅ NEW
+// ✅ Stagger bar updates
     );
 
     boss.onDeath = () {
@@ -373,6 +382,7 @@ class RogueShooterGame extends FlameGame
     boss.position = Vector2(size.x / 2, -300);
     boss.anchor = Anchor.center;
     add(boss); // ✅ Add the boss to the game
+    bossStaggerNotifier.value = 0; // ✅ Show stagger bar
 
     Future.delayed(Duration(milliseconds: 1500), () {
       // ✅ Move the boss **into the center of the map**
