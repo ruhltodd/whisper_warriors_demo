@@ -8,6 +8,8 @@ class AbilityFactory {
         return WhisperingFlames();
       case 'Soul Fracture':
         return SoulFracture();
+      case 'Shadow Blades':
+        return ShadowBlades();
       default:
         print("❌ ERROR: Unknown ability '$abilityName'"); // 🔍 Debugging
     }

@@ -1,11 +1,13 @@
+import 'dart:math';
 import 'package:flame/components.dart';
 import 'player.dart';
 import 'enemy.dart';
 import 'fireaura.dart';
 import 'explosion.dart';
+import 'shadowblades.dart'; // ✅ Import the Shadow Blade effect
 
 /// Enum for ability types (optional, for categorization)
-enum AbilityType { passive, onHit, onKill, aura, scaling }
+enum AbilityType { passive, onHit, onKill, aura, scaling, projectile }
 
 /// Base class for all abilities
 abstract class Ability {
@@ -51,36 +53,79 @@ class WhisperingFlames extends Ability {
     _elapsedTime += dt; // ✅ Accumulate time
 
     if (_elapsedTime >= 1.0) {
-      // 🔥 Apply damage **only once per second**
       _elapsedTime = 0.0; // ✅ Reset timer
 
-      // ✅ Scale damage with Spirit Level
       double scaledDamage = baseDamagePerSecond * player.spiritMultiplier;
 
       for (var enemy in player.gameRef.children.whereType<BaseEnemy>()) {
         double distance = (enemy.position - player.position).length;
 
         if (distance < range) {
-          // ✅ Calculate Critical Strike
           bool isCritical =
               player.gameRef.random.nextDouble() < player.critChance / 100;
           int finalDamage = isCritical
               ? (scaledDamage * player.critMultiplier).toInt()
               : scaledDamage.toInt();
 
-          enemy.takeDamage(finalDamage,
-              isCritical: isCritical); // ✅ Now correctly applied every second
+          enemy.takeDamage(finalDamage, isCritical: isCritical);
         }
       }
     }
   }
+}
 
-  /// Rolls to determine if this hit is a critical strike
-  bool _rollCriticalStrike(Player player) {
-    return (player.gameRef.random.nextDouble() * 100) < player.critChance;
+/// 💀 **Shadow Blades Ability**
+class ShadowBlades extends Ability {
+  double cooldown = 2.0; // Cooldown between throws
+  double elapsedTime = 0.0;
+
+  ShadowBlades()
+      : super(
+          name: "Shadow Blades",
+          description: "Throws spectral blades that pierce through enemies.",
+          type: AbilityType.projectile,
+        );
+
+  @override
+  void applyEffect(Player player) {
+    super.applyEffect(player);
+  }
+
+  @override
+  void onUpdate(Player player, double dt) {
+    elapsedTime += dt;
+    if (elapsedTime >= cooldown) {
+      elapsedTime = 0.0; // ✅ Reset cooldown
+      _throwBlades(player);
+    }
+  }
+
+  void _throwBlades(Player player) {
+    print("🗡️ Throwing Shadow Blades!");
+
+    int bladeCount = 3; // Number of blades
+    double spreadAngle = 15.0 * (pi / 180); // ✅ Convert degrees to radians
+
+    for (int i = 0; i < bladeCount; i++) {
+      double angleOffset = (i - 1) * spreadAngle;
+      Vector2 direction = Vector2(1, 0)..rotate(player.angle + angleOffset);
+
+      final blade = ShadowBladeProjectile(
+        damage: (10 * player.spiritMultiplier).toInt(),
+        velocity: direction *
+            (500 + (player.spiritLevel * 50)), // ✅ Scales with Spirit Level
+        player: player,
+      )
+        ..position = player.position.clone()
+        ..size = Vector2(48, 16) // Blade sprite size
+        ..anchor = Anchor.center;
+
+      player.gameRef.add(blade);
+    }
   }
 }
 
+/// 💀 **Soul Fracture Ability**
 class SoulFracture extends Ability {
   SoulFracture()
       : super(
@@ -134,67 +179,3 @@ extension ExplosionCooldown on Player {
     }
   }
 }
-/*
-class FadingCrescent extends Ability {
-  FadingCrescent()
-      : super(
-          name: "Fading Crescent",
-          description: "Deals more damage with fewer abilities left.",
-          type: AbilityType.Scaling,
-        );
-
-  @override
-  void applyEffect(Player player) {
-    // Increase damage based on the number of remaining abilities
-    player.updateDamageScaling();
-  }
-}
-
-class VampiricTouch extends Ability {
-  VampiricTouch()
-      : super(
-          name: "Vampiric Touch",
-          description: "Heal 5% of enemy HP on kill.",
-          type: AbilityType.OnKill,
-        );
-
-  @override
-  void onKill(Player player, Vector2 enemyPosition) {
-    player.heal(0.05); // Heal 5% of max HP per kill
-  }
-}
-
-class UnholyFortitude extends Ability {
-  UnholyFortitude()
-      : super(
-          name: "Unholy Fortitude",
-          description: "Damage taken is converted into temporary HP.",
-          type: AbilityType.Passive,
-        );
-
-  @override
-  void applyEffect(Player player) {
-    player.convertDamageToTempHP();
-  }
-}
-
-class WillOfTheForgotten extends Ability {
-  UnholyFortitude()
-      : super(
-          name: "Will of the Forgotten",
-          description: "The fewer abilities left, the stronger you get.",
-          type: AbilityType.Passive,
-        );
-
-  @override
-  void applyEffect(Player player) {
-    player.lessAbilitiesStrongerBase();
-  }
-}
-
-  @override
-  void applyEffect(Player player) {
-    super.applyEffect(player);
-    player.gameRef.add(FireAura(player: player)); // ✅ Add Fire Aura Effect
-  }
-*/
