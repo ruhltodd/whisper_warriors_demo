@@ -6,7 +6,7 @@ import 'wave2Enemy.dart';
 import 'player.dart';
 import 'main.dart';
 
-class Projectile extends SpriteComponent
+class Projectile extends SpriteAnimationComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   late Vector2 velocity;
   final int damage;
@@ -46,9 +46,26 @@ class Projectile extends SpriteComponent
     spawnPosition = position.clone(); // ✅ Track initial position
 
     if (isBossProjectile) {
-      sprite = await gameRef.loadSprite('boss_projectile.png');
+      final spriteSheet = await gameRef.images.load('boss_projectile.png');
+
+      // ✅ Assign animation
+      animation = SpriteAnimation.fromFrameData(
+        spriteSheet,
+        SpriteAnimationData.sequenced(
+          amount: 4, // ✅ Number of frames
+          stepTime: 0.3, // ✅ Adjust animation speed
+          textureSize: Vector2(80, 80), // ✅ Each frame size
+          loop: true, // ✅ Keeps looping while projectile is active
+        ),
+      );
     } else {
-      sprite = await gameRef.loadSprite('projectile_normal.png');
+      final normalSprite = await gameRef.loadSprite('projectile_normal.png');
+
+      // ✅ Single-frame animation for normal projectiles
+      animation = SpriteAnimation.spriteList(
+        [normalSprite],
+        stepTime: double.infinity, // ✅ Static sprite, never loops
+      );
     }
 
     add(CircleHitbox()); // ✅ Ensure hitbox exists
