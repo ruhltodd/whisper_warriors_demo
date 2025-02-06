@@ -137,16 +137,30 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
   }
 
+  bool alternatePattern = false;
+  int attackCount = 0; // ✅ Tracks number of attacks
+
   void _shootProjectiles() {
     print("🔥 Boss is firing projectiles!");
 
-    int numProjectiles = 4;
-    double spreadAngle = 360;
+    // ✅ Define the two patterns
+    List<double> cardinalAngles = [0, 90, 180, 270]; // N, S, E, W
+    List<double> diagonalAngles = [45, 135, 225, 315]; // NE, SE, SW, NW
 
-    for (int i = 0; i < numProjectiles; i++) {
-      double angle =
-          (-spreadAngle / 2) + (i * (spreadAngle / (numProjectiles - 1)));
-      double radians = angle * (pi / 180);
+// ✅ Determine the attack pattern
+    List<double> angles = alternatePattern ? diagonalAngles : cardinalAngles;
+    alternatePattern = !alternatePattern; // ✅ Toggle pattern
+
+    // 🔄 **Every 4th attack, reverse the direction**
+    if (attackCount % 4 == 3) {
+      angles = angles.reversed.toList(); // ✅ Reverse order
+      print("🔄 Reversing projectile direction!");
+    }
+
+    attackCount++; // ✅ Increment attack counter
+
+    for (double angle in angles) {
+      double radians = angle * (pi / 180); // ✅ Convert to radians
 
       Vector2 projectileVelocity = Vector2(cos(radians), sin(radians)) * 800;
 
@@ -158,7 +172,7 @@ class Boss1 extends BaseEnemy with Staggerable {
         velocity: projectileVelocity,
       )
         ..position = spawnPosition
-        ..size = Vector2(65, 65)
+        ..size = Vector2(40, 40)
         ..anchor = Anchor.center;
 
       gameRef.add(bossProjectile);

@@ -114,6 +114,7 @@ class Projectile extends SpriteAnimationComponent
       }
     } else {
       if (other is Player) {
+        print("🛑 Projectile collided with player at ${DateTime.now()}");
         other.takeDamage(damage);
         removeFromParent();
       }

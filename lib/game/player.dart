@@ -21,7 +21,7 @@ class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   // ✅ Base Stats (before Spirit Level modifications)
   double baseHealth = 100.0;
-  double baseSpeed = 120.0;
+  double baseSpeed = 140.0;
   double baseAttackSpeed = 1.0; // Attacks per second
   double baseDefense = 0.0; // % Damage reduction
   double baseDamage = 10.0;
@@ -67,8 +67,8 @@ class Player extends PositionComponent
   double explosionCooldown = 0.2;
 
   Player() : super(size: Vector2(128, 128)) {
-    add(RectangleHitbox.relative(
-      Vector2(0.6, 0.6), // 60% of the original size
+    add(CircleHitbox.relative(
+      0.5, // 50% of player size (adjust as needed)
       parentSize: size,
     ));
   }
@@ -127,13 +127,19 @@ class Player extends PositionComponent
 
     Vector2 totalMovement = movementDirection + joystickDelta;
     if (totalMovement.length > 0) {
-      position += totalMovement.normalized() * movementSpeed * dt;
+      Vector2 prevPosition = position.clone(); // ✅ Store previous position
+
+      // 🔹 **Manually apply linear interpolation for smoother movement**
+      position = prevPosition +
+          (totalMovement.normalized() * movementSpeed * dt) * 0.75;
+
       whisperWarrior.scale.x = totalMovement.x > 0 ? -1 : 1;
       whisperWarrior.playAnimation('attack');
     } else {
       whisperWarrior.playAnimation('idle');
     }
 
+    // 🔹 Ensure sprite updates smoothly with movement
     whisperWarrior.position = position.clone();
 
     // ✅ Ensure an enemy is targeted before shooting
