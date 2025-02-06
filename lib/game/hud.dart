@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
+import 'package:whisper_warriors/game/inventorybar.dart';
 import 'experience.dart';
 import 'main.dart';
 import 'abilitybar.dart';
@@ -25,7 +26,8 @@ class HUD extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double safeTop = MediaQuery.of(context).padding.top;
-
+    print(
+        "👜 Current Inventory: ${game.player.inventory.map((item) => item.name).toList()}");
     return Stack(
       children: [
         // ⏳ Game Timer (Top Right)
@@ -149,6 +151,13 @@ class HUD extends StatelessWidget {
           child: AbilityBar(player: game.player),
         ),
 
+        // 🛡 Inventory Bar (Below the Ability Bar)
+        Positioned(
+          top: safeTop +
+              70, // Adjust this value if needed based on your AbilityBar's height
+          left: 10,
+          child: InventoryBar(player: game.player),
+        ),
         // 🎮 Joystick (Bottom Left)
         Align(
           alignment: Alignment.bottomLeft,

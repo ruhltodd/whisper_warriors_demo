@@ -86,6 +86,9 @@ flutter:
     - assets/images/vampiric_touch.png
     - assets/images/whispering_flames.png
     - assets/images/will_of_the_forgotten.png
+    - assets/images/shard_of_umbrathos.png
+    - assets/images/veil_of_the_forgotten.png
+    - assets/images/umbral_fang.png
     - assets/images/fire_aura.png
     - assets/images/explosion.png
     - assets/images/boss1_idle.png

@@ -1,0 +1,269 @@
+﻿Adding Inventory Items to Whisper Warriors*
+---
+
+
+## Step 1: Define a New Inventory Item
+
+
+### 1. Create a New Item (Example: Phantom Cloak)
+Navigate to `lib/game/items/` and create a new file, e.g., **phantom_cloak.dart**.
+
+
+```dart
+import 'package:hive/hive.dart';
+import 'items.dart';
+import 'player.dart';
+
+
+part 'phantom_cloak.g.dart';
+
+
+@HiveType(typeId: 4) // Ensure this ID is unique
+class PhantomCloak extends Item {
+PhantomCloak()
+: super(
+name: "Phantom Cloak",
+description: "A cloak woven from spectral mist, increasing evasion.",
+stats: {"Evasion": 0.20}, // 20% chance to dodge attacks
+rarity: "Epic",
+)                                                                                       ;
+
+
+@override
+void applyEffect(Player player) {
+player.evasionChance += stats["Evasion"]!;
+print("🌀 Phantom Cloak equipped! Evasion increased.");
+}
+
+
+@override
+void removeEffect(Player player) {
+player.evasionChance -= stats["Evasion"]!;
+print("🌀 Phantom Cloak unequipped.");
+}
+}
+```
+
+
+### 2. Generate Hive Adapter
+Since Hive is used for persistence, generate the required adapter:
+```bash
+flutter packages pub run build_runner build
+```
+This will generate **phantom_cloak.g.dart**, enabling Hive to store the item.
+
+
+---
+
+
+## Step 2: Register the New Item in Hive
+
+
+### 1. Add to `main.dart`
+```dart
+void main() async {
+WidgetsFlutterBinding.ensureInitialized()                                               ;
+await Hive.initFlutter()                                                                ;
+
+
+// Register all inventory items
+Hive.registerAdapter(InventoryItemAdapter())                                            ;
+Hive.registerAdapter(UmbralFangAdapter())                                               ;
+Hive.registerAdapter(VeilOfTheForgottenAdapter())                                       ;
+Hive.registerAdapter(ShardOfUmbrathosAdapter())                                         ;
+Hive.registerAdapter(PhantomCloakAdapter())                                             ; // ✅ Register new item
+
+
+await Hive.openBox<InventoryItem>('inventoryBox');
+
+
+runApp(MyApp())                                                                         ;
+}
+```
+
+
+---
+
+
+## Step 3: Add Item to the Inventory System
+
+
+### 1. Modify `getAvailableItems()` in `main.dart`
+Add the new item to available inventory:
+```dart
+List<InventoryItem> getAvailableItems() {
+return [
+InventoryItem(item: UmbralFang(), isEquipped: false),
+InventoryItem(item: VeilOfTheForgotten(), isEquipped: false),
+InventoryItem(item: ShardOfUmbrathos(), isEquipped: false),
+InventoryItem(item: PhantomCloak(), isEquipped: false), // ✅ Added new item
+]                                                                                       ;
+}
+```
+
+
+---
+
+
+## Step 4: Equip Items in `Player.dart`
+
+
+### 1. Add Evasion Stat to `Player.dart`
+Modify the `Player` class to support the **evasion chance** effect from Phantom Cloak.
+
+
+```dart
+class Player extends PositionComponent {
+double baseHealth = 100.0                                                               ;
+double baseSpeed = 140.0                                                                ;
+double evasionChance = 0.0                                                              ; // ✅ Add evasion stat
+
+
+List<InventoryItem> equippedItems = []                                                  ;
+
+
+void applyEquippedItems() {
+for (var invItem in equippedItems) {
+invItem.applyEffect(this)                                                               ;
+}
+}
+
+
+void takeDamage(int damage) {
+if (evasionChance > 0 && gameRef.random.nextDouble() < evasionChance) {
+print("🌀 Attack Dodged! Phantom Cloak saved you.");
+return                                                                                  ; // Attack is dodged
+}
+
+
+currentHealth -= damage                                                                 ;
+if (currentHealth <= 0) {
+die()                                                                                   ;
+}
+}
+}
+```
+
+
+---
+
+
+## Step 5: Display Items in Inventory UI
+
+
+### 1. Modify `inventorybar.dart`
+Update the UI to show the **equipped inventory items**.
+
+
+```dart
+import 'package:flutter/material.dart';
+import 'player.dart';
+import 'inventoryitem.dart';
+
+
+class InventoryBar extends StatelessWidget {
+final Player player                                                                     ;
+
+
+const InventoryBar({Key? key, required this.player}) : super(key: key)                  ;
+
+
+@override
+Widget build(BuildContext context) {
+return Container(
+padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+decoration: BoxDecoration(
+color: Colors.black45,
+borderRadius: BorderRadius.circular(8),
+),
+child: Row(
+children: player.equippedItems.map((inventoryItem) {
+return Padding(
+padding: const EdgeInsets.symmetric(horizontal: 4.0),
+child: Column(
+mainAxisSize: MainAxisSize.min,
+children: [
+Image.asset(
+'assets/images/${inventoryItem.item.name.toLowerCase().replaceAll(" ", "_")}.png',
+width: 32,
+height: 32,
+fit: BoxFit.cover,
+),
+const SizedBox(height: 2),
+Text(
+inventoryItem.item.name,
+style: const TextStyle(
+color: Colors.white,
+fontSize: 10,
+),
+),
+],
+),
+)                                                                                       ;
+}).toList(),
+),
+)                                                                                       ;
+}
+}
+```
+
+
+---
+
+
+## Step 6: Equip Items from Selection Screen
+
+
+### 1. Update `InventoryScreen`
+Modify `itemselectionscreen.dart` to allow **drag-and-drop** selection.
+
+
+```dart
+void _toggleItemSelection(InventoryItem item) {
+setState(() {
+int firstEmptyIndex = _selectedItems.indexWhere((slot) => slot == null)                 ;
+
+
+if (_selectedItems.contains(item)) {
+_selectedItems[_selectedItems.indexOf(item)] = null                                     ;
+} else if (firstEmptyIndex != -1) {
+_selectedItems[firstEmptyIndex] = item                                                  ;
+}
+})                                                                                      ;
+}
+```
+
+
+---
+
+
+## Step 7: Test and Debug
+
+
+### 1. Run the Game
+```bash
+flutter run
+```
+
+
+### 2. Debugging Tips
+- Check if the **Phantom Cloak** appears in the **inventory selection screen**.
+- Select the item and **confirm** the selection.
+- When taking damage, verify if the **evasion effect** works:
+```bash
+flutter: 🌀 Attack Dodged! Phantom Cloak saved you.
+```
+- Open the **HUD Inventory Bar** and ensure the **item is displayed**.
+
+
+---
+
+
+## Summary
+1. **Create** a new item (`phantom_cloak.dart`) with `applyEffect()`.
+2. **Register** it in **Hive** (`main.dart`).
+3. **Add** it to **available items** (`getAvailableItems()`).
+4. **Modify `Player.dart`** to apply its effects.
+5. **Update the UI** (`inventorybar.dart`) to show equipped items.
+6. **Allow selection** from `itemselectionscreen.dart`.
+7. **Test the game** and ensure the effects work.

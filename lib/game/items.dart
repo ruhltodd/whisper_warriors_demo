@@ -1,18 +1,27 @@
-import 'package:flame/components.dart';
+import 'package:hive/hive.dart';
 import 'player.dart';
 
-// 🔹 **Base Class for Items**
-abstract class Item {
+part 'items.g.dart'; // ✅ Required for Hive TypeAdapter Generation
+
+@HiveType(typeId: 99) // ✅ Unique ID for the base class
+abstract class Item extends HiveObject {
+  @HiveField(0)
   final String name;
+
+  @HiveField(1)
   final String description;
-  final String rarity; // ✅ Add rarity field
-  final Map<String, double> stats; // ✅ Add stats field
+
+  @HiveField(2)
+  final String rarity;
+
+  @HiveField(3)
+  final Map<String, double> stats;
 
   Item({
     required this.name,
     required this.description,
-    required this.rarity, // ✅ Initialize rarity
-    required this.stats, // ✅ Initialize stats
+    required this.rarity,
+    required this.stats,
   });
 
   void applyEffect(Player player);
@@ -20,14 +29,15 @@ abstract class Item {
 }
 
 // 🗡️ **Umbral Fang - Increases attack speed & allows piercing**
+@HiveType(typeId: 1) // ✅ Unique typeId
 class UmbralFang extends Item {
   UmbralFang()
       : super(
           name: "Umbral Fang",
           description:
               "A dagger formed from pure shadow, phasing through enemies.",
-          rarity: "Rare", // ✅ Set rarity
-          stats: {"Attack Speed": 0.15, "Piercing": 1}, // ✅ Define stats
+          rarity: "Rare",
+          stats: {"Attack Speed": 0.15, "Piercing": 1},
         );
 
   @override
@@ -45,13 +55,14 @@ class UmbralFang extends Item {
 }
 
 // 🏹 **Veil of the Forgotten - Reduces damage when below 50% HP**
+@HiveType(typeId: 2) // ✅ Unique typeId
 class VeilOfTheForgotten extends Item {
   VeilOfTheForgotten()
       : super(
           name: "Veil of the Forgotten",
           description: "A spectral robe woven from lost memories.",
           rarity: "Epic",
-          stats: {"Defense Bonus": 0.20, "Threshold": 0.50}, // ✅ Add stats
+          stats: {"Defense Bonus": 0.20, "Threshold": 0.50},
         );
 
   @override
@@ -67,6 +78,7 @@ class VeilOfTheForgotten extends Item {
 }
 
 // 💠 **Shard of Umbrathos - Boosts Spirit Multiplier by 15%**
+@HiveType(typeId: 3) // ✅ Unique typeId
 class ShardOfUmbrathos extends Item {
   ShardOfUmbrathos()
       : super(
@@ -74,7 +86,7 @@ class ShardOfUmbrathos extends Item {
           description:
               "A fragment of the Fading King’s power, still pulsing with energy.",
           rarity: "Legendary",
-          stats: {"Spirit Multiplier": 0.15}, // ✅ Add stats
+          stats: {"Spirit Multiplier": 0.15},
         );
 
   @override
@@ -89,64 +101,3 @@ class ShardOfUmbrathos extends Item {
     print("💠 Shard of Umbrathos unequipped.");
   }
 }
-///legendary sword.. less than 1% drop rate
-/*class Epitaph extends Item {
-  Epitaph()
-      : super(
-          name: "Epitaph, Greatsword of Whispers",
-          description:
-              "A blade forged from lost souls. It murmurs the echoes of forgotten warriors.",
-          type: ItemType.weapon,
-        );
-
-  @override
-  void onEquip(Player player) {
-    print("🗡️ Epitaph Equipped!");
-
-    // 🔹 **Apply Whispering Strikes Effect**
-    player.attackModifiers.add(WhisperingStrikes());
-
-    // 🔹 **Apply Passive Damage Reduction**
-    player.addPassiveEffect(PassiveEffect(
-        /*  name: "Veil of the Lost",
-      description: "Reduces incoming damage by 20% when below 50% HP.",
-      condition: () => player.currentHealth < player.maxHealth * 0.5,
-      effect: () => player.defense *= 1.2, // Increase defense by 20%
-      removeEffect: () =>
-          player.defense /= 1.2,*/ // Reset defense when unequipped
-        ));
-  }
-
-  @override
-  void onUnequip(Player player) {
-    print("🗡️ Epitaph Unequipped!");
-
-    // Remove attack modifier
-    player.attackModifiers.removeWhere((effect) => effect is WhisperingStrikes);
-
-    // Remove passive damage reduction
-    player.removePassiveEffect("Veil of the Lost");
-  }
-}
-
-class PassiveEffect {}
-
-class WhisperingStrikes extends AttackModifier {
-  // WhisperingStrikes() : super(name: "Whispering Strikes");
-
-  @override
-  void applyEffect(Player player, PositionComponent target, int damage) {
-    if (player.gameRef.random.nextDouble() < 0.15) {
-      // 15% proc chance
-      Future.delayed(Duration(milliseconds: 150), () {
-        if (target.isMounted) {
-          print("🔁 Whispering Strike triggered! Repeating attack...");
-          player.shootProjectile(target, (damage * 0.5).toInt()); // 50% damage
-        }
-      });
-    }
-  }
-}
-
-class AttackModifier {}
-*/

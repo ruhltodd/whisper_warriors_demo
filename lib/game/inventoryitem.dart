@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'fireaura.dart';
 import 'items.dart'; // ✅ Import items.dart to access Item class
 import 'player.dart'; // ✅ Import Player to access stats modification
 
@@ -20,16 +21,16 @@ class InventoryItem extends HiveObject {
   String get rarity => item.rarity; // ✅ Retrieve from item
   Map<String, double> get stats => item.stats; // ✅ Retrieve from item
 
-  // ✅ Apply effects when equipped
+  @override
   void applyEffect(Player player) {
+    // Apply the base effects (e.g., modifying attack speed, defense, etc.)
     item.stats.forEach((key, value) {
-      // ✅ Explicit reference to `item.stats`
       switch (key) {
         case "Attack Speed":
           player.baseAttackSpeed *= (1 + value);
           break;
         case "Piercing":
-          player.hasUmbralFang = true; // ✅ Enables piercing projectiles
+          player.hasUmbralFang = true;
           break;
         case "Defense Bonus":
           if (player.currentHealth <= player.maxHealth * 0.5) {
@@ -43,7 +44,22 @@ class InventoryItem extends HiveObject {
           print("⚠️ Unknown stat: $key");
       }
     });
+
     print("🎭 Applied ${item.name} to Player.");
+
+    // Ensure FireAura is added **AFTER** the Player is mounted
+    Future.delayed(Duration(milliseconds: 100), () {
+      if (player.isMounted && player.gameRef != null) {
+        if (!player.gameRef.children.any((child) => child is FireAura)) {
+          player.gameRef.add(FireAura(player: player));
+          print("🔥 FireAura applied to Player!");
+        } else {
+          print("🔥 FireAura already active.");
+        }
+      } else {
+        print("⚠️ Cannot add FireAura: player is not mounted yet.");
+      }
+    });
   }
 
   // ✅ Remove effects when unequipped

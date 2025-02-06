@@ -59,9 +59,12 @@ class Player extends PositionComponent
   late WhisperWarrior whisperWarrior;
   BaseEnemy? closestEnemy;
   List<Ability> abilities = [];
-  final List<String> selectedAbilities; // ✅ Store selected abilities
   final ValueNotifier<List<Ability>> abilityNotifier =
-      ValueNotifier<List<Ability>>([]);
+      ValueNotifier([]); // ✅ Tracks ability updates
+  final List<String> selectedAbilities; // ✅ Store selected abilities
+  final ValueNotifier<List<InventoryItem>> equippedItemsNotifier =
+      ValueNotifier([]); // ✅ Live-updating notifier
+
   bool isDead = false;
 
   // ✅ Special Player Stats
@@ -80,6 +83,7 @@ class Player extends PositionComponent
     ShardOfUmbrathos()
   ]; // // 🏹 **Stores collected items**
   List<InventoryItem> equippedItems; // ✅ Store equipped items
+  ValueNotifier<List<Item>> inventoryNotifier = ValueNotifier([]);
 
   bool hasUmbralFang = false;
   bool hasVeilOfForgotten = false;
@@ -118,27 +122,39 @@ class Player extends PositionComponent
       ..anchor = Anchor.center
       ..position = position.clone();
     gameRef.add(whisperWarrior);
+
     // ✅ Apply Effects of Pre-Added Items
+    // For each item in the player's local inventory, wrap it as an InventoryItem,
+    // add it to the InventoryManager, and equip it once.
     for (var item in inventory) {
+      InventoryItem invItem = InventoryItem(item: item, isEquipped: true);
+      InventoryManager.addItem(invItem);
       equipItem(item.name);
     }
   }
 
-  // 🏹 **Equip an Item**
+  // ✅ **Equip an Item & Update UI**
   void equipItem(String itemName) {
     List<InventoryItem> matchedItems = InventoryManager.getInventory()
-        .where(
-          (inventoryItem) =>
-              inventoryItem.item.name == itemName && inventoryItem.isEquipped,
-        )
+        .where((inventoryItem) => inventoryItem.item.name == itemName)
         .toList();
 
     if (matchedItems.isNotEmpty) {
-      // Apply effect to the first matched item
       matchedItems.first.applyEffect(this);
-      print("🎭 Equipped: ${matchedItems.first.name}");
+      if (!equippedItems.contains(matchedItems.first)) {
+        equippedItems.add(matchedItems.first);
+        equippedItemsNotifier.value = List.from(equippedItems); // ✅ Notify UI
+      }
+      print("🎭 Equipped: ${matchedItems.first.item.name}");
     } else {
       print("⚠️ No equipped item found for $itemName");
+    }
+
+    // ✅ **Remove an Item & Update UI**
+    void removeItem(Item item) {
+      equippedItems.removeWhere((invItem) => invItem.item == item);
+      equippedItemsNotifier.value = List.from(equippedItems); // ✅ Notify UI
+      print("🚫 Unequipped: ${item.name}");
     }
 
     // Debug logs
@@ -166,9 +182,12 @@ class Player extends PositionComponent
   }
 
   void applyEquippedItems() {
-    hasUmbralFang = equippedItems.contains("Umbral Fang");
-    hasVeilOfForgotten = equippedItems.contains("Veil of the Forgotten");
-    hasShardOfUmbrathos = equippedItems.contains("Shard of Umbrathos");
+    hasUmbralFang =
+        equippedItems.any((invItem) => invItem.item.name == "Umbral Fang");
+    hasVeilOfForgotten = equippedItems
+        .any((invItem) => invItem.item.name == "Veil of the Forgotten");
+    hasShardOfUmbrathos = equippedItems
+        .any((invItem) => invItem.item.name == "Shard of Umbrathos");
   }
 
   void applyInventoryItemEffect(InventoryItem item) {
@@ -385,6 +404,12 @@ class Player extends PositionComponent
 
     gameRef.add(projectile);
     print("🚀 PLAYER PROJECTILE FIRED!");
+  }
+
+  void addItem(Item item) {
+    inventory.add(item);
+    inventoryNotifier.value = List.from(inventory); // ✅ Triggers UI update
+    print("📦 Added ${item.name} to inventory.");
   }
 
   void addAbility(Ability ability) {

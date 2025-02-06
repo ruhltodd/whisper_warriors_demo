@@ -17,19 +17,19 @@ class InventoryItemAdapter extends TypeAdapter<InventoryItem> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return InventoryItem(
-      item: fields[0] as Item, // ✅ Deserialize Item instance
-      isEquipped: fields[1] as bool, // ✅ Read equipped status
+      item: fields[0] as Item,
+      isEquipped: (fields[1] as bool?) ?? false, // ✅ Handle null safely
     );
   }
 
   @override
   void write(BinaryWriter writer, InventoryItem obj) {
     writer
-      ..writeByte(2) // ✅ Adjust number of fields
+      ..writeByte(2)
       ..writeByte(0)
-      ..write(obj.item) // ✅ Serialize Item instance
+      ..write(obj.item)
       ..writeByte(1)
-      ..write(obj.isEquipped); // ✅ Serialize equipped status
+      ..write(obj.isEquipped);
   }
 
   @override

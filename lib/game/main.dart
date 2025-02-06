@@ -1,6 +1,7 @@
 import 'dart:async'; //
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/inventoryitem.dart';
+import 'package:whisper_warriors/game/itemselectionscreen.dart'; // ✅ Add this
 import 'inventory.dart'; // Ensure this is imported
 import 'package:flame/game.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -18,7 +19,7 @@ import 'wave1Enemy.dart';
 import 'wave2Enemy.dart';
 import 'mainmenu.dart';
 import 'itemselectionscreen.dart';
-import 'items.dart';
+import 'package:whisper_warriors/game/items.dart';
 import 'abilityselectionscreen.dart';
 import 'abilityfactory.dart';
 import 'abilities.dart';
@@ -27,16 +28,20 @@ import 'explosion.dart';
 import 'dropitem.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // ✅ Required for async operations
-  await Hive.initFlutter(); // ✅ Initialize Hive database
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
 
-  // ✅ Register InventoryItem Adapter (Required for saving items)
+  // Register adapters:
   Hive.registerAdapter(InventoryItemAdapter());
+  // If using aliases:
+  Hive.registerAdapter(UmbralFangAdapter());
+  Hive.registerAdapter(VeilOfTheForgottenAdapter());
+  // If you have ShardOfUmbrathos, register its adapter as well:
+  Hive.registerAdapter(ShardOfUmbrathosAdapter());
 
-  // ✅ Open a Hive box for storing inventory data
   await Hive.openBox<InventoryItem>('inventoryBox');
 
-  runApp(MyApp()); // ✅ Start the app after initializing Hive
+  runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -112,17 +117,10 @@ class _MyAppState extends State<MyApp> {
               InventoryScreen(
                 availableItems: getAvailableItems(),
                 onConfirm: (finalSelectedItems) {
-                  // Save the selected inventory items
                   equippedItems = finalSelectedItems;
-                  // Transition to the game state
                   setState(() {
                     _selectingItems = false;
                     _gameStarted = true;
-                  });
-                },
-                onItemSelected: (selectedItem) {
-                  setState(() {
-                    equippedItems.add(selectedItem);
                   });
                 },
               ),
