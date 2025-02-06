@@ -5,15 +5,20 @@ import 'package:flutter/foundation.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
+import 'package:whisper_warriors/game/inventoryitem.dart';
 import 'package:whisper_warriors/game/items.dart';
+import 'abilityfactory.dart';
 import 'healthbar.dart';
+import 'inventory.dart';
 import 'main.dart';
 import 'enemy.dart';
+import 'passives.dart';
 import 'projectile.dart';
 import 'whisperwarrior.dart';
 import 'healingnumber.dart';
 import 'abilities.dart';
 import 'explosion.dart';
+import 'items.dart';
 import 'fireaura.dart';
 import 'package:flame/input.dart'; // ✅ Required for keyboard input
 
@@ -54,6 +59,7 @@ class Player extends PositionComponent
   late WhisperWarrior whisperWarrior;
   BaseEnemy? closestEnemy;
   List<Ability> abilities = [];
+  final List<String> selectedAbilities; // ✅ Store selected abilities
   final ValueNotifier<List<Ability>> abilityNotifier =
       ValueNotifier<List<Ability>>([]);
   bool isDead = false;
@@ -66,11 +72,37 @@ class Player extends PositionComponent
   double lastExplosionTime = 0.0;
   double explosionCooldown = 0.2;
 
-  Player() : super(size: Vector2(128, 128)) {
+  // ✅ Inventory System
+  // ✅ Inventory System
+  List<Item> inventory = [
+    UmbralFang(),
+    VeilOfTheForgotten(),
+    ShardOfUmbrathos()
+  ]; // // 🏹 **Stores collected items**
+  List<InventoryItem> equippedItems; // ✅ Store equipped items
+
+  bool hasUmbralFang = false;
+  bool hasVeilOfForgotten = false;
+  bool hasShardOfUmbrathos = false;
+  bool hasItem(String itemName) {
+    return inventory.any((item) => item.name == itemName); // ✅ Compare names
+  }
+
+  void applySelectedAbilities() {
+    for (var ability in selectedAbilities) {
+      addAbility(AbilityFactory.createAbility(ability)!);
+    }
+  }
+
+  Player({required this.selectedAbilities, required this.equippedItems})
+      : super(size: Vector2(128, 128)) {
     add(CircleHitbox.relative(
       0.5, // 50% of player size (adjust as needed)
       parentSize: size,
     ));
+
+    // Removed applySelectedAbilities() to prevent double application.
+    applyEquippedItems();
   }
 
   get attackModifiers => null;
@@ -86,11 +118,84 @@ class Player extends PositionComponent
       ..anchor = Anchor.center
       ..position = position.clone();
     gameRef.add(whisperWarrior);
+    // ✅ Apply Effects of Pre-Added Items
+    for (var item in inventory) {
+      equipItem(item.name);
+    }
+  }
+
+  // 🏹 **Equip an Item**
+  void equipItem(String itemName) {
+    List<InventoryItem> matchedItems = InventoryManager.getInventory()
+        .where(
+          (inventoryItem) =>
+              inventoryItem.item.name == itemName && inventoryItem.isEquipped,
+        )
+        .toList();
+
+    if (matchedItems.isNotEmpty) {
+      // Apply effect to the first matched item
+      matchedItems.first.applyEffect(this);
+      print("🎭 Equipped: ${matchedItems.first.name}");
+    } else {
+      print("⚠️ No equipped item found for $itemName");
+    }
+
+    // Debug logs
+    print("🔹 Player Stats After Equipping: ");
+    print(" - Attack Speed: $attackSpeed");
+    print(" - Defense: $defense");
+    print(" - Spirit Multiplier: $spiritMultiplier");
+  }
+
+  // 🎭 **Remove an Item**
+  void removeItem(Item item) {
+    if (equippedItems.contains(item)) {
+      equippedItems.remove(item);
+      item.removeEffect(this);
+      print("🚫 Unequipped: ${item.name}");
+    }
+  }
+
+  // 🎒 **Collect an Item (Adds to inventory but doesn't equip)**
+  void collectItem(Item item) {
+    if (!inventory.contains(item)) {
+      inventory.add(item);
+      print("📦 Collected: ${item.name}");
+    }
+  }
+
+  void applyEquippedItems() {
+    hasUmbralFang = equippedItems.contains("Umbral Fang");
+    hasVeilOfForgotten = equippedItems.contains("Veil of the Forgotten");
+    hasShardOfUmbrathos = equippedItems.contains("Shard of Umbrathos");
+  }
+
+  void applyInventoryItemEffect(InventoryItem item) {
+    item.stats.forEach((stat, value) {
+      if (stat == "Attack Speed") baseAttackSpeed *= (1 + value);
+      if (stat == "Defense Bonus" && currentHealth < maxHealth * 0.5)
+        baseDefense *= (1 + value);
+      if (stat == "Spirit Multiplier") spiritMultiplier *= (1 + value);
+    });
+  }
+
+  void removeInventoryItemEffect(InventoryItem item) {
+    item.stats.forEach((stat, value) {
+      if (stat == "Attack Speed") baseAttackSpeed /= (1 + value);
+      if (stat == "Defense Bonus") baseDefense /= (1 + value);
+      if (stat == "Spirit Multiplier") spiritMultiplier /= (1 + value);
+    });
   }
 
   void updateSpiritMultiplier() {
     // ✅ Each Spirit Level increases all stats by 5%
     spiritMultiplier = 1.0 + (spiritLevel * 0.05);
+
+    // 🔹 **Apply "Shard of Umbrathos" bonus if equipped**
+    if (equippedItems.any((item) => item is ShardOfUmbrathos)) {
+      spiritMultiplier *= 1.15; // ✅ 15% Bonus to Spirit Multiplier
+    }
   }
 
   void updateJoystick(Vector2 delta) {
@@ -193,6 +298,14 @@ class Player extends PositionComponent
     if (isDead) return; // Prevent extra damage when player dies
 
     double reducedDamage = damage * (1 - (defense / 100));
+
+    // 🏹 **Apply Veil of the Forgotten effect if HP < 50%**
+    if (equippedItems.any((item) => item is VeilOfTheForgotten) &&
+        currentHealth < maxHealth * 0.5) {
+      reducedDamage *= 0.8; // 🔥 Reduce damage by 20%
+      print("🌀 Veil of the Forgotten active! Damage reduced.");
+    }
+
     currentHealth -=
         reducedDamage.clamp(1, maxHealth).toInt(); // ✅ Explicit cast
 
@@ -256,6 +369,7 @@ class Player extends PositionComponent
       damage: damage, // ✅ Ensure `damage` is an int
       velocity: direction * 500, // ✅ Now correctly passing velocity
       maxRange: 1600, // ✅ Player projectiles should have a range
+      player: this, // ✅ Pass the player reference
       onHit: (enemy) {
         // ✅ Move Cursed Echo trigger here
         if (hasAbility<CursedEcho>()) {

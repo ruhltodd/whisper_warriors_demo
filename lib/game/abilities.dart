@@ -44,9 +44,17 @@ class WhisperingFlames extends Ability {
         );
 
   @override
+  @override
   void applyEffect(Player player) {
     super.applyEffect(player);
-    player.gameRef.add(FireAura(player: player)); // ✅ Add Fire Aura Effect
+    // Delay adding the FireAura until the current frame completes.
+    Future.delayed(Duration.zero, () {
+      if (player.isMounted && player.gameRef != null) {
+        player.gameRef.add(FireAura(player: player));
+      } else {
+        print("⚠️ Cannot add FireAura: player is not mounted yet.");
+      }
+    });
   }
 
   @override

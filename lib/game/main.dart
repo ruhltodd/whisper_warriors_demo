@@ -17,6 +17,8 @@ import 'enemy.dart';
 import 'wave1Enemy.dart';
 import 'wave2Enemy.dart';
 import 'mainmenu.dart';
+import 'itemselectionscreen.dart';
+import 'items.dart';
 import 'abilityselectionscreen.dart';
 import 'abilityfactory.dart';
 import 'abilities.dart';
@@ -45,7 +47,26 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _gameStarted = false;
   bool _selectingAbilities = false;
+  bool _selectingItems = false; // ✅ New state for item selection
   List<String> selectedAbilities = [];
+  List<InventoryItem> equippedItems = []; // Declare the equipped items list
+
+  List<InventoryItem> getAvailableItems() {
+    return [
+      InventoryItem(
+        item: UmbralFang(),
+        isEquipped: false,
+      ),
+      InventoryItem(
+        item: VeilOfTheForgotten(),
+        isEquipped: false,
+      ),
+      InventoryItem(
+        item: ShardOfUmbrathos(),
+        isEquipped: false,
+      ),
+    ];
+  }
 
   void startGame() {
     setState(() {
@@ -56,8 +77,9 @@ class _MyAppState extends State<MyApp> {
   void onAbilitiesSelected(List<String> abilities) {
     setState(() {
       selectedAbilities = abilities;
-      _gameStarted = true;
       _selectingAbilities = false;
+      _selectingItems =
+          true; // Go to Inventory selection instead of starting the game
     });
   }
 
@@ -72,15 +94,40 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         body: Stack(
           children: [
-            if (!_gameStarted && !_selectingAbilities)
+            // 🎮 Main Menu
+            if (!_gameStarted && !_selectingAbilities && !_selectingItems)
               MainMenu(
                 startGame: startGame,
                 openOptions: openOptions,
               ),
+
+            // ⚡ Ability Selection (new condition)
             if (_selectingAbilities)
               AbilitySelectionScreen(
                 onAbilitiesSelected: onAbilitiesSelected,
               ),
+
+            // Inventory selection
+            if (_selectingItems)
+              InventoryScreen(
+                availableItems: getAvailableItems(),
+                onConfirm: (finalSelectedItems) {
+                  // Save the selected inventory items
+                  equippedItems = finalSelectedItems;
+                  // Transition to the game state
+                  setState(() {
+                    _selectingItems = false;
+                    _gameStarted = true;
+                  });
+                },
+                onItemSelected: (selectedItem) {
+                  setState(() {
+                    equippedItems.add(selectedItem);
+                  });
+                },
+              ),
+
+            // 🎮 Game UI & HUD
             if (_gameStarted)
               GameWidget(
                 game: RogueShooterGame(selectedAbilities: selectedAbilities),
@@ -91,13 +138,13 @@ class _MyAppState extends State<MyApp> {
                             .updateJoystick(delta),
                         experienceBar: (game as RogueShooterGame).experienceBar,
                         game: game as RogueShooterGame,
-                        bossHealthNotifier: (game as RogueShooterGame)
-                            .bossHealthNotifier, // ✅ Add this
-                        bossStaggerNotifier: (game as RogueShooterGame)
-                            .bossStaggerNotifier, // ✅ Add Stagger Tracking
+                        bossHealthNotifier:
+                            (game as RogueShooterGame).bossHealthNotifier,
+                        bossStaggerNotifier:
+                            (game as RogueShooterGame).bossStaggerNotifier,
                       ),
-                  'retryOverlay': (_, game) => RetryOverlay(
-                      game: game as RogueShooterGame), // ✅ Add this
+                  'retryOverlay': (_, game) =>
+                      RetryOverlay(game: game as RogueShooterGame),
                 },
               ),
           ],
@@ -123,6 +170,7 @@ class RogueShooterGame extends FlameGame
   int enemyCount = 0; // ✅ Add this if missing
   int maxEnemies = 30;
   final List<String> selectedAbilities;
+  List<InventoryItem> equippedItems = InventoryManager.getEquippedItems();
   final Random random = Random(); // ✅ Define Random instance
 
   bool isPaused = false;
@@ -206,7 +254,10 @@ class RogueShooterGame extends FlameGame
     );
     add(grassMap);
 
-    player = Player()
+    player = Player(
+      selectedAbilities: selectedAbilities, // ✅ Pass abilities
+      equippedItems: equippedItems, // ✅ Pass selected items
+    )
       ..position = Vector2(size.x / 2, size.y / 2)
       ..size = Vector2(64, 64);
     add(player);
@@ -490,7 +541,9 @@ class RogueShooterGame extends FlameGame
           add(grassMap);
 
           // ✅ 5. Reset Player
-          player = Player()
+          player = Player(
+              selectedAbilities: selectedAbilities,
+              equippedItems: equippedItems)
             ..position = Vector2(size.x / 2, size.y / 2)
             ..size = Vector2(64, 64);
           add(player);

@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'enemy.dart';
+import 'inventoryitem.dart';
 import 'wave2Enemy.dart';
 import 'player.dart';
 import 'main.dart';
+import 'items.dart';
 
 class Projectile extends SpriteAnimationComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
@@ -14,6 +16,8 @@ class Projectile extends SpriteAnimationComponent
   final double maxRange;
   late Vector2 spawnPosition;
   final void Function(BaseEnemy)? onHit; // ✅ Callback for hit logic
+  final Player? player; // ✅ Add player reference
+  bool shouldPierce = false; // ✅ Declare before checking conditions
 
   // 🔹 **General Constructor**
   Projectile({
@@ -22,12 +26,14 @@ class Projectile extends SpriteAnimationComponent
     this.isBossProjectile = false,
     this.maxRange = 800,
     this.onHit, // ✅ Now optional (for abilities like Cursed Echo)
+    this.player, // ✅ Include player reference if available
   }) : super(size: Vector2(50, 50)); // Adjust size as needed
 
   // 🔹 **Named Constructor for Player**
   Projectile.playerProjectile({
     required int damage,
     required Vector2 velocity,
+    required Player player, // ✅ Ensure player is passed
     void Function(BaseEnemy)? onHit, // ✅ Pass `onHit` for abilities
   }) : this(
           damage: damage,
@@ -35,6 +41,7 @@ class Projectile extends SpriteAnimationComponent
           maxRange: 800,
           isBossProjectile: false,
           onHit: onHit, // ✅ Ensure `onHit` is passed
+          player: player, // ✅ Assign player
         );
 
   // 🔹 **Named Constructor for Boss**
@@ -106,6 +113,20 @@ class Projectile extends SpriteAnimationComponent
         // ✅ Trigger `onHit` if it exists (Cursed Echo, special effects, etc.)
         onHit?.call(other);
 
+        // Inside the projectile collision logic
+        if (player?.hasItem("umbral_fang") ?? false) {
+          shouldPierce = true;
+        }
+
+        removeFromParent();
+      } else if (other is Wave2Enemy) {
+        other.takeDamage(damage);
+        onHit?.call(other);
+
+        // Inside the projectile collision logic
+        if (player?.hasItem("umbral_fang") ?? false) {
+          shouldPierce = true;
+        }
         removeFromParent();
       } else if (other is Wave2Enemy) {
         other.takeDamage(damage);
