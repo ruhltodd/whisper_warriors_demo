@@ -1,5 +1,5 @@
-import 'dart:math'; // ✅ Fix for cos and sin
-import 'dart:ui'; // ✅ Fix for VoidCallback
+import 'dart:math';
+import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/collisions.dart';
@@ -16,20 +16,22 @@ import 'staggerable.dart';
 
 class Boss1 extends BaseEnemy with Staggerable {
   bool enraged = false;
+  bool projectilesInvisible = false; // ✅ Track projectile visibility
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
   final double damageNumberInterval = 0.5;
   bool hasDroppedItem = false;
   final Function(double) onHealthChanged;
-  final ValueChanged<double>
-      onStaggerChanged; // ✅ Notify HUD of stagger changes
-  VoidCallback onDeath; // ✅ Handles boss death
-  late final double maxHealth; // ✅ Store original max health
+  final ValueChanged<double> onStaggerChanged;
+  VoidCallback onDeath;
+  late final double maxHealth;
   late final SpriteAnimation idleAnimation;
   late final SpriteAnimation walkAnimation;
   late StaggerBar staggerBar;
   final Random random = Random();
-  final ValueNotifier<double> bossStaggerNotifier; // ✅ UI Notifier
+  final ValueNotifier<double> bossStaggerNotifier;
+  int attackCount = 0;
+  bool alternatePattern = false;
 
   Boss1({
     required Player player,
@@ -71,45 +73,21 @@ class Boss1 extends BaseEnemy with Staggerable {
     );
 
     animation = idleAnimation;
-    add(RectangleHitbox()); // ✅ Ensure hitbox exists
+    add(RectangleHitbox());
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    updateStagger(dt); // ✅ Handles stagger logic
+    updateStagger(dt);
 
-    if (isStaggered) {
-      // ✅ Ensure stagger recovers after time passes
-      return;
-    }
+    if (isStaggered) return;
+
     timeSinceLastAttack += dt;
     timeSinceLastDamageNumber += dt;
 
     _updateMovement(dt);
     _handleAttacks(dt);
-  }
-
-  @override
-  void _triggerStagger() {
-    if (isStaggered) return;
-
-    print("⚡ BOSS STAGGERED!");
-    isStaggered = true;
-    speed *= 0.2; // ✅ Slow down movement
-    attackCooldown *= 1.5; // ✅ Slow attack speed
-
-    add(OpacityEffect.to(
-        0.5, EffectController(duration: 0.2))); // ✅ Visual effect
-
-    Future.delayed(Duration(seconds: 3), () {
-      isStaggered = false;
-      speed /= 0.5;
-      attackCooldown /= 1.5;
-      staggerProgress = 0; // ✅ Reset stagger bar
-      bossStaggerNotifier.value = 0; // ✅ Update UI
-      add(OpacityEffect.to(1.0, EffectController(duration: 0.2)));
-    });
   }
 
   void _updateMovement(double dt) {
@@ -137,33 +115,26 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
   }
 
-  bool alternatePattern = false;
-  int attackCount = 0; // ✅ Tracks number of attacks
-
   void _shootProjectiles() {
     print("🔥 Boss is firing projectiles!");
 
-    // ✅ Define the two patterns
-    List<double> cardinalAngles = [0, 90, 180, 270]; // N, S, E, W
-    List<double> diagonalAngles = [45, 135, 225, 315]; // NE, SE, SW, NW
+    List<double> cardinalAngles = [0, 90, 180, 270];
+    List<double> diagonalAngles = [45, 135, 225, 315];
 
-// ✅ Determine the attack pattern
     List<double> angles = alternatePattern ? diagonalAngles : cardinalAngles;
-    alternatePattern = !alternatePattern; // ✅ Toggle pattern
+    alternatePattern = !alternatePattern;
 
-    // 🔄 **Every 4th attack, reverse the direction**
     if (attackCount % 4 == 3) {
-      angles = angles.reversed.toList(); // ✅ Reverse order
+      angles = angles.reversed.toList();
       print("🔄 Reversing projectile direction!");
     }
 
-    attackCount++; // ✅ Increment attack counter
+    attackCount++;
 
     for (double angle in angles) {
-      double radians = angle * (pi / 180); // ✅ Convert to radians
+      double radians = angle * (pi / 180);
 
       Vector2 projectileVelocity = Vector2(cos(radians), sin(radians)) * 800;
-
       Vector2 spawnOffset = projectileVelocity.normalized() * 50;
       Vector2 spawnPosition = position.clone() + spawnOffset;
 
@@ -174,6 +145,10 @@ class Boss1 extends BaseEnemy with Staggerable {
         ..position = spawnPosition
         ..size = Vector2(40, 40)
         ..anchor = Anchor.center;
+
+      if (projectilesInvisible) {
+        bossProjectile.opacity = 0.0; // ✅ Make projectiles invisible
+      }
 
       gameRef.add(bossProjectile);
       print("🔥 Boss Projectile fired at angle: $angle°");
@@ -189,7 +164,6 @@ class Boss1 extends BaseEnemy with Staggerable {
     int finalDamage =
         isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
 
-    // ✅ **Double damage if staggered**
     if (isStaggered) {
       finalDamage *= 2;
     }
@@ -197,12 +171,14 @@ class Boss1 extends BaseEnemy with Staggerable {
     health -= finalDamage;
     onHealthChanged(health.toDouble());
 
-    // ✅ **Slower stagger accumulation**
-    staggerProgress += baseDamage * 0.04; // 🔥 Reduce accumulation rate
+    if (health <= maxHealth * 0.5 && !projectilesInvisible) {
+      _enterMemoryPhase(); // ✅ Activate invisible projectile phase
+    }
+
+    staggerProgress += baseDamage * 0.04;
     staggerProgress = staggerProgress.clamp(0, 100);
     bossStaggerNotifier.value = staggerProgress;
 
-    // ✅ **Check if stagger should trigger**
     if (staggerProgress >= 100) {
       triggerStagger();
     }
@@ -228,6 +204,16 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
   }
 
+  void _enterMemoryPhase() {
+    print("👁 **Memory Phase Activated** - Projectiles are now invisible!");
+    projectilesInvisible = true;
+
+    add(ColorEffect(
+      const Color(0xFFFFFFFF), // White glow
+      EffectController(duration: 3.0),
+    ));
+  }
+
   @override
   void triggerStagger() {
     if (isStaggered) return;
@@ -237,9 +223,8 @@ class Boss1 extends BaseEnemy with Staggerable {
     speed *= 0.5;
     attackCooldown *= 1.5;
 
-    // 🔥 **Apply Red Glow Effect**
     add(ColorEffect(
-      const Color(0xFFFF0000), // Red Tint
+      const Color(0xFFFF0000), // Red glow effect
       EffectController(duration: 3.0, reverseDuration: 0.5),
     ));
 
@@ -251,6 +236,11 @@ class Boss1 extends BaseEnemy with Staggerable {
       attackCooldown /= 1.5;
       staggerProgress = 0;
       bossStaggerNotifier.value = 0;
+
+      if (projectilesInvisible) {
+        projectilesInvisible = false; // ✅ Reveal projectiles if staggered
+        print("👁 **Projectiles revealed after stagger!**");
+      }
 
       add(OpacityEffect.to(1.0, EffectController(duration: 0.2)));
     });
