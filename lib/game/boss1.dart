@@ -16,7 +16,7 @@ import 'staggerable.dart';
 
 class Boss1 extends BaseEnemy with Staggerable {
   bool enraged = false;
-  bool projectilesInvisible = false; // ✅ Track projectile visibility
+  bool isFading = false; // ✅ Boss enters fading phase at 50% health
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
   final double damageNumberInterval = 0.5;
@@ -131,6 +131,13 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     attackCount++;
 
+    // ✅ **If the boss is fading, randomly remove 2 projectiles**
+    if (isFading) {
+      angles.shuffle();
+      angles = angles.sublist(0, 2);
+      print("👁 **Some projectiles have vanished!**");
+    }
+
     for (double angle in angles) {
       double radians = angle * (pi / 180);
 
@@ -145,10 +152,6 @@ class Boss1 extends BaseEnemy with Staggerable {
         ..position = spawnPosition
         ..size = Vector2(40, 40)
         ..anchor = Anchor.center;
-
-      if (projectilesInvisible) {
-        bossProjectile.opacity = 0.0; // ✅ Make projectiles invisible
-      }
 
       gameRef.add(bossProjectile);
       print("🔥 Boss Projectile fired at angle: $angle°");
@@ -171,8 +174,8 @@ class Boss1 extends BaseEnemy with Staggerable {
     health -= finalDamage;
     onHealthChanged(health.toDouble());
 
-    if (health <= maxHealth * 0.5 && !projectilesInvisible) {
-      _enterMemoryPhase(); // ✅ Activate invisible projectile phase
+    if (health <= maxHealth * 0.5 && !isFading) {
+      _enterFadingPhase();
     }
 
     staggerProgress += baseDamage * 0.04;
@@ -190,8 +193,13 @@ class Boss1 extends BaseEnemy with Staggerable {
         position.clone() + Vector2(0, -20),
         isCritical: isCritical,
       );
+
       gameRef.add(damageNumber);
       timeSinceLastDamageNumber = 0.0;
+
+      if (isFading) {
+        damageNumber.priority = 1000; // ✅ Ensures it's drawn above everything
+      }
     }
 
     if (health <= (maxHealth * 0.3) && !enraged) {
@@ -204,14 +212,10 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
   }
 
-  void _enterMemoryPhase() {
-    print("👁 **Memory Phase Activated** - Projectiles are now invisible!");
-    projectilesInvisible = true;
-
-    add(ColorEffect(
-      const Color(0xFFFFFFFF), // White glow
-      EffectController(duration: 3.0),
-    ));
+  void _enterFadingPhase() {
+    print("👁 **The Fading King is fading!** - Boss is now invisible!");
+    isFading = true;
+    add(OpacityEffect.to(0.0, EffectController(duration: 2.0)));
   }
 
   @override
@@ -224,11 +228,11 @@ class Boss1 extends BaseEnemy with Staggerable {
     attackCooldown *= 1.5;
 
     add(ColorEffect(
-      const Color(0xFFFF0000), // Red glow effect
+      const Color(0xFFFF0000),
       EffectController(duration: 3.0, reverseDuration: 0.5),
     ));
 
-    add(OpacityEffect.to(0.5, EffectController(duration: 0.2)));
+    add(OpacityEffect.to(1.0, EffectController(duration: 0.5)));
 
     Future.delayed(Duration(seconds: 3), () {
       isStaggered = false;
@@ -237,12 +241,10 @@ class Boss1 extends BaseEnemy with Staggerable {
       staggerProgress = 0;
       bossStaggerNotifier.value = 0;
 
-      if (projectilesInvisible) {
-        projectilesInvisible = false; // ✅ Reveal projectiles if staggered
-        print("👁 **Projectiles revealed after stagger!**");
+      if (isFading) {
+        add(OpacityEffect.to(0.0, EffectController(duration: 1.0)));
+        print("👁 **The Fading King vanishes once more!**");
       }
-
-      add(OpacityEffect.to(1.0, EffectController(duration: 0.2)));
     });
   }
 
@@ -275,15 +277,5 @@ class Boss1 extends BaseEnemy with Staggerable {
     onDeath();
     gameRef.add(Explosion(position));
     removeFromParent();
-  }
-
-  @override
-  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
-    super.onCollision(intersectionPoints, other);
-
-    if (other is FireAura) {
-      print("🔥 Umbrathos hit by Whispering Flames!");
-      takeDamage(other.damage.toInt());
-    }
   }
 }
