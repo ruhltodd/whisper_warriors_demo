@@ -59,6 +59,7 @@ class Player extends PositionComponent
   final List<String> selectedAbilities; // Store selected abilities
   final ValueNotifier<List<InventoryItem>> equippedItemsNotifier =
       ValueNotifier([]); // Live-updating notifier
+  bool projectilesShouldPierce = false; // ✅ Track if projectiles should pierce
 
   bool isDead = false;
 
@@ -250,7 +251,7 @@ class Player extends PositionComponent
     // Shoot projectile if cooldown is over and an enemy is targeted
     if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
       print("🛑 Projectile removed: Max range exceeded");
-      shootProjectile(closestEnemy!, damage.toInt()); // Pass required arguments
+      shootProjectile(damage.toInt(), closestEnemy!); // Pass required arguments
       timeSinceLastShot = 0.0; // Reset cooldown
     }
 
@@ -356,29 +357,26 @@ class Player extends PositionComponent
   }
 
   // Shoot a projectile at the target
-  void shootProjectile(PositionComponent target, int damage,
+  void shootProjectile(int damage, PositionComponent target,
       {bool isCritical = false}) {
-    if (closestEnemy == null) {
-      print("⚠️ No enemy targeted - projectile not fired!");
+    // ✅ Ensure there's a valid enemy target before firing
+    BaseEnemy? target = findClosestEnemy();
+    if (target == null) {
+      print("⚠️ No valid enemy target found - projectile not fired!");
       return;
     }
 
     print("🚀 shootProjectile() called!");
 
-    final direction = (closestEnemy!.position - position).normalized();
+    final Vector2 direction = (target.position - position).normalized();
 
     final projectile = Projectile(
-      damage: damage, // Ensure `damage` is an int
-      velocity: direction * 500, // Correctly passing velocity
+      damage: damage,
+      velocity: direction * 500, // Adjust projectile speed
       maxRange: 1600, // Player projectiles should have a range
-      player: this, // Pass the player reference
+      player: this,
       onHit: (enemy) {
-        // Move Cursed Echo trigger here
-        if (hasAbility<CursedEcho>()) {
-          abilities
-              .firstWhere((a) => a is CursedEcho)
-              .onHit(this, enemy, damage, isCritical: isCritical);
-        }
+        // ✅ Apply Cursed Echo only **once** per attack
       },
     )
       ..position = position.clone()
@@ -386,7 +384,15 @@ class Player extends PositionComponent
       ..anchor = Anchor.center;
 
     gameRef.add(projectile);
-    print("🚀 PLAYER PROJECTILE FIRED!");
+    print("🎯 PLAYER PROJECTILE FIRED towards ${target.position}");
+    // ✅ **Trigger Cursed Echo per shot, not per enemy hit**
+    if (hasAbility<CursedEcho>() && gameRef.random.nextDouble() < 0.2) {
+      Future.delayed(Duration(milliseconds: 100), () {
+        print("🔁 Cursed Echo triggered! Repeating projectile...");
+        shootProjectile(damage, closestEnemy!,
+            isCritical: isCritical); // Fire again
+      });
+    }
   }
 
   // Add an item to the inventory
@@ -406,6 +412,25 @@ class Player extends PositionComponent
   // Check if the player has a specific ability
   bool hasAbility<T extends Ability>() {
     return abilities.any((ability) => ability is T);
+  }
+
+  // Find the closest enemy
+  BaseEnemy? findClosestEnemy() {
+    final enemies = gameRef.children.whereType<BaseEnemy>().toList();
+    if (enemies.isEmpty) {
+      return null;
+    }
+
+    BaseEnemy? closest;
+    double closestDistance = double.infinity;
+    for (final enemy in enemies) {
+      final distance = (enemy.position - position).length;
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closest = enemy;
+      }
+    }
+    return closest;
   }
 
   // Update the closest enemy

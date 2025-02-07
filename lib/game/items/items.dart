@@ -37,12 +37,13 @@ class UmbralFang extends Item {
           description:
               "A dagger formed from pure shadow, phasing through enemies.",
           rarity: "Rare",
-          stats: {"Attack Speed": 0.15, "Piercing": 1},
+          stats: {"Attack Speed": 0.20, "Piercing": 1},
         );
 
   @override
   void applyEffect(Player player) {
     player.baseAttackSpeed *= 1.15;
+    player.projectilesShouldPierce = true; // ✅ Enable piercing
     print(
         "🗡️ Umbral Fang equipped! Attack speed increased & projectiles pierce!");
   }
@@ -50,7 +51,8 @@ class UmbralFang extends Item {
   @override
   void removeEffect(Player player) {
     player.baseAttackSpeed /= 1.15;
-    print("🗡️ Umbral Fang unequipped.");
+    player.projectilesShouldPierce = false; // ✅ Disable piercing
+    print("🗡️ Umbral Fang unequipped. Projectiles no longer pierce.");
   }
 }
 
@@ -86,7 +88,7 @@ class ShardOfUmbrathos extends Item {
           description:
               "A fragment of the Fading King’s power, still pulsing with energy.",
           rarity: "Legendary",
-          stats: {"Spirit Multiplier": 0.15},
+          stats: {"Spirit Multiplier": 0.30},
         );
 
   @override

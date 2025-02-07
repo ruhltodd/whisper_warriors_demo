@@ -268,13 +268,25 @@ class Boss1 extends BaseEnemy with Staggerable {
   void die() {
     if (!hasDroppedItem) {
       hasDroppedItem = true;
-      final drop = DropItem(expValue: 100, spriteName: 'gold_coin.png')
-        ..position = position.clone();
+      final drop = _getRandomDropItem();
+      drop.position = position.clone();
       gameRef.add(drop);
     }
 
     onDeath();
     gameRef.add(Explosion(position));
     removeFromParent();
+  }
+
+  DropItem _getRandomDropItem() {
+    final items = [
+      DropItem(expValue: 100, spriteName: 'gold_coin.png'),
+      DropItem(expValue: 200, spriteName: 'umbral_fang.png'),
+      DropItem(expValue: 300, spriteName: 'veil_of_the_forgotten.png'),
+      DropItem(expValue: 400, spriteName: 'shard_of_umbrathos.png'),
+    ];
+
+    final randomIndex = random.nextInt(items.length);
+    return items[randomIndex];
   }
 }

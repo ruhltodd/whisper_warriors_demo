@@ -158,7 +158,7 @@ class CursedEcho extends Ability {
           Duration(milliseconds: (delayBetweenRepeats * 1000).toInt()), () {
         if (target.isMounted) {
           print("🔁 Cursed Echo triggered! Repeating attack...");
-          player.shootProjectile(target, damage, isCritical: isCritical);
+          player.shootProjectile(damage, target, isCritical: isCritical);
         }
       });
     }

@@ -16,6 +16,8 @@ class Projectile extends SpriteAnimationComponent
   final void Function(BaseEnemy)? onHit; // ✅ Callback for hit logic
   final Player? player; // ✅ Add player reference
   bool shouldPierce = false; // ✅ Declare before checking conditions
+  final List<BaseEnemy> enemiesHit =
+      []; // ✅ Track enemies hit by the projectile
 
   // 🔹 **General Constructor**
   Projectile({
@@ -25,7 +27,13 @@ class Projectile extends SpriteAnimationComponent
     this.maxRange = 800,
     this.onHit, // ✅ Now optional (for abilities like Cursed Echo)
     this.player, // ✅ Include player reference if available
-  }) : super(size: Vector2(50, 50)); // Adjust size as needed
+  }) {
+    shouldPierce = player?.hasItem("Umbral Fang") ??
+        false; // ✅ Always check if Umbral Fang is equipped
+    print("🗡️ Projectile Created - shouldPierce: $shouldPierce");
+    print(
+        "🔹 Player has Umbral Fang: ${player?.hasItem("Umbral Fang")}"); // ✅ Check if piercing is enabled
+  } // Adjust size as needed
 
   // 🔹 **Named Constructor for Player**
   Projectile.playerProjectile({
@@ -105,31 +113,30 @@ class Projectile extends SpriteAnimationComponent
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (!isBossProjectile) {
-      if (other is BaseEnemy) {
-        other.takeDamage(damage);
+      if (other is BaseEnemy || other is Wave2Enemy) {
+        BaseEnemy enemy = other as BaseEnemy;
 
-        // ✅ Trigger `onHit` if it exists (Cursed Echo, special effects, etc.)
-        onHit?.call(other);
+        // ✅ **Prevent hitting the same enemy multiple times per frame**
+        if (!enemiesHit.contains(enemy)) {
+          enemiesHit.add(enemy); // ✅ Mark enemy as hit
+          enemy.takeDamage(damage);
+          print("🗡️ Projectile hit: ${enemy.runtimeType} - Damage: $damage");
 
-        // Inside the projectile collision logic
-        if (player?.hasItem("umbral_fang") ?? false) {
-          shouldPierce = true;
+          // ✅ Trigger `onHit` effects (Cursed Echo, etc.)
+          onHit?.call(enemy);
         }
 
-        removeFromParent();
-      } else if (other is Wave2Enemy) {
-        other.takeDamage(damage);
-        onHit?.call(other);
-
-        // Inside the projectile collision logic
+        // ✅ Check if **Umbral Fang is equipped** to allow piercing
         if (player?.hasItem("umbral_fang") ?? false) {
-          shouldPierce = true;
+          shouldPierce = true; // ✅ **Re-enable piercing correctly**
+          print("🗡️ Umbral Fang active! Projectiles pierce.");
         }
-        removeFromParent();
-      } else if (other is Wave2Enemy) {
-        other.takeDamage(damage);
-        onHit?.call(other); // ✅ Apply `onHit` effect here too
-        removeFromParent();
+
+        // ✅ Remove projectile **only if it should NOT pierce**
+        if (!shouldPierce) {
+          removeFromParent();
+          print("🛑 Projectile removed after hitting: ${enemy.runtimeType}");
+        }
       }
     } else {
       if (other is Player) {
@@ -138,6 +145,7 @@ class Projectile extends SpriteAnimationComponent
         removeFromParent();
       }
     }
+
     super.onCollision(intersectionPoints, other);
   }
 }

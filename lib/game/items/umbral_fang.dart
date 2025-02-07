@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:whisper_warriors/game/items/items.dart'; // Your base Item class
-import 'package:whisper_warriors/game/player/player.dart'; // Needed for effect methods
+import 'package:whisper_warriors/game/player/player.dart';
+import 'package:whisper_warriors/game/projectiles/projectile.dart'; // Needed for effect methods
 part 'package:whisper_warriors/game/items/umbral_fang.g.dart';
 
 @HiveType(typeId: 1) // Use a unique typeId (different from InventoryItem)
@@ -9,22 +10,43 @@ class UmbralFang extends Item {
       : super(
           name: "Umbral Fang",
           description: "A dark blade forged from the essence of shadows.",
-          // Example stat: increases attack speed by 15%
-          stats: {"Attack Speed": 0.15},
+          stats: {"Attack Speed": 0.15}, // ✅ Keeps attack speed bonus
           rarity: "Rare",
         );
 
   @override
   void applyEffect(Player player) {
-    // Increase the player's base attack speed by 15%
+    // ✅ 1. Increase Attack Speed
     player.baseAttackSpeed *= (1 + stats["Attack Speed"]!);
-    print("Applied Umbral Fang effect to player.");
+
+    print(
+        "🛠️ Player's equipped items: ${player.equippedItems.map((e) => e.name).toList()}");
+
+    print(
+        "📌 projectilesShouldPierce BEFORE: ${player.projectilesShouldPierce}");
+
+    // ✅ 2. Enable Piercing for Player Projectiles
+    player.projectilesShouldPierce = true;
+    print("🗡️ Umbral Fang equipped - projectiles now pierce!");
+
+    // ✅ 3. Ensure already-fired projectiles update if needed
+    for (var projectile in player.gameRef.children.whereType<Projectile>()) {
+      projectile.shouldPierce = true;
+    }
   }
 
   @override
   void removeEffect(Player player) {
-    // Reverse the effect on attack speed
+    // ✅ 1. Reverse Attack Speed Bonus
     player.baseAttackSpeed /= (1 + stats["Attack Speed"]!);
-    print("Removed Umbral Fang effect from player.");
+
+    // ✅ 2. Disable Piercing
+    player.projectilesShouldPierce = false;
+    print("⚔️ Umbral Fang removed - projectiles no longer pierce.");
+
+    // ✅ 3. Update existing projectiles
+    for (var projectile in player.gameRef.children.whereType<Projectile>()) {
+      projectile.shouldPierce = false;
+    }
   }
 }
