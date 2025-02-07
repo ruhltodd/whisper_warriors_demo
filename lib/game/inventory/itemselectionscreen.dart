@@ -14,7 +14,7 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventorySelectionScreenState extends State<InventoryScreen> {
   List<InventoryItem?> _selectedItems = List.filled(5, null);
-  InventoryItem? _hoveredItem; // ✅ Tracks hovered item for stats
+  InventoryItem? _hoveredItem; // Tracks hovered item for stats
 
   void _toggleItemSelection(InventoryItem item) {
     setState(() {
@@ -76,7 +76,7 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
     );
   }
 
-  /// ✅ **Equipped Slots**
+  /// Equipped Slots
   Widget _buildEquippedSlots() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -110,7 +110,7 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
     );
   }
 
-  /// ✅ **Inventory Grid with Hover Effect**
+  /// Inventory Grid with Hover Effect
   Widget _buildInventoryGrid() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -131,9 +131,7 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
             onExit: (_) => setState(() => _hoveredItem = null),
             child: GestureDetector(
               onTap: () {
-                if (!isSelected) {
-                  _toggleItemSelection(item);
-                }
+                _toggleItemSelection(item);
               },
               child: Container(
                 decoration: BoxDecoration(
@@ -158,7 +156,7 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
     );
   }
 
-  /// ✅ **Floating Hover Stats**
+  /// Floating Hover Stats
   Widget _buildHoverStats() {
     return Positioned(
       left: MediaQuery.of(context).size.width / 2 - 120,
@@ -203,11 +201,16 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
     );
   }
 
-  /// ✅ **Confirm Button**
+  /// Confirm Button
   Widget _buildConfirmButton() {
     return ElevatedButton(
       onPressed: () {
-        widget.onConfirm(_selectedItems.whereType<InventoryItem>().toList());
+        final filteredSelection =
+            _selectedItems.whereType<InventoryItem>().toList();
+        print(
+            "🎒 Final Selected Items: ${filteredSelection.map((item) => item.item.name).toList()}");
+
+        widget.onConfirm(filteredSelection);
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color.fromARGB(255, 123, 123, 123),

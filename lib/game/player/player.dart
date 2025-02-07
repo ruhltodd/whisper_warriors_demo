@@ -72,11 +72,8 @@ class Player extends PositionComponent
   double explosionCooldown = 0.2;
 
   // Inventory System
-  List<Item> inventory = [
-    UmbralFang(),
-    VeilOfTheForgotten(),
-    ShardOfUmbrathos()
-  ]; // Stores collected items
+  List<Item> inventory =
+      []; // Start with an empty inventory// Stores collected items
   List<InventoryItem> equippedItems; // Store equipped items
   ValueNotifier<List<Item>> inventoryNotifier = ValueNotifier([]);
 
@@ -96,23 +93,32 @@ class Player extends PositionComponent
     }
   }
 
-  // Constructor
+  // Constructor for Player
+  // Constructor for Player
   Player({required this.selectedAbilities, required this.equippedItems})
       : super(size: Vector2(128, 128)) {
+    print(
+        "🛡 Player Constructor - Received Equipped Items: ${equippedItems.map((e) => e.item.name).toList()}");
+
     add(CircleHitbox.relative(
       0.5, // 50% of player size (adjust as needed)
       parentSize: size,
     ));
 
-    // Apply equipped items on initialization
-    applyEquippedItems();
-  }
+    // ✅ Ensure inventory includes equipped items
+    inventory.addAll(equippedItems.map((invItem) => invItem.item));
 
+    // ✅ Apply equipped item effects
+    Future.delayed(Duration(milliseconds: 100), () {
+      applyEquippedItems();
+    });
+  }
   get attackModifiers => null;
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    loadInventory();
     healthBar = HealthBar(this);
     gameRef.add(healthBar!);
 
@@ -122,15 +128,20 @@ class Player extends PositionComponent
       ..position = position.clone();
     gameRef.add(whisperWarrior);
 
-    // Apply effects of pre-added items
-    for (var item in inventory) {
-      InventoryItem invItem = InventoryItem(item: item, isEquipped: true);
-      InventoryManager.addItem(invItem);
-      equipItem(item.name);
+// ✅ Apply only explicitly equipped items
+    for (var item in equippedItems) {
+      item.applyEffect(this);
+      print("🎭 Applied ${item.name} to Player.");
     }
   }
 
-  // Equip an item and update UI
+  // ✅ Ensure previously equipped items aren't lost
+  void loadInventory() {
+    if (inventory.isEmpty) {
+      inventory.addAll(equippedItems.map((invItem) => invItem.item));
+    }
+  }
+
   void equipItem(String itemName) {
     List<InventoryItem> matchedItems = InventoryManager.getInventory()
         .where((inventoryItem) => inventoryItem.item.name == itemName)
@@ -140,14 +151,14 @@ class Player extends PositionComponent
       matchedItems.first.applyEffect(this);
       if (!equippedItems.contains(matchedItems.first)) {
         equippedItems.add(matchedItems.first);
-        equippedItemsNotifier.value = List.from(equippedItems); // Notify UI
+        equippedItemsNotifier.value =
+            List.from(equippedItems); // ✅ Ensure UI updates
       }
       print("🎭 Equipped: ${matchedItems.first.item.name}");
     } else {
       print("⚠️ No equipped item found for $itemName");
     }
 
-    // Debug logs
     print("🔹 Player Stats After Equipping: ");
     print(" - Attack Speed: $attackSpeed");
     print(" - Defense: $defense");
@@ -159,6 +170,7 @@ class Player extends PositionComponent
     if (equippedItems.contains(item)) {
       equippedItems.remove(item);
       item.removeEffect(this);
+      equippedItemsNotifier.value = List.from(equippedItems); // ✅ Update UI
       print("🚫 Unequipped: ${item.name}");
     }
   }
@@ -173,12 +185,21 @@ class Player extends PositionComponent
 
   // Apply effects of equipped items
   void applyEquippedItems() {
-    hasUmbralFang =
-        equippedItems.any((invItem) => invItem.item.name == "Umbral Fang");
-    hasVeilOfForgotten = equippedItems
-        .any((invItem) => invItem.item.name == "Veil of the Forgotten");
-    hasShardOfUmbrathos = equippedItems
-        .any((invItem) => invItem.item.name == "Shard of Umbrathos");
+    print(
+        "🛡 Applying Equipped Items: ${equippedItems.map((e) => e.item.name).toList()}");
+
+    Set<String> appliedItems = {};
+
+    for (var invItem in equippedItems) {
+      if (!appliedItems.contains(invItem.item.name)) {
+        invItem.item.applyEffect(this);
+        appliedItems.add(invItem.item.name);
+        print("🎭 Applied ${invItem.item.name} to Player.");
+      }
+    }
+
+    // ✅ Explicitly update the notifier so InventoryBar gets the change
+    equippedItemsNotifier.value = List.from(equippedItems);
   }
 
   // Apply inventory item effects to player stats

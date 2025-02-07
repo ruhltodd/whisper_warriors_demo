@@ -2,7 +2,7 @@ import 'dart:async'; //
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/itemselectionscreen.dart'; // ✅ Add this
-import 'package:whisper_warriors/game/inventory/inventory.dart'; // Ensure this is imported
+// Ensure this is imported
 import 'package:flame/game.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/components.dart';
@@ -30,20 +30,35 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
-  // Register adapters:
+  // Register Hive adapters
   Hive.registerAdapter(InventoryItemAdapter());
-  // If using aliases:
   Hive.registerAdapter(UmbralFangAdapter());
   Hive.registerAdapter(VeilOfTheForgottenAdapter());
-  // If you have ShardOfUmbrathos, register its adapter as well:
   Hive.registerAdapter(ShardOfUmbrathosAdapter());
 
   await Hive.openBox<InventoryItem>('inventoryBox');
 
-  runApp(MyApp());
+  // ✅ Load equipped items **AFTER Hive is initialized**
+  List<InventoryItem> loadEquippedItems() {
+    final box = Hive.box<InventoryItem>('inventoryBox');
+
+    // ✅ Retrieve **all equipped items** from stored map
+    List<InventoryItem> items = box.values.cast<InventoryItem>().toList();
+
+    print(
+        "🔍 Loaded Equipped Items from Hive: ${items.map((item) => item.item.name).toList()}");
+
+    return items;
+  }
+
+  List<InventoryItem> equippedItems = loadEquippedItems(); // ✅ Load safely
+
+  runApp(MyApp(equippedItems: equippedItems));
 }
 
 class MyApp extends StatefulWidget {
+  final List<InventoryItem> equippedItems;
+  MyApp({required this.equippedItems}); // Add equippedItems
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -51,9 +66,10 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _gameStarted = false;
   bool _selectingAbilities = false;
-  bool _selectingItems = false; // ✅ New state for item selection
+  bool _selectingItems = false; // New state for item selection
   List<String> selectedAbilities = [];
   List<InventoryItem> equippedItems = []; // Declare the equipped items list
+  late RogueShooterGame gameInstance; // Define the gameInstance variable
 
   List<InventoryItem> getAvailableItems() {
     return [
@@ -72,7 +88,16 @@ class _MyAppState extends State<MyApp> {
     ];
   }
 
+  @override
+  void initState() {
+    super.initState();
+    equippedItems = widget.equippedItems; // Store the equipped items
+  }
+
   void startGame() {
+    print(
+        "🛡 startGame() - Equipped Items Before Start: ${equippedItems.map((e) => e.item.name).toList()}");
+
     setState(() {
       _selectingAbilities = true;
     });
@@ -98,14 +123,14 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         body: Stack(
           children: [
-            // 🎮 Main Menu
+            // Main Menu
             if (!_gameStarted && !_selectingAbilities && !_selectingItems)
               MainMenu(
                 startGame: startGame,
                 openOptions: openOptions,
               ),
 
-            // ⚡ Ability Selection (new condition)
+            // Ability Selection (new condition)
             if (_selectingAbilities)
               AbilitySelectionScreen(
                 onAbilitiesSelected: onAbilitiesSelected,
@@ -115,19 +140,48 @@ class _MyAppState extends State<MyApp> {
             if (_selectingItems)
               InventoryScreen(
                 availableItems: getAvailableItems(),
-                onConfirm: (finalSelectedItems) {
-                  equippedItems = finalSelectedItems;
+                onConfirm: (finalSelectedItems) async {
+                  print(
+                      "🎒 Final Confirmed Items: ${finalSelectedItems.map((item) => item.item.name).toList()}");
+
+                  final box = Hive.box<InventoryItem>('inventoryBox');
+                  await box.clear(); // ✅ Ensure previous items are removed
+
+                  // ✅ Store items properly
+                  for (var item in finalSelectedItems) {
+                    await box.put(item.item.name, item);
+                  }
+
                   setState(() {
                     _selectingItems = false;
                     _gameStarted = true;
+                    equippedItems = List.from(finalSelectedItems);
+                  });
+
+                  print(
+                      "🛡 Equipped Items Updated in Hive: ${equippedItems.map((item) => item.item.name).toList()}");
+
+                  gameInstance = RogueShooterGame(
+                    selectedAbilities: selectedAbilities,
+                    equippedItems: equippedItems,
+                  );
+
+                  // ✅ Delay applying effects to prevent null issues
+                  Future.delayed(Duration(milliseconds: 500), () {
+                    if (gameInstance.player != null) {
+                      gameInstance.player.applyEquippedItems();
+                      print("🛡 Applied Equipped Items after Player Loaded.");
+                    } else {
+                      print(
+                          "⚠️ Player is still null, skipping applyEquippedItems.");
+                    }
                   });
                 },
               ),
-
-            // 🎮 Game UI & HUD
+            // Game UI & HUD
             if (_gameStarted)
               GameWidget(
-                game: RogueShooterGame(selectedAbilities: selectedAbilities),
+                game: gameInstance,
                 overlayBuilderMap: {
                   'hud': (_, game) => HUD(
                         onJoystickMove: (delta) => (game as RogueShooterGame)
@@ -167,13 +221,14 @@ class RogueShooterGame extends FlameGame
   int enemyCount = 0; // ✅ Add this if missing
   int maxEnemies = 30;
   final List<String> selectedAbilities;
-  List<InventoryItem> equippedItems = InventoryManager.getEquippedItems();
+  final List<InventoryItem> equippedItems;
   final Random random = Random(); // ✅ Define Random instance
 
   bool isPaused = false;
   int elapsedTime = 0;
 
-  RogueShooterGame({required this.selectedAbilities}) {
+  RogueShooterGame(
+      {required this.selectedAbilities, required this.equippedItems}) {
     bossHealthNotifier = ValueNotifier<double?>(null);
     bossStaggerNotifier = ValueNotifier<double>(0); // ✅ Initialize at 0
 // ✅ Initialize as null
@@ -253,7 +308,7 @@ class RogueShooterGame extends FlameGame
 
     player = Player(
       selectedAbilities: selectedAbilities, // ✅ Pass abilities
-      equippedItems: equippedItems, // ✅ Pass selected items
+      equippedItems: equippedItems, // ✅ Ensure only equipped items are passed
     )
       ..position = Vector2(size.x / 2, size.y / 2)
       ..size = Vector2(64, 64);
