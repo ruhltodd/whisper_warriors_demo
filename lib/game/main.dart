@@ -1,8 +1,8 @@
 import 'dart:async'; //
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:whisper_warriors/game/inventoryitem.dart';
-import 'package:whisper_warriors/game/itemselectionscreen.dart'; // ✅ Add this
-import 'inventory.dart'; // Ensure this is imported
+import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
+import 'package:whisper_warriors/game/inventory/itemselectionscreen.dart'; // ✅ Add this
+import 'package:whisper_warriors/game/inventory/inventory.dart'; // Ensure this is imported
 import 'package:flame/game.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/components.dart';
@@ -10,22 +10,21 @@ import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
-import 'experience.dart';
-import 'customcamera.dart';
-import 'hud.dart';
-import 'player.dart';
-import 'enemy.dart';
-import 'wave1Enemy.dart';
-import 'wave2Enemy.dart';
-import 'mainmenu.dart';
-import 'itemselectionscreen.dart';
-import 'package:whisper_warriors/game/items.dart';
-import 'abilityselectionscreen.dart';
-import 'abilityfactory.dart';
-import 'abilities.dart';
-import 'boss1.dart';
-import 'explosion.dart';
-import 'dropitem.dart';
+import 'package:whisper_warriors/game/ui/experience.dart';
+import 'package:whisper_warriors/game/utils/customcamera.dart';
+import 'package:whisper_warriors/game/ui/hud.dart';
+import 'package:whisper_warriors/game/player/player.dart';
+import 'package:whisper_warriors/game/ai/enemy.dart';
+import 'package:whisper_warriors/game/ai/wave1Enemy.dart';
+import 'package:whisper_warriors/game/ai/wave2Enemy.dart';
+import 'package:whisper_warriors/game/ui/mainmenu.dart';
+import 'package:whisper_warriors/game/items/items.dart';
+import 'package:whisper_warriors/game/abilities/abilityselectionscreen.dart';
+import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
+import 'package:whisper_warriors/game/abilities/abilities.dart';
+import 'package:whisper_warriors/game/bosses/boss1.dart';
+import 'package:whisper_warriors/game/effects/explosion.dart';
+import 'package:whisper_warriors/game/utils/dropitem.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
