@@ -20,6 +20,7 @@ abstract class Ability {
     required this.type,
   });
 
+  // Override these methods for specific ability behavior
   void applyEffect(Player player) {}
   void onKill(Player player, Vector2 enemyPosition) {}
   void onUpdate(Player player, double dt) {}
@@ -27,12 +28,11 @@ abstract class Ability {
       {bool isCritical = false}) {}
 }
 
+/// 🔥 **Whispering Flames Ability** - Fire aura that damages nearby enemies
 class WhisperingFlames extends Ability {
-  double baseDamagePerSecond = 3.0; // 🔥 Base value (scaled by Spirit)
-  double range = 200.0;
-  double _elapsedTime = 0.0;
-
-  double get damage => baseDamagePerSecond; // ✅ Add damage getter
+  double baseDamagePerSecond = 3.0; // Base damage per second
+  double range = 200.0; // Range in which enemies take damage
+  double _elapsedTime = 0.0; // Timer for damage ticks
 
   WhisperingFlames()
       : super(
@@ -42,10 +42,9 @@ class WhisperingFlames extends Ability {
         );
 
   @override
-  @override
   void applyEffect(Player player) {
     super.applyEffect(player);
-    // Delay adding the FireAura until the current frame completes.
+    // Delay adding FireAura to ensure the player is fully initialized
     Future.delayed(Duration.zero, () {
       if (player.isMounted && player.gameRef != null) {
         player.gameRef.add(FireAura(player: player));
@@ -58,17 +57,15 @@ class WhisperingFlames extends Ability {
   @override
   void onUpdate(Player player, double dt) {
     if (player.gameRef == null) return;
-
-    _elapsedTime += dt; // ✅ Accumulate time
+    _elapsedTime += dt;
 
     if (_elapsedTime >= 1.0) {
-      _elapsedTime = 0.0; // ✅ Reset timer
-
+      _elapsedTime = 0.0; // Reset timer
       double scaledDamage = baseDamagePerSecond * player.spiritMultiplier;
 
+      // Damage all enemies within range
       for (var enemy in player.gameRef.children.whereType<BaseEnemy>()) {
         double distance = (enemy.position - player.position).length;
-
         if (distance < range) {
           bool isCritical =
               player.gameRef.random.nextDouble() < player.critChance / 100;
@@ -83,17 +80,15 @@ class WhisperingFlames extends Ability {
   }
 }
 
-/// 💀 **Shadow Blades Ability**
-
+/// 🗡️ **Shadow Blades Ability** - Throws auto-targeted spectral blades
 class ShadowBlades extends Ability {
-  double cooldown = 0.5; // ✅ Faster attack speed
+  double cooldown = 0.5; // Time between blade throws
   double elapsedTime = 0.0;
 
   ShadowBlades()
       : super(
           name: "Shadow Blades",
-          description:
-              "Auto-targets and throws a spectral blade at the closest enemy.",
+          description: "Throws a spectral blade at the closest enemy.",
           type: AbilityType.projectile,
         );
 
@@ -101,30 +96,22 @@ class ShadowBlades extends Ability {
   void onUpdate(Player player, double dt) {
     elapsedTime += dt;
     if (elapsedTime >= cooldown) {
-      elapsedTime = 0.0; // ✅ Reset cooldown
+      elapsedTime = 0.0;
       _throwBlade(player);
     }
   }
 
   void _throwBlade(Player player) {
     print("🗡️ Throwing Shadow Blade!");
-
-    // ✅ Find the closest enemy or boss
     BaseEnemy? target = _findClosestTarget(player);
+    if (target == null) return;
 
-    if (target == null) {
-      print("⚠️ No enemies found - Shadow Blade not fired.");
-      return;
-    }
-
-    // ✅ Direction towards the enemy
     Vector2 direction = (target.position - player.position).normalized();
     double rotationAngle = direction.angleTo(Vector2(1, 0));
 
     final blade = ShadowBladeProjectile(
       damage: (12 * player.spiritMultiplier).toInt(),
-      velocity: direction *
-          (750 + (player.spiritLevel * 20)), // ✅ Scales speed with Spirit Level
+      velocity: direction * (750 + (player.spiritLevel * 20)),
       player: player,
       rotationAngle: rotationAngle,
     )
@@ -139,22 +126,17 @@ class ShadowBlades extends Ability {
     final enemies = player.gameRef.children.whereType<BaseEnemy>().toList();
     if (enemies.isEmpty) return null;
 
-    BaseEnemy? closest;
-    double closestDistance = double.infinity;
-    for (final enemy in enemies) {
-      double distance = (enemy.position - player.position).length;
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closest = enemy;
-      }
-    }
-    return closest;
+    return enemies.reduce((a, b) => (a.position - player.position).length <
+            (b.position - player.position).length
+        ? a
+        : b);
   }
 }
 
+/// 🔁 **Cursed Echo Ability** - Chance to repeat attacks
 class CursedEcho extends Ability {
   double baseProcChance = 0.2; // 20% base chance
-  double delayBetweenRepeats = 0.2; // Small delay before repeating
+  double delayBetweenRepeats = 0.2; // Delay before repeating attack
 
   CursedEcho()
       : super(
@@ -165,21 +147,17 @@ class CursedEcho extends Ability {
         );
 
   double getProcChance(Player player) {
-    return (baseProcChance + (player.spiritLevel * 0.01))
-        .clamp(0, 1); // ✅ Scales with Spirit Level, max 100%
+    return (baseProcChance + (player.spiritLevel * 0.01)).clamp(0, 1);
   }
 
   @override
   void onHit(Player player, PositionComponent target, int damage,
       {bool isCritical = false}) {
-    double procChance = getProcChance(player); // ✅ Get scaled proc chance
-
-    if (player.gameRef.random.nextDouble() < procChance) {
+    if (player.gameRef.random.nextDouble() < getProcChance(player)) {
       Future.delayed(
           Duration(milliseconds: (delayBetweenRepeats * 1000).toInt()), () {
         if (target.isMounted) {
-          print(
-              "🔁 Cursed Echo triggered at ${procChance * 100}% chance! Repeating attack...");
+          print("🔁 Cursed Echo triggered! Repeating attack...");
           player.shootProjectile(target, damage, isCritical: isCritical);
         }
       });
@@ -187,7 +165,7 @@ class CursedEcho extends Ability {
   }
 }
 
-/// 💀 **Soul Fracture Ability**
+/// 💥 **Soul Fracture Ability** - Enemies explode on death
 class SoulFracture extends Ability {
   SoulFracture()
       : super(
@@ -204,39 +182,27 @@ class SoulFracture extends Ability {
   }
 }
 
-// ✅ Explosion now scales with Spirit Level
+/// 💣 **Explosion Scaling** - Scales explosion damage with Spirit Level
 extension ExplosionCooldown on Player {
   bool hasTriggeredExplosionRecently() {
     double currentTime = gameRef.currentTime();
-
     if (currentTime - lastExplosionTime < explosionCooldown) {
       return true;
     }
-
     lastExplosionTime = currentTime;
     return false;
   }
 
   void triggerExplosion(Vector2 position) {
-    double currentTime = gameRef.currentTime();
-
-    if (currentTime - lastExplosionTime < explosionCooldown) {
-      return;
-    }
-
-    lastExplosionTime = currentTime;
-
+    if (hasTriggeredExplosionRecently()) return;
     gameRef.add(Explosion(position));
-    print("💥 Spirit Explosion triggered at $position");
+    print("💥 Spirit Explosion triggered!");
 
-    // ✅ Explosion damage scales with Spirit Level
     for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
       double distance = (enemy.position - position).length;
-
       if (distance < 100.0) {
         int damage = (10.0 * spiritMultiplier).toInt().clamp(1, 9999);
         enemy.takeDamage(damage);
-        print("🔥 Explosion hit enemy for $damage damage!");
       }
     }
   }

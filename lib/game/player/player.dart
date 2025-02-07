@@ -19,7 +19,7 @@ import 'package:whisper_warriors/game/effects/fireaura.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
-  // ✅ Base Stats (before Spirit Level modifications)
+  // Base Stats (before Spirit Level modifications)
   double baseHealth = 100.0;
   double baseSpeed = 140.0;
   double baseAttackSpeed = 1.0; // Attacks per second
@@ -28,13 +28,13 @@ class Player extends PositionComponent
   double baseCritChance = 5.0; // % Chance
   double baseCritMultiplier = 1.5; // 1.5x damage on crit
 
-  // ✅ Spirit Level System
+  // Spirit Level System
   double spiritMultiplier = 1.0; // Scales with Spirit Level
   int spiritLevel = 1;
   double spiritExp = 0.0;
   double spiritExpToNextLevel = 1000.0;
 
-  // ✅ Derived Stats (calculated from Spirit Level)
+  // Derived Stats (calculated from Spirit Level)
   double get maxHealth => baseHealth * spiritMultiplier;
   double get movementSpeed => baseSpeed * spiritMultiplier;
   double get attackSpeed => baseAttackSpeed * (1 + (spiritMultiplier - 1));
@@ -44,25 +44,25 @@ class Player extends PositionComponent
   double get critMultiplier =>
       baseCritMultiplier + ((spiritMultiplier - 1) * 0.5);
 
-  // ✅ Current Health (tracks real-time health)
+  // Current Health (tracks real-time health)
   double currentHealth = 100.0;
 
-  // ✅ UI & Game Elements
+  // UI & Game Elements
   HealthBar? healthBar;
   Vector2 joystickDelta = Vector2.zero();
-  Vector2 movementDirection = Vector2.zero(); // ✅ Stores movement direction
+  Vector2 movementDirection = Vector2.zero(); // Stores movement direction
   late WhisperWarrior whisperWarrior;
   BaseEnemy? closestEnemy;
   List<Ability> abilities = [];
   final ValueNotifier<List<Ability>> abilityNotifier =
-      ValueNotifier([]); // ✅ Tracks ability updates
-  final List<String> selectedAbilities; // ✅ Store selected abilities
+      ValueNotifier([]); // Tracks ability updates
+  final List<String> selectedAbilities; // Store selected abilities
   final ValueNotifier<List<InventoryItem>> equippedItemsNotifier =
-      ValueNotifier([]); // ✅ Live-updating notifier
+      ValueNotifier([]); // Live-updating notifier
 
   bool isDead = false;
 
-  // ✅ Special Player Stats
+  // Special Player Stats
   double vampiricHealing = 0;
   double blackHoleCooldown = 10;
   double firingCooldown = 1.0;
@@ -70,29 +70,32 @@ class Player extends PositionComponent
   double lastExplosionTime = 0.0;
   double explosionCooldown = 0.2;
 
-  // ✅ Inventory System
-  // ✅ Inventory System
+  // Inventory System
   List<Item> inventory = [
     UmbralFang(),
     VeilOfTheForgotten(),
     ShardOfUmbrathos()
-  ]; // // 🏹 **Stores collected items**
-  List<InventoryItem> equippedItems; // ✅ Store equipped items
+  ]; // Stores collected items
+  List<InventoryItem> equippedItems; // Store equipped items
   ValueNotifier<List<Item>> inventoryNotifier = ValueNotifier([]);
 
   bool hasUmbralFang = false;
   bool hasVeilOfForgotten = false;
   bool hasShardOfUmbrathos = false;
+
+  // Check if the player has a specific item by name
   bool hasItem(String itemName) {
-    return inventory.any((item) => item.name == itemName); // ✅ Compare names
+    return inventory.any((item) => item.name == itemName);
   }
 
+  // Apply selected abilities to the player
   void applySelectedAbilities() {
     for (var ability in selectedAbilities) {
       addAbility(AbilityFactory.createAbility(ability)!);
     }
   }
 
+  // Constructor
   Player({required this.selectedAbilities, required this.equippedItems})
       : super(size: Vector2(128, 128)) {
     add(CircleHitbox.relative(
@@ -100,7 +103,7 @@ class Player extends PositionComponent
       parentSize: size,
     ));
 
-    // Removed applySelectedAbilities() to prevent double application.
+    // Apply equipped items on initialization
     applyEquippedItems();
   }
 
@@ -118,9 +121,7 @@ class Player extends PositionComponent
       ..position = position.clone();
     gameRef.add(whisperWarrior);
 
-    // ✅ Apply Effects of Pre-Added Items
-    // For each item in the player's local inventory, wrap it as an InventoryItem,
-    // add it to the InventoryManager, and equip it once.
+    // Apply effects of pre-added items
     for (var item in inventory) {
       InventoryItem invItem = InventoryItem(item: item, isEquipped: true);
       InventoryManager.addItem(invItem);
@@ -128,7 +129,7 @@ class Player extends PositionComponent
     }
   }
 
-  // ✅ **Equip an Item & Update UI**
+  // Equip an item and update UI
   void equipItem(String itemName) {
     List<InventoryItem> matchedItems = InventoryManager.getInventory()
         .where((inventoryItem) => inventoryItem.item.name == itemName)
@@ -138,18 +139,11 @@ class Player extends PositionComponent
       matchedItems.first.applyEffect(this);
       if (!equippedItems.contains(matchedItems.first)) {
         equippedItems.add(matchedItems.first);
-        equippedItemsNotifier.value = List.from(equippedItems); // ✅ Notify UI
+        equippedItemsNotifier.value = List.from(equippedItems); // Notify UI
       }
       print("🎭 Equipped: ${matchedItems.first.item.name}");
     } else {
       print("⚠️ No equipped item found for $itemName");
-    }
-
-    // ✅ **Remove an Item & Update UI**
-    void removeItem(Item item) {
-      equippedItems.removeWhere((invItem) => invItem.item == item);
-      equippedItemsNotifier.value = List.from(equippedItems); // ✅ Notify UI
-      print("🚫 Unequipped: ${item.name}");
     }
 
     // Debug logs
@@ -159,7 +153,7 @@ class Player extends PositionComponent
     print(" - Spirit Multiplier: $spiritMultiplier");
   }
 
-  // 🎭 **Remove an Item**
+  // Remove an item and update UI
   void removeItem(Item item) {
     if (equippedItems.contains(item)) {
       equippedItems.remove(item);
@@ -168,7 +162,7 @@ class Player extends PositionComponent
     }
   }
 
-  // 🎒 **Collect an Item (Adds to inventory but doesn't equip)**
+  // Collect an item (adds to inventory but doesn't equip)
   void collectItem(Item item) {
     if (!inventory.contains(item)) {
       inventory.add(item);
@@ -176,6 +170,7 @@ class Player extends PositionComponent
     }
   }
 
+  // Apply effects of equipped items
   void applyEquippedItems() {
     hasUmbralFang =
         equippedItems.any((invItem) => invItem.item.name == "Umbral Fang");
@@ -185,6 +180,7 @@ class Player extends PositionComponent
         .any((invItem) => invItem.item.name == "Shard of Umbrathos");
   }
 
+  // Apply inventory item effects to player stats
   void applyInventoryItemEffect(InventoryItem item) {
     item.stats.forEach((stat, value) {
       if (stat == "Attack Speed") baseAttackSpeed *= (1 + value);
@@ -194,6 +190,7 @@ class Player extends PositionComponent
     });
   }
 
+  // Remove inventory item effects from player stats
   void removeInventoryItemEffect(InventoryItem item) {
     item.stats.forEach((stat, value) {
       if (stat == "Attack Speed") baseAttackSpeed /= (1 + value);
@@ -202,53 +199,42 @@ class Player extends PositionComponent
     });
   }
 
+  // Update spirit multiplier based on spirit level and equipped items
   void updateSpiritMultiplier() {
-    // ✅ Each Spirit Level increases all stats by 5%
     spiritMultiplier = 1.0 + (spiritLevel * 0.05);
 
-    // 🔹 **Apply "Shard of Umbrathos" bonus if equipped**
+    // Apply "Shard of Umbrathos" bonus if equipped
     if (equippedItems.any((item) => item is ShardOfUmbrathos)) {
-      spiritMultiplier *= 1.15; // ✅ 15% Bonus to Spirit Multiplier
+      spiritMultiplier *= 1.15; // 15% Bonus to Spirit Multiplier
     }
   }
 
+  // Update joystick input for movement
   void updateJoystick(Vector2 delta) {
     joystickDelta = delta;
   }
 
-  void moveUp() {
-    joystickDelta = Vector2(0, -1);
-  }
-
-  void moveDown() {
-    joystickDelta = Vector2(0, 1);
-  }
-
-  void moveLeft() {
-    joystickDelta = Vector2(-1, 0);
-  }
-
-  void moveRight() {
-    joystickDelta = Vector2(1, 0);
-  }
-
-  void stopMovement() {
-    joystickDelta = Vector2.zero(); // ✅ Stops movement when key is released
-  }
+  // Movement methods
+  void moveUp() => joystickDelta = Vector2(0, -1);
+  void moveDown() => joystickDelta = Vector2(0, 1);
+  void moveLeft() => joystickDelta = Vector2(-1, 0);
+  void moveRight() => joystickDelta = Vector2(1, 0);
+  void stopMovement() =>
+      joystickDelta = Vector2.zero(); // Stops movement when key is released
 
   @override
   void update(double dt) {
     super.update(dt);
-    timeSinceLastShot += dt; // ✅ Ensure cooldown timer increases
+    timeSinceLastShot += dt; // Ensure cooldown timer increases
 
     updateSpiritMultiplier();
-    updateClosestEnemy(); // 🔥 This ensures `closestEnemy` is updated
+    updateClosestEnemy(); // Update the closest enemy
 
     Vector2 totalMovement = movementDirection + joystickDelta;
     if (totalMovement.length > 0) {
-      Vector2 prevPosition = position.clone(); // ✅ Store previous position
+      Vector2 prevPosition = position.clone(); // Store previous position
 
-      // 🔹 **Manually apply linear interpolation for smoother movement**
+      // Apply linear interpolation for smoother movement
       position = prevPosition +
           (totalMovement.normalized() * movementSpeed * dt) * 0.75;
 
@@ -258,47 +244,49 @@ class Player extends PositionComponent
       whisperWarrior.playAnimation('idle');
     }
 
-    // 🔹 Ensure sprite updates smoothly with movement
+    // Ensure sprite updates smoothly with movement
     whisperWarrior.position = position.clone();
 
-    // ✅ Ensure an enemy is targeted before shooting
+    // Shoot projectile if cooldown is over and an enemy is targeted
     if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
       print("🛑 Projectile removed: Max range exceeded");
-      shootProjectile(
-          closestEnemy!, damage.toInt()); // ✅ Pass required arguments
-      timeSinceLastShot = 0.0; // ✅ Reset cooldown
+      shootProjectile(closestEnemy!, damage.toInt()); // Pass required arguments
+      timeSinceLastShot = 0.0; // Reset cooldown
     }
 
+    // Update health bar position
     if (healthBar != null) {
       healthBar!.position = position +
           Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
     }
 
+    // Update abilities
     for (var ability in abilities) {
       ability.onUpdate(this, dt);
     }
   }
 
+  // Gain spirit experience and handle level-ups
   void gainSpiritExp(double amount) {
     while (amount > 0) {
       double remainingToLevel = spiritExpToNextLevel - spiritExp;
 
       if (amount >= remainingToLevel) {
-        // ✅ Prevents skipping multiple levels at once
         spiritExp = spiritExpToNextLevel;
         amount -= remainingToLevel;
-        spiritLevelUp(); // ✅ Level up BEFORE adding more XP
+        spiritLevelUp(); // Level up before adding more XP
       } else {
         spiritExp += amount;
         amount = 0;
       }
     }
 
-    // ✅ Update bar AFTER all level-up calculations
+    // Update experience bar
     gameRef.experienceBar
         .updateSpirit(spiritExp, spiritExpToNextLevel, spiritLevel);
   }
 
+  // Handle spirit level up
   void spiritLevelUp() {
     spiritLevel++;
     spiritExp -= spiritExpToNextLevel;
@@ -307,23 +295,22 @@ class Player extends PositionComponent
     print("✨ Spirit Level Up! New Spirit Level: $spiritLevel");
   }
 
+  // Take damage and handle death
   void takeDamage(int damage) async {
-    // ✅ Make it async
     if (isDead) return; // Prevent extra damage when player dies
 
     double reducedDamage = damage * (1 - (defense / 100));
 
-    // 🏹 **Apply Veil of the Forgotten effect if HP < 50%**
+    // Apply Veil of the Forgotten effect if HP < 50%
     if (equippedItems.any((item) => item is VeilOfTheForgotten) &&
         currentHealth < maxHealth * 0.5) {
-      reducedDamage *= 0.8; // 🔥 Reduce damage by 20%
+      reducedDamage *= 0.8; // Reduce damage by 20%
       print("🌀 Veil of the Forgotten active! Damage reduced.");
     }
 
-    currentHealth -=
-        reducedDamage.clamp(1, maxHealth).toInt(); // ✅ Explicit cast
+    currentHealth -= reducedDamage.clamp(1, maxHealth).toInt(); // Explicit cast
 
-    // ✅ Lose Spirit EXP instead of instantly dropping a level
+    // Lose Spirit EXP instead of instantly dropping a level
     double expLoss =
         spiritExpToNextLevel * 0.05; // Lose 5% of current level EXP
     spiritExp -= expLoss;
@@ -337,7 +324,7 @@ class Player extends PositionComponent
       isDead = true;
       whisperWarrior.playAnimation('death');
 
-      // ✅ Get animation duration correctly
+      // Get animation duration correctly
       final double animationDuration = whisperWarrior.animation!.frames.length *
           whisperWarrior.animation!.frames.first.stepTime;
 
@@ -368,6 +355,7 @@ class Player extends PositionComponent
     }
   }
 
+  // Shoot a projectile at the target
   void shootProjectile(PositionComponent target, int damage,
       {bool isCritical = false}) {
     if (closestEnemy == null) {
@@ -380,12 +368,12 @@ class Player extends PositionComponent
     final direction = (closestEnemy!.position - position).normalized();
 
     final projectile = Projectile(
-      damage: damage, // ✅ Ensure `damage` is an int
-      velocity: direction * 500, // ✅ Now correctly passing velocity
-      maxRange: 1600, // ✅ Player projectiles should have a range
-      player: this, // ✅ Pass the player reference
+      damage: damage, // Ensure `damage` is an int
+      velocity: direction * 500, // Correctly passing velocity
+      maxRange: 1600, // Player projectiles should have a range
+      player: this, // Pass the player reference
       onHit: (enemy) {
-        // ✅ Move Cursed Echo trigger here
+        // Move Cursed Echo trigger here
         if (hasAbility<CursedEcho>()) {
           abilities
               .firstWhere((a) => a is CursedEcho)
@@ -401,22 +389,26 @@ class Player extends PositionComponent
     print("🚀 PLAYER PROJECTILE FIRED!");
   }
 
+  // Add an item to the inventory
   void addItem(Item item) {
     inventory.add(item);
-    inventoryNotifier.value = List.from(inventory); // ✅ Triggers UI update
+    inventoryNotifier.value = List.from(inventory); // Triggers UI update
     print("📦 Added ${item.name} to inventory.");
   }
 
+  // Add an ability to the player
   void addAbility(Ability ability) {
     abilities.add(ability);
     abilityNotifier.value = List.from(abilities);
     ability.applyEffect(this);
   }
 
+  // Check if the player has a specific ability
   bool hasAbility<T extends Ability>() {
     return abilities.any((ability) => ability is T);
   }
 
+  // Update the closest enemy
   void updateClosestEnemy() {
     final enemies = gameRef.children.whereType<BaseEnemy>().toList();
     if (enemies.isEmpty) {
@@ -441,11 +433,12 @@ class Player extends PositionComponent
     }
   }
 
+  // Gain health and display healing numbers
   void gainHealth(int amount) {
     if (currentHealth < maxHealth && amount > 0) {
       int healedAmount = ((currentHealth + amount) > maxHealth)
           ? (maxHealth - currentHealth).toInt()
-          : amount; // ✅ Explicit cast
+          : amount; // Explicit cast
       currentHealth += healedAmount;
 
       if (healedAmount > 0) {
@@ -455,29 +448,30 @@ class Player extends PositionComponent
     }
   }
 
+  // Trigger an explosion at a specific position
   void triggerExplosion(Vector2 position) {
     double currentTime = gameRef.currentTime();
 
-    // ✅ Prevent excessive explosions
+    // Prevent excessive explosions
     if (currentTime - lastExplosionTime < explosionCooldown) {
       return;
     }
 
-    lastExplosionTime = currentTime; // ✅ Update cooldown
+    lastExplosionTime = currentTime; // Update cooldown
 
     gameRef.add(Explosion(position));
     print("💥 Explosion triggered at $position");
 
-    // ✅ Calculate explosion damage based on Spirit Level
+    // Calculate explosion damage based on Spirit Level
     double explosionDamage = damage * 0.25; // Base: 25% of player damage
     explosionDamage *= spiritMultiplier; // Scale with Spirit Level
 
-    // ✅ Apply damage to nearby enemies
+    // Apply damage to nearby enemies
     for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
       double distance = (enemy.position - position).length;
 
       if (distance < 100.0) {
-        // ✅ Explosion radius
+        // Explosion radius
         int finalDamage = explosionDamage.toInt().clamp(1, 9999);
         enemy.takeDamage(finalDamage);
         print("🔥 Explosion hit enemy for $finalDamage damage!");
@@ -491,7 +485,9 @@ class Player extends PositionComponent
     super.onRemove();
   }
 
+  // Add a passive effect to the player
   void addPassiveEffect(PassiveEffect passiveEffect) {}
 
+  // Remove a passive effect from the player
   void removePassiveEffect(String s) {}
 }

@@ -16,14 +16,8 @@ class AbilityFactory {
     }
   }
 }
-  /*  case 'Soul Fracture':
-        return SoulFracture();
-        return null;
-    }
-  }
-}
 
-
+/*
    case 'Soul Fracture':
         return SoulFracture();
       case 'Fading Crescent':
