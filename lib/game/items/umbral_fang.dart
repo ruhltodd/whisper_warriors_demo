@@ -10,6 +10,8 @@ class UmbralFang extends Item {
       : super(
           name: "Umbral Fang",
           description: "A dark blade forged from the essence of shadows.",
+          expValue: 100, // Example value for expValue
+          spriteName: "umbral_fang_sprite", // Example value for spriteName
           stats: {"Attack Speed": 0.15}, // ✅ Keeps attack speed bonus
           rarity: "Rare",
         );

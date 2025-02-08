@@ -5,6 +5,8 @@ import 'package:flame/effects.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:whisper_warriors/game/bosses/staggerbar.dart';
+import 'package:whisper_warriors/game/inventory/loottable.dart';
+import 'package:whisper_warriors/game/items/lootbox.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/projectiles/projectile.dart';
@@ -268,9 +270,11 @@ class Boss1 extends BaseEnemy with Staggerable {
   void die() {
     if (!hasDroppedItem) {
       hasDroppedItem = true;
-      final drop = _getRandomDropItem();
-      drop.position = position.clone();
-      gameRef.add(drop);
+      final dropItems = _getDropItems();
+      final lootBox = LootBox(items: dropItems);
+      lootBox.position = position.clone();
+      gameRef.add(lootBox);
+      print("🗃️ LootBox spawned at position: ${lootBox.position}");
     }
 
     onDeath();
@@ -278,15 +282,21 @@ class Boss1 extends BaseEnemy with Staggerable {
     removeFromParent();
   }
 
-  DropItem _getRandomDropItem() {
-    final items = [
-      DropItem(expValue: 100, spriteName: 'gold_coin.png'),
-      DropItem(expValue: 200, spriteName: 'umbral_fang.png'),
-      DropItem(expValue: 300, spriteName: 'veil_of_the_forgotten.png'),
-      DropItem(expValue: 400, spriteName: 'shard_of_umbrathos.png'),
-    ];
+  List<DropItem> _getDropItems() {
+    final List<DropItem> dropItems = [];
 
-    final randomIndex = random.nextInt(items.length);
-    return items[randomIndex];
+    // Add the gold coin
+    dropItems.add(DropItem(expValue: 100, spriteName: 'gold_coin.png'));
+
+    // Add the random loot item
+    final item = LootTable.getRandomLoot();
+    if (item != null) {
+      dropItems.add(DropItem(
+          expValue: item.expValue,
+          spriteName: item.spriteName,
+          isBossDrop: true));
+    }
+
+    return dropItems;
   }
 }

@@ -635,6 +635,22 @@ class RogueShooterGame extends FlameGame
     }
   }
 
+  void showNotification(String message) {
+    // Implement your notification display logic here
+    // For example, you can use a TextComponent or any other UI element
+    add(TextComponent(
+      text: message,
+      position: Vector2(size.x / 2, 20), // Upper center of the screen
+      anchor: Anchor.topCenter,
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 16, // Smaller font size
+        ),
+      ),
+    ));
+  }
+
   Vector2 _getRandomSpawnPosition() {
     final random = Random();
     final spawnMargin = 50.0;

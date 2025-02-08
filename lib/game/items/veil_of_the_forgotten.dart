@@ -12,6 +12,8 @@ class VeilOfTheForgotten extends Item {
               "A mysterious veil that shrouds you in protective darkness.",
           // Example stat: gives a 20% bonus to defense when health is below 50%
           stats: {"Defense Bonus": 0.20},
+          expValue: 100, // Example value for experience points
+          spriteName: "veil_of_the_forgotten_sprite", // Example sprite name
           rarity: "Epic",
         );
 

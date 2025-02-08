@@ -12,6 +12,8 @@ class ShardOfUmbrathos extends Item {
           description: "A mysterious shard that enhances your spirit.",
           stats: {"Spirit Multiplier": 0.15}, // Example stat bonus
           rarity: "Epic",
+          expValue: 100, // Example expValue
+          spriteName: "shard_of_umbrathos.png", // Example spriteName
         );
 
   @override

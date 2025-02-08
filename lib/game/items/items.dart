@@ -17,11 +17,19 @@ abstract class Item extends HiveObject {
   @HiveField(3)
   final Map<String, double> stats;
 
+  @HiveField(4)
+  final int expValue;
+
+  @HiveField(5)
+  final String spriteName;
+
   Item({
     required this.name,
     required this.description,
     required this.rarity,
     required this.stats,
+    required this.expValue,
+    required this.spriteName,
   });
 
   void applyEffect(Player player);
@@ -38,6 +46,8 @@ class UmbralFang extends Item {
               "A dagger formed from pure shadow, phasing through enemies.",
           rarity: "Rare",
           stats: {"Attack Speed": 0.20, "Piercing": 1},
+          expValue: 200,
+          spriteName: 'umbral_fang.png',
         );
 
   @override
@@ -65,6 +75,8 @@ class VeilOfTheForgotten extends Item {
           description: "A spectral robe woven from lost memories.",
           rarity: "Epic",
           stats: {"Defense Bonus": 0.20, "Threshold": 0.50},
+          expValue: 300,
+          spriteName: 'veil_of_the_forgotten.png',
         );
 
   @override
@@ -89,6 +101,8 @@ class ShardOfUmbrathos extends Item {
               "A fragment of the Fading King’s power, still pulsing with energy.",
           rarity: "Legendary",
           stats: {"Spirit Multiplier": 0.30},
+          expValue: 400,
+          spriteName: 'shard_of_umbrathos.png',
         );
 
   @override
