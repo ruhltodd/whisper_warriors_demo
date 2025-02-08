@@ -4,27 +4,22 @@ import 'package:flame/effects.dart';
 import 'package:flutter/animation.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/main.dart';
+import 'package:whisper_warriors/game/items/items.dart';
 
 class DropItem extends SpriteComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
-  final int expValue;
-  final String spriteName;
-  final bool isBossDrop; // Flag to indicate if the item is dropped by a boss
+  final Item item;
   bool isCollected = false; // Prevent duplicate pickups
   bool canBeCollected = false; // Delay before item can be collected
 
-  DropItem({
-    required this.expValue,
-    required this.spriteName,
-    this.isBossDrop = false, // Default to false
-  }) : super(size: Vector2(15, 15)) {
+  DropItem({required this.item}) : super(size: Vector2(15, 15)) {
     add(CircleHitbox());
   }
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
-    sprite = await gameRef.loadSprite(spriteName);
+    sprite = await gameRef.loadSprite(item.spriteName);
 
     // ✅ Start the bounce effect when spawned
     _playBounceEffect();
@@ -78,13 +73,9 @@ class DropItem extends SpriteComponent
         gameRef.player.position, // Move towards the player
         EffectController(duration: 0.3, curve: Curves.easeOut),
         onComplete: () {
-          gameRef.player.gainSpiritExp(expValue.toDouble()); // ✅ Give EXP
-          if (isBossDrop) {
-            gameRef.showNotification(
-                "💰 Player collected $expValue EXP from $spriteName!"); // ✅ Show notification
-          }
+          gameRef.player.gainSpiritExp(item.expValue.toDouble()); // ✅ Give EXP
           removeFromParent(); // ✅ Remove item after collection
-          print("💰 Player collected $expValue EXP from $spriteName!");
+          print("💰 Player collected ${item.expValue} EXP from ${item.name}!");
         },
       ),
     );

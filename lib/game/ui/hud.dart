@@ -92,7 +92,8 @@ class HUD extends StatelessWidget {
                     width: 200, // ✅ Fixed width for proper centering
                     child: BossHealthBar(
                       bossHealth: bossHealth,
-                      maxBossHealth: 50000,
+                      maxBossHealth: 500, //for testing purposes
+                      //  maxBossHealth: 50000,
                     ),
                   ),
 

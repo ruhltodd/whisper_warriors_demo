@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:whisper_warriors/game/bosses/staggerbar.dart';
 import 'package:whisper_warriors/game/inventory/loottable.dart';
 import 'package:whisper_warriors/game/items/lootbox.dart';
+import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/projectiles/projectile.dart';
@@ -271,7 +272,8 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (!hasDroppedItem) {
       hasDroppedItem = true;
       final dropItems = _getDropItems();
-      final lootBox = LootBox(items: dropItems);
+      final lootBox =
+          LootBox(items: dropItems.map((dropItem) => dropItem.item).toList());
       lootBox.position = position.clone();
       gameRef.add(lootBox);
       print("🗃️ LootBox spawned at position: ${lootBox.position}");
@@ -286,15 +288,12 @@ class Boss1 extends BaseEnemy with Staggerable {
     final List<DropItem> dropItems = [];
 
     // Add the gold coin
-    dropItems.add(DropItem(expValue: 100, spriteName: 'gold_coin.png'));
+    dropItems.add(DropItem(item: GoldCoin()));
 
     // Add the random loot item
     final item = LootTable.getRandomLoot();
     if (item != null) {
-      dropItems.add(DropItem(
-          expValue: item.expValue,
-          spriteName: item.spriteName,
-          isBossDrop: true));
+      dropItems.add(DropItem(item: item));
     }
 
     return dropItems;

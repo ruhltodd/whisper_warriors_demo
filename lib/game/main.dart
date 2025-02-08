@@ -389,12 +389,12 @@ class RogueShooterGame extends FlameGame
             ? Wave1Enemy(
                 player: player,
                 speed: 70,
-                health: 500,
+                health: 50,
                 size: Vector2(64, 64),
               )
             : Wave2Enemy(
                 player: player,
-                speed: 50,
+                speed: 100,
                 health: 800,
                 size: Vector2(128, 128),
               );
@@ -403,7 +403,7 @@ class RogueShooterGame extends FlameGame
         enemy = Wave1Enemy(
           player: player,
           speed: 100,
-          health: 300,
+          health: 50,
           size: Vector2(64, 64),
         );
       }
@@ -458,7 +458,8 @@ class RogueShooterGame extends FlameGame
     final boss = Boss1(
       player: player,
       speed: 20,
-      health: 50000,
+      //health: 50000,
+      health: 500, // for testing purposes
       size: Vector2(128, 128),
       onHealthChanged: (double health) => bossHealthNotifier.value = health,
       onDeath: () {},
@@ -472,9 +473,9 @@ class RogueShooterGame extends FlameGame
       _postBossEnemySpawn();
 
       // ✅ Drop Gold Coin at Boss Position
+      final goldCoinItem = GoldCoin();
       final goldCoin = DropItem(
-        expValue: 5000,
-        spriteName: 'gold_coin.png',
+        item: goldCoinItem,
       )..position = boss.position.clone();
 
       add(goldCoin);
@@ -499,8 +500,9 @@ class RogueShooterGame extends FlameGame
 
       print("🔥 BOSS LANDED IN CENTER AT $bossSpawnPosition!");
     });
+    bossHealthNotifier.value = 500; // ✅ Show Boss HP for testing purposes
 
-    bossHealthNotifier.value = 50000; // ✅ Show Boss HP
+    //bossHealthNotifier.value = 50000; // ✅ Show Boss HP
   }
 
   void _postBossEnemySpawn() {

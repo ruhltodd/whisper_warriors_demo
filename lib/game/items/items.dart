@@ -99,7 +99,7 @@ class ShardOfUmbrathos extends Item {
           name: "Shard of Umbrathos",
           description:
               "A fragment of the Fading King’s power, still pulsing with energy.",
-          rarity: "Legendary",
+          rarity: "Epic",
           stats: {"Spirit Multiplier": 0.30},
           expValue: 400,
           spriteName: 'shard_of_umbrathos.png',
@@ -115,5 +115,51 @@ class ShardOfUmbrathos extends Item {
   void removeEffect(Player player) {
     player.spiritMultiplier /= 1.15;
     print("💠 Shard of Umbrathos unequipped.");
+  }
+}
+
+@HiveType(typeId: 4) // ✅ Unique typeId
+class GoldCoin extends Item {
+  GoldCoin()
+      : super(
+          name: "Gold Coin",
+          description: "A shiny gold coin.",
+          rarity: "Common",
+          stats: {},
+          expValue: 5000,
+          spriteName: 'gold_coin.png',
+        );
+
+  @override
+  void applyEffect(Player player) {
+    // Define any effects if needed
+  }
+
+  @override
+  void removeEffect(Player player) {
+    // Define any removal effects if needed
+  }
+}
+
+@HiveType(typeId: 5) // ✅ Unique typeId
+class BlueCoin extends Item {
+  BlueCoin()
+      : super(
+          name: "Blue Coin",
+          description: "A shiny blue coin.",
+          rarity: "Common",
+          stats: {},
+          expValue: 10,
+          spriteName: 'blue_coin.png',
+        );
+
+  @override
+  void applyEffect(Player player) {
+    // Define any effects if needed
+  }
+
+  @override
+  void removeEffect(Player player) {
+    // Define any removal effects if needed
   }
 }

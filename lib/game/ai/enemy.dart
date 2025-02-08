@@ -5,6 +5,7 @@ import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/utils/dropitem.dart';
+import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 
@@ -85,12 +86,11 @@ class BaseEnemy extends SpriteAnimationComponent
 
     if (!hasDroppedItem) {
       hasDroppedItem = true;
-      final drop = DropItem(expValue: 10, spriteName: 'blue_coin.png')
-        ..position = position.clone();
+      final blueCoinItem = BlueCoin();
+      final drop = DropItem(item: blueCoinItem)..position = position.clone();
       gameRef.add(drop);
-      gameRef.player.gainHealth(gameRef.player.vampiricHealing.toInt());
     }
 
-    removeFromParent();
+    removeFromParent(); // ✅ Ensure the enemy is removed from the game world
   }
 }
