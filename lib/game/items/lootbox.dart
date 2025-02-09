@@ -64,59 +64,19 @@ class LootBox extends SpriteComponent
   }
 
   void _openLootBox() {
-    isOpened = true; // Prevent multiple openings
+    isOpened = true;
     print("🗃️ LootBox opened at position: $position");
 
-    int notificationIndex = 0; // ✅ Track the number of notifications
-
-    // Spawn the items contained in the loot box
     for (var item in items) {
       final dropItem = DropItem(item: item);
       dropItem.position = position.clone();
       gameRef.add(dropItem);
       print(
-          "💰 Item spawned from LootBox: ${item.spriteName} at position: ${dropItem.position}");
+          "💰 Item spawned from LootBox: ${item.spriteName} at ${dropItem.position}");
 
-      // Determine the text color based on the item's rarity
-      Color textColor;
-      switch (item.rarity) {
-        case "Rare":
-          textColor = Colors.blue;
-          break;
-        case "Epic":
-          textColor = Colors.purple;
-          break;
-        case "Legendary":
-          textColor = Colors.orange;
-          break;
-        default:
-          textColor = Colors.white;
-      }
-
-      // ✅ Adjust notification position based on the index to prevent overlap
-      final notificationPosition = gameRef.player.position.clone() +
-          Vector2(0, -50 - (notificationIndex * 35));
-
-      final textStyle = TextStyle(
-        color: textColor,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        shadows: [
-          Shadow(
-            blurRadius: 4.0,
-            color: Colors.black,
-            offset: Offset(2.0, 2.0),
-          ),
-        ],
-      );
-
-      // ✅ Delay each notification slightly so they animate cleanly
-      Future.delayed(Duration(milliseconds: notificationIndex * 150), () {
-        gameRef.add(NotificationComponent(
-            gameRef, item.name, notificationPosition, textStyle));
-      });
-
-      notificationIndex++; // ✅ Increment to stagger notifications
+      // ✅ Send loot info to the Loot Notification Bar (HUD)
+      gameRef.lootNotificationBar
+          .addLootNotification(item.name, item.rarity, 1);
     }
 
     removeFromParent(); // ✅ Remove loot box after opening

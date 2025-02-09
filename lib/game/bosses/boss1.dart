@@ -118,8 +118,6 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _shootProjectiles() {
-    print("🔥 Boss is firing projectiles!");
-
     List<double> cardinalAngles = [0, 90, 180, 270];
     List<double> diagonalAngles = [45, 135, 225, 315];
 
@@ -128,7 +126,6 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     if (attackCount % 4 == 3) {
       angles = angles.reversed.toList();
-      print("🔄 Reversing projectile direction!");
     }
 
     attackCount++;
@@ -137,7 +134,6 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (isFading) {
       angles.shuffle();
       angles = angles.sublist(0, 2);
-      print("👁 **Some projectiles have vanished!**");
     }
 
     for (double angle in angles) {
@@ -156,7 +152,6 @@ class Boss1 extends BaseEnemy with Staggerable {
         ..anchor = Anchor.center;
 
       gameRef.add(bossProjectile);
-      print("🔥 Boss Projectile fired at angle: $angle°");
     }
   }
 
@@ -215,7 +210,6 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _enterFadingPhase() {
-    print("👁 **The Fading King is fading!** - Boss is now invisible!");
     isFading = true;
     add(OpacityEffect.to(0.0, EffectController(duration: 2.0)));
   }
@@ -224,7 +218,6 @@ class Boss1 extends BaseEnemy with Staggerable {
   void triggerStagger() {
     if (isStaggered) return;
 
-    print("⚡ BOSS STAGGERED!");
     isStaggered = true;
     speed *= 0.5;
     attackCooldown *= 1.5;
@@ -245,7 +238,6 @@ class Boss1 extends BaseEnemy with Staggerable {
 
       if (isFading) {
         add(OpacityEffect.to(0.0, EffectController(duration: 1.0)));
-        print("👁 **The Fading King vanishes once more!**");
       }
     });
   }

@@ -70,7 +70,6 @@ class FireAura extends SpriteAnimationComponent
 
           // ✅ **If Cursed Echo triggered, reapply Fire Aura damage once**
           if (cursedEchoTriggered) {
-            print("🔥 Cursed Echo triggered Fire Aura repeat!");
             Future.delayed(Duration(milliseconds: 100), () {
               enemy.takeDamage(finalDamage, isCritical: isCritical);
             });

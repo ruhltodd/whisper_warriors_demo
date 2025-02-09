@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
 import 'package:whisper_warriors/game/ui/experience.dart';
+import 'package:whisper_warriors/game/ui/notifications.dart';
 import 'package:whisper_warriors/game/utils/customcamera.dart';
 import 'package:whisper_warriors/game/ui/hud.dart';
 import 'package:whisper_warriors/game/player/player.dart';
@@ -184,15 +185,12 @@ class _MyAppState extends State<MyApp> {
                 game: gameInstance,
                 overlayBuilderMap: {
                   'hud': (_, game) => HUD(
-                        onJoystickMove: (delta) => (game as RogueShooterGame)
-                            .player
-                            .updateJoystick(delta),
+                        onJoystickMove: (delta) =>
+                            (game).player.updateJoystick(delta),
                         experienceBar: (game as RogueShooterGame).experienceBar,
-                        game: game as RogueShooterGame,
-                        bossHealthNotifier:
-                            (game as RogueShooterGame).bossHealthNotifier,
-                        bossStaggerNotifier:
-                            (game as RogueShooterGame).bossStaggerNotifier,
+                        game: game,
+                        bossHealthNotifier: (game).bossHealthNotifier,
+                        bossStaggerNotifier: (game).bossStaggerNotifier,
                       ),
                   'retryOverlay': (_, game) =>
                       RetryOverlay(game: game as RogueShooterGame),
@@ -223,6 +221,7 @@ class RogueShooterGame extends FlameGame
   final List<String> selectedAbilities;
   final List<InventoryItem> equippedItems;
   final Random random = Random(); // ✅ Define Random instance
+  late LootNotificationBar lootNotificationBar;
 
   bool isPaused = false;
   int elapsedTime = 0;
@@ -287,6 +286,10 @@ class RogueShooterGame extends FlameGame
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    // loot notification bar
+    lootNotificationBar = LootNotificationBar(this);
+    add(lootNotificationBar);
+    print("✅ LootNotificationBar added to the game");
 
     bgmPlayer = AudioPlayer();
     await bgmPlayer.setReleaseMode(ReleaseMode.loop);

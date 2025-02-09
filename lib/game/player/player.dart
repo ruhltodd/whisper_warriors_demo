@@ -194,7 +194,6 @@ class Player extends PositionComponent
       if (!appliedItems.contains(invItem.item.name)) {
         invItem.item.applyEffect(this);
         appliedItems.add(invItem.item.name);
-        print("🎭 Applied ${invItem.item.name} to Player.");
       }
     }
 
@@ -271,7 +270,6 @@ class Player extends PositionComponent
 
     // Shoot projectile if cooldown is over and an enemy is targeted
     if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
-      print("🛑 Projectile removed: Max range exceeded");
       shootProjectile(damage.toInt(), closestEnemy!); // Pass required arguments
       timeSinceLastShot = 0.0; // Reset cooldown
     }
@@ -314,7 +312,6 @@ class Player extends PositionComponent
     spiritExp -= spiritExpToNextLevel;
     spiritExpToNextLevel *= 1.2;
     updateSpiritMultiplier();
-    print("✨ Spirit Level Up! New Spirit Level: $spiritLevel");
   }
 
   // Take damage and handle death
@@ -327,7 +324,6 @@ class Player extends PositionComponent
     if (equippedItems.any((item) => item is VeilOfTheForgotten) &&
         currentHealth < maxHealth * 0.5) {
       reducedDamage *= 0.8; // Reduce damage by 20%
-      print("🌀 Veil of the Forgotten active! Damage reduced.");
     }
 
     currentHealth -= reducedDamage.clamp(1, maxHealth).toInt(); // Explicit cast
@@ -350,11 +346,8 @@ class Player extends PositionComponent
       final double animationDuration = whisperWarrior.animation!.frames.length *
           whisperWarrior.animation!.frames.first.stepTime;
 
-      print("☠️ Death animation will play for ${animationDuration}s");
-
       Future.delayed(Duration(milliseconds: (animationDuration * 100).toInt()),
           () {
-        print("☠️ Player death animation complete, now removing...");
         whisperWarrior.playAnimation('death');
         removeFromParent();
         healthBar?.removeFromParent();
@@ -366,7 +359,6 @@ class Player extends PositionComponent
 
       final fireAura = gameRef.children.whereType<FireAura>().firstOrNull;
       if (fireAura != null) {
-        print("🔥 Removing FireAura because player is dead.");
         fireAura.removeFromParent();
       }
 
@@ -383,11 +375,8 @@ class Player extends PositionComponent
     // ✅ Ensure there's a valid enemy target before firing
     BaseEnemy? target = findClosestEnemy();
     if (target == null) {
-      print("⚠️ No valid enemy target found - projectile not fired!");
       return;
     }
-
-    print("🚀 shootProjectile() called!");
 
     final Vector2 direction = (target.position - position).normalized();
 
@@ -405,13 +394,14 @@ class Player extends PositionComponent
       ..anchor = Anchor.center;
 
     gameRef.add(projectile);
-    print("🎯 PLAYER PROJECTILE FIRED towards ${target.position}");
     // ✅ **Trigger Cursed Echo per shot, not per enemy hit**
     if (hasAbility<CursedEcho>() && gameRef.random.nextDouble() < 0.2) {
       Future.delayed(Duration(milliseconds: 100), () {
-        print("🔁 Cursed Echo triggered! Repeating projectile...");
-        shootProjectile(damage, closestEnemy!,
-            isCritical: isCritical); // Fire again
+        if (closestEnemy != null) {
+          shootProjectile(damage, closestEnemy!, isCritical: isCritical);
+        } else {
+          print("⚠️ No enemy found to shoot at!");
+        }
       });
     }
   }
@@ -459,7 +449,6 @@ class Player extends PositionComponent
     final enemies = gameRef.children.whereType<BaseEnemy>().toList();
     if (enemies.isEmpty) {
       closestEnemy = null;
-      print("No enemies found.");
       return;
     }
 
@@ -475,7 +464,6 @@ class Player extends PositionComponent
 
     if (newClosest != closestEnemy) {
       closestEnemy = newClosest;
-      print("🎯 New closest enemy assigned at ${closestEnemy?.position}");
     }
   }
 
@@ -506,7 +494,6 @@ class Player extends PositionComponent
     lastExplosionTime = currentTime; // Update cooldown
 
     gameRef.add(Explosion(position));
-    print("💥 Explosion triggered at $position");
 
     // Calculate explosion damage based on Spirit Level
     double explosionDamage = damage * 0.25; // Base: 25% of player damage
@@ -520,7 +507,6 @@ class Player extends PositionComponent
         // Explosion radius
         int finalDamage = explosionDamage.toInt().clamp(1, 9999);
         enemy.takeDamage(finalDamage);
-        print("🔥 Explosion hit enemy for $finalDamage damage!");
       }
     }
   }

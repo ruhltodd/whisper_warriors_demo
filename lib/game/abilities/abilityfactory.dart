@@ -14,6 +14,7 @@ class AbilityFactory {
       default:
         print("❌ ERROR: Unknown ability '$abilityName'"); // 🔍 Debugging
     }
+    return null;
   }
 }
 

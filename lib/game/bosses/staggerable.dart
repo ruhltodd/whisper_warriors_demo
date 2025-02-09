@@ -42,8 +42,6 @@ mixin Staggerable on PositionComponent {
   }
 
   void triggerStagger() {
-    print("⚡ STAGGERED! Boss takes extra damage!");
-
     isStaggered = true;
     staggerProgress = 0.0; // ✅ Reset stagger meter
     _staggerCooldownTimer = staggerCooldown;
@@ -71,7 +69,6 @@ mixin Staggerable on PositionComponent {
 
     Future.delayed(Duration(seconds: staggerDuration.toInt()), () {
       isStaggered = false;
-      print("⚡ RECOVERED FROM STAGGER!");
     });
   }
 

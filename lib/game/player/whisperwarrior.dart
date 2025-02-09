@@ -18,8 +18,6 @@ class WhisperWarrior extends SpriteAnimationComponent
 
   @override
   Future<void> onLoad() async {
-    print("Loading WhisperWarrior...");
-
     animations = {};
 
     // ✅ Load the idle animation from `whisper_warrior_idle.png`
@@ -65,13 +63,10 @@ class WhisperWarrior extends SpriteAnimationComponent
     // Set the default animation
     animation = animations['idle'];
     isLoaded = true;
-
-    print("WhisperWarrior loaded successfully with multiple animations!");
   }
 
   void playAnimation(String animationName) {
     if (!isLoaded) {
-      print("Warning: Attempted to play animation before loading completed.");
       return;
     }
 
@@ -79,8 +74,6 @@ class WhisperWarrior extends SpriteAnimationComponent
       animation = animations[animationName];
 
       if (animationName == 'death') {
-        print("☠️ Playing death animation...");
-
         // ✅ Prevent looping by setting `loop` to false
         animation!.loop = false;
 
@@ -89,16 +82,13 @@ class WhisperWarrior extends SpriteAnimationComponent
             animation!.frames.length * animation!.frames.first.stepTime;
 
         Future.delayed(Duration(milliseconds: (duration * 1000).toInt()), () {
-          print("☠️ Death animation finished, freezing on last frame.");
           animation = SpriteAnimation.spriteList(
             [animation!.frames.last.sprite], // ✅ Freeze on last frame
             stepTime: double.infinity,
           );
         });
       }
-    } else {
-      print('Animation "$animationName" not found.');
-    }
+    } else {}
   }
 
   @override

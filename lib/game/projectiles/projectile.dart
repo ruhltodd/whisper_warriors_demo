@@ -120,7 +120,6 @@ class Projectile extends SpriteAnimationComponent
         if (!enemiesHit.contains(enemy)) {
           enemiesHit.add(enemy); // ✅ Mark enemy as hit
           enemy.takeDamage(damage);
-          print("🗡️ Projectile hit: ${enemy.runtimeType} - Damage: $damage");
 
           // ✅ Trigger `onHit` effects (Cursed Echo, etc.)
           onHit?.call(enemy);
@@ -135,12 +134,10 @@ class Projectile extends SpriteAnimationComponent
         // ✅ Remove projectile **only if it should NOT pierce**
         if (!shouldPierce) {
           removeFromParent();
-          print("🛑 Projectile removed after hitting: ${enemy.runtimeType}");
         }
       }
     } else {
       if (other is Player) {
-        print("🛑 Projectile collided with player at ${DateTime.now()}");
         other.takeDamage(damage);
         removeFromParent();
       }

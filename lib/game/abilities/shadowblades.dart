@@ -27,13 +27,10 @@ class ShadowBlades extends PositionComponent with HasGameRef<RogueShooterGame> {
   }
 
   void _shootBlade() {
-    print("⚔️ Throwing Shadow Blade!");
-
     // ✅ Find closest enemy or boss
     BaseEnemy? target = _findClosestTarget();
 
     if (target == null) {
-      print("⚠️ No enemies found - Shadow Blade not fired.");
       return;
     }
 
@@ -134,7 +131,6 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
           isCritical ? (damage * player.critMultiplier).toInt() : damage;
 
       other.takeDamage(finalDamage, isCritical: isCritical);
-      print("🗡️ Shadow Blade hit! ${isCritical ? '🔥 CRIT!' : ''}");
 
       // ✅ **No longer rolling Cursed Echo per enemy hit**
       // ✅ **Now triggers per blade when first thrown**
