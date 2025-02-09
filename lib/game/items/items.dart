@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:whisper_warriors/game/player/player.dart';
+import 'package:whisper_warriors/game/projectiles/projectile.dart';
 
 part 'items.g.dart'; // ✅ Required for Hive TypeAdapter Generation
 
@@ -37,7 +38,7 @@ abstract class Item extends HiveObject {
 }
 
 // 🗡️ **Umbral Fang - Increases attack speed & allows piercing**
-@HiveType(typeId: 1) // ✅ Unique typeId
+@HiveType(typeId: 1) // ✅ Ensure it's unique in Hive
 class UmbralFang extends Item {
   UmbralFang()
       : super(
@@ -45,17 +46,23 @@ class UmbralFang extends Item {
           description:
               "A dagger formed from pure shadow, phasing through enemies.",
           rarity: "Rare",
-          stats: {"Attack Speed": 0.20, "Piercing": 1},
+          stats: {"Attack Speed": 0.15, "Piercing": 1}, // ✅ Standardized Stats
           expValue: 200,
-          spriteName: 'umbral_fang.png',
+          spriteName: "umbral_fang.png", // ✅ Proper sprite filename
         );
 
   @override
   void applyEffect(Player player) {
     player.baseAttackSpeed *= 1.15;
     player.projectilesShouldPierce = true; // ✅ Enable piercing
+
     print(
         "🗡️ Umbral Fang equipped! Attack speed increased & projectiles pierce!");
+
+    // ✅ Ensure already-fired projectiles update if needed
+    for (var projectile in player.gameRef.children.whereType<Projectile>()) {
+      projectile.shouldPierce = true;
+    }
   }
 
   @override
