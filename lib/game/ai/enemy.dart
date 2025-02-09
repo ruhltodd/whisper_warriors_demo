@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart'; // Import for VoidCallback
+import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/effects/damagenumber.dart';
@@ -90,6 +91,11 @@ class BaseEnemy extends SpriteAnimationComponent
       final drop = DropItem(item: blueCoinItem)..position = position.clone();
       gameRef.add(drop);
     }
+
+    // ✅ Grant XP for defeating this enemy
+    int xpEarned = 20; // Adjust based on enemy type
+    PlayerProgressManager.addXp(xpEarned);
+    print("⚔️ Enemy Defeated! +$xpEarned XP");
 
     removeFromParent(); // ✅ Ensure the enemy is removed from the game world
   }

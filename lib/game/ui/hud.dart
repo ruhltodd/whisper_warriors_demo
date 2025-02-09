@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:whisper_warriors/game/inventory/inventorybar.dart';
-import 'package:whisper_warriors/game/ui/experience.dart';
+import 'package:whisper_warriors/game/ui/globalexperiencelevelbar.dart';
+import 'package:whisper_warriors/game/ui/spiritlevelbar.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/abilities/abilitybar.dart';
 import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
@@ -49,6 +50,12 @@ class HUD extends StatelessWidget {
           ),
         ),
 
+        // 📈 XP Bar (Above Spirit Level)
+        Positioned(
+          top: safeTop + 2, // ✅ Moves XP Bar slightly higher
+          left: MediaQuery.of(context).size.width / 2 - 75, // ✅ Centered
+          child: XPBar(smallSize: true), // ✅ Uses the compact version for HUD
+        ),
         // ⚡ Spirit Bar (Top Center)
         Positioned(
           top: safeTop + 10,

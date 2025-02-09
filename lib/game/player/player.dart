@@ -3,6 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flame/collisions.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
+import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
 import 'package:whisper_warriors/game/player/healthbar.dart';
@@ -76,6 +77,7 @@ class Player extends PositionComponent
       []; // Start with an empty inventory// Stores collected items
   List<InventoryItem> equippedItems; // Store equipped items
   ValueNotifier<List<Item>> inventoryNotifier = ValueNotifier([]);
+  List<String> unlockedAbilities = [];
 
   bool hasUmbralFang = false;
   bool hasVeilOfForgotten = false;
@@ -88,8 +90,18 @@ class Player extends PositionComponent
 
   // Apply selected abilities to the player
   void applySelectedAbilities() {
-    for (var ability in selectedAbilities) {
-      addAbility(AbilityFactory.createAbility(ability)!);
+    List<String> unlockedAbilities = PlayerProgressManager
+        .getUnlockedAbilities(); // ✅ Ensure latest abilities are retrieved
+
+    for (var abilityName in unlockedAbilities) {
+      if (!abilities.any((a) => a.name == abilityName)) {
+        Ability? ability = AbilityFactory.createAbility(abilityName);
+        if (ability != null) {
+          addAbility(ability);
+        }
+      } else {
+        print("⚠️ Ability $abilityName already in list, skipping...");
+      }
     }
   }
 
@@ -127,6 +139,17 @@ class Player extends PositionComponent
       ..anchor = Anchor.center
       ..position = position.clone();
     gameRef.add(whisperWarrior);
+
+    // Load unlocked abilities from PlayerProgressManager
+    unlockedAbilities = PlayerProgressManager.getUnlockedAbilities();
+
+    for (var abilityName in unlockedAbilities) {
+      Ability? ability = AbilityFactory.createAbility(abilityName);
+      if (ability != null) {
+        addAbility(ability);
+      }
+    }
+    print("🔥 Player Loaded with Abilities: $unlockedAbilities");
 
 // ✅ Apply only explicitly equipped items
     for (var item in equippedItems) {
@@ -415,9 +438,14 @@ class Player extends PositionComponent
 
   // Add an ability to the player
   void addAbility(Ability ability) {
+    if (abilities.any((a) => a.runtimeType == ability.runtimeType)) {
+      print("⚠️ Ability ${ability.name} already exists, skipping...");
+      return; // ✅ Prevents duplicate abilities in the HUD
+    }
     abilities.add(ability);
-    abilityNotifier.value = List.from(abilities);
+    abilityNotifier.value = List.from(abilities); // ✅ Triggers HUD update
     ability.applyEffect(this);
+    print("🔥 Added Ability: ${ability.name}");
   }
 
   // Check if the player has a specific ability

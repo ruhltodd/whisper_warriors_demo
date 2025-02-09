@@ -1,7 +1,17 @@
 import 'package:hive/hive.dart';
+import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
 
 class PlayerProgressManager {
   static final Box _progressBox = Hive.box('playerProgressBox');
+
+  // ✅ Temporary XP/Level Reset (Does NOT modify Hive)
+  static void resetProgressForTestingTemporary() {
+    print("🧪 TEMP Debug: Forcing Level 1 (Session-Only)");
+    int tempLevel = 1;
+    int tempXp = 0;
+
+    print("🌟 Debug Level: $tempLevel | Debug XP: $tempXp");
+  }
 
   // Load XP (default to 0)
   static int getXp() => _progressBox.get('xp', defaultValue: 0);
@@ -21,7 +31,26 @@ class PlayerProgressManager {
     print("📈 Level Updated: $level");
   }
 
-  // Grant XP and check if player levels up
+  // Get unlocked abilities from Hive
+  static List<String> getUnlockedAbilities() {
+    int currentLevel = getLevel();
+
+    // ✅ Unlock abilities dynamically based on level
+    List<String> unlocked = AbilityFactory.abilityUnlockOrder
+        .take(currentLevel) // Take abilities up to the player's level
+        .toList();
+
+    print("🔓 Unlocked Abilities: $unlocked");
+    return unlocked;
+  }
+
+  // Save unlocked abilities to Hive
+  static void saveUnlockedAbilities(List<String> abilities) {
+    _progressBox.put('unlockedAbilities', abilities);
+    print("🔓 Unlocked Abilities: $abilities");
+  }
+
+  // Grant XP and check for level up
   static void addXp(int amount) {
     int currentXp = getXp();
     int newXp = currentXp + amount;
@@ -31,9 +60,9 @@ class PlayerProgressManager {
     checkForLevelUp();
   }
 
-  // XP needed for next level (simple curve, adjust if needed)
+  // XP needed for next level
   static int xpForNextLevel(int level) {
-    return 100 * level; // Example: Level 2 needs 200 XP, Level 3 needs 300 XP
+    return 100 * level; // Adjust this formula as needed
   }
 
   static void checkForLevelUp() {
@@ -45,6 +74,39 @@ class PlayerProgressManager {
       setLevel(currentLevel + 1);
       setXp(0); // Reset XP after level-up
       print("🎉 Player Leveled Up to Level ${currentLevel + 1}!");
+
+      // ✅ Check if a new ability is available at this level
+      List<String> unlockedAbilities = getUnlockedAbilities();
+      if (unlockedAbilities.length >= currentLevel) {
+        print(
+            "🔓 New Ability Unlocked: ${unlockedAbilities[currentLevel - 1]}!");
+      }
+    }
+  }
+
+// 🔥 Unlock an ability when leveling up
+  static void unlockAbilityForLevel(int level) {
+    // ✅ Only include the abilities we actually have implemented
+    List<String> availableAbilities = [
+      "Whispering Flames",
+      "Soul Fracture",
+      "Shadow Blades",
+      "Cursed Echo"
+    ];
+
+    List<String> unlockedAbilities = getUnlockedAbilities();
+
+    // ✅ Ensure we don't exceed the implemented abilities
+    if (level <= availableAbilities.length) {
+      String newAbility =
+          availableAbilities[level - 1]; // Level 1 unlocks 1st ability, etc.
+      if (!unlockedAbilities.contains(newAbility)) {
+        unlockedAbilities.add(newAbility);
+        saveUnlockedAbilities(unlockedAbilities);
+        print("✨ Unlocked New Ability: $newAbility");
+      }
+    } else {
+      print("⚠️ No more abilities to unlock at level $level!");
     }
   }
 }

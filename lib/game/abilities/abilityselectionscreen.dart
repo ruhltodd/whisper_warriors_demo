@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart'; // ✅ Audio support
+import 'package:audioplayers/audioplayers.dart';
+import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
+import 'package:whisper_warriors/game/ui/globalexperiencelevelbar.dart'; // ✅ Added for ability unlocks
 
 class AbilitySelectionScreen extends StatefulWidget {
   final Function(List<String>) onAbilitiesSelected;
@@ -14,7 +16,8 @@ class AbilitySelectionScreen extends StatefulWidget {
 class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   List<String> selectedAbilities = [];
   final int maxAbilities = 4;
-  late AudioPlayer _audioPlayer; // ✅ Background music instance
+  late AudioPlayer _audioPlayer;
+  late List<String> unlockedAbilities; // ✅ Store unlocked abilities
 
   final Map<String, String> abilities = {
     'Whispering Flames':
@@ -43,6 +46,12 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
     super.initState();
     _audioPlayer = AudioPlayer();
     _playMusic();
+
+    unlockedAbilities =
+        PlayerProgressManager.getUnlockedAbilities(); // ✅ Load dynamically
+
+    // ✅ Load unlocked abilities
+    unlockedAbilities = PlayerProgressManager.getUnlockedAbilities();
   }
 
   Future<void> _playMusic() async {
@@ -52,24 +61,9 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
 
   @override
   void dispose() {
-    _audioPlayer.dispose(); // ✅ Cleanup audio when leaving the screen
+    _audioPlayer.dispose();
     super.dispose();
   }
-
-/*  void _skipSelection() {
-    print("⏭ Skipping Ability Selection. Loading Game...");
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          body: GameWidget(
-            game: RogueShooterGame(), // ✅ Start without selected abilities
-          ),
-        ),
-      ),
-    );
-  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -77,40 +71,44 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
       backgroundColor: Colors.black87,
       body: Stack(
         children: [
-          // ✅ Background Image
           Positioned.fill(
             child: Image.asset(
               'assets/images/main_menu_background.png',
               fit: BoxFit.cover,
             ),
           ),
-
           Column(
             children: [
-              SizedBox(height: 40),
+              SizedBox(height: 20),
+
+              // ✅ XP Bar at the top
+              XPBar(),
+
+              SizedBox(height: 20),
 
               Expanded(
                 child: GridView.builder(
                   padding: EdgeInsets.all(16),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 10, // ✅ 10 Columns
+                    crossAxisCount: 10,
                     crossAxisSpacing: 4,
                     mainAxisSpacing: 4,
                     childAspectRatio: 1,
                   ),
-                  itemCount: 30,
+                  itemCount: unlockedAbilities.length,
                   itemBuilder: (context, index) {
-                    if (index < abilities.keys.length) {
-                      String ability = abilities.keys.elementAt(index);
-                      return _buildAbilityTile(ability);
-                    } else {
-                      return _buildEmptySlot();
+                    if (index >= unlockedAbilities.length) {
+                      print(
+                          "⚠️ Invalid index: $index, available: ${unlockedAbilities.length}");
+                      return SizedBox();
                     }
+
+                    String ability = unlockedAbilities[index];
+                    return _buildAbilityTile(ability);
                   },
                 ),
               ),
 
-              // ✅ Ability Selection Counter
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
                 child: Text(
@@ -154,14 +152,16 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
                     ),
                     SizedBox(height: 12),
 
-                    // ✅ Confirm Selection Button (Only enabled when 10 abilities are selected)
+                    // ✅ Confirm Selection Button (Always Enabled)
                     ElevatedButton(
-                      onPressed: selectedAbilities.length == maxAbilities
-                          ? () => _confirmSelection()
-                          : null,
+                      onPressed: () => _confirmSelection(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
+                        backgroundColor: selectedAbilities.isEmpty
+                            ? Colors.grey
+                            : Colors.white,
+                        foregroundColor: selectedAbilities.isEmpty
+                            ? Colors.black45
+                            : Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -181,8 +181,12 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   }
 
   Widget _buildAbilityTile(String ability) {
+    bool isUnlocked = unlockedAbilities.contains(ability);
+
     return GestureDetector(
-      onTap: () => _toggleAbilitySelection(ability),
+      onTap: isUnlocked
+          ? () => _toggleAbilitySelection(ability)
+          : null, // Prevent selecting locked abilities
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -190,46 +194,37 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
             decoration: BoxDecoration(
               color: selectedAbilities.contains(ability)
                   ? Colors.green
-                  : Colors.blueGrey,
+                  : isUnlocked
+                      ? Colors.blueGrey
+                      : Colors.grey.shade800, // Grayed out if locked
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: selectedAbilities.contains(ability)
                     ? Colors.greenAccent
-                    : Colors.white,
+                    : isUnlocked
+                        ? Colors.white
+                        : Colors.grey.shade600, // Dim border if locked
                 width: 2,
               ),
             ),
             child: Padding(
               padding: const EdgeInsets.all(6.0),
-              child: Image.asset(
-                'assets/images/${ability.toLowerCase().replaceAll(" ", "_")}.png',
-                width: 48, // ✅ Smaller Icon
-                height: 48, // ✅ Smaller Icon
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.help_outline,
-                      size: 32, color: Colors.white);
-                },
+              child: Opacity(
+                opacity: isUnlocked ? 1.0 : 0.4, // Dim locked abilities
+                child: Image.asset(
+                  'assets/images/${ability.toLowerCase().replaceAll(" ", "_")}.png',
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.help_outline,
+                        size: 32, color: Colors.white);
+                  },
+                ),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildEmptySlot() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade800.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.white30,
-          width: 1,
-        ),
-      ),
-      child: Center(
-        child: Icon(Icons.lock, size: 32, color: Colors.white30), // Placeholder
       ),
     );
   }
@@ -245,7 +240,7 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   }
 
   void _confirmSelection() {
-    print("✅ Selected Abilities: $selectedAbilities"); // 🔍 Debugging
-    widget.onAbilitiesSelected(selectedAbilities); // ✅ Send abilities to MyApp
+    print("✅ Selected Abilities: $selectedAbilities");
+    widget.onAbilitiesSelected(selectedAbilities);
   }
 }

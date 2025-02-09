@@ -1,6 +1,20 @@
 import 'abilities.dart';
 
 class AbilityFactory {
+  static final List<String> abilityUnlockOrder = [
+    'Whispering Flames',
+    'Soul Fracture',
+    'Shadow Blades',
+    'Cursed Echo',
+    'Fading Crescent',
+    'Vampiric Touch',
+    'Unholy Fortitude',
+    'Will of the Forgotten',
+    'Spectral Chain',
+    'Chrono Echo',
+    'Time Dilation',
+    'Revenants Stride',
+  ];
   static Ability? createAbility(String abilityName) {
     switch (abilityName) {
       case 'Whispering Flames':

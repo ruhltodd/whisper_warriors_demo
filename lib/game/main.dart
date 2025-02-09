@@ -1,16 +1,16 @@
 import 'dart:async'; //
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
-import 'package:whisper_warriors/game/inventory/itemselectionscreen.dart'; // ✅ Add this
-// Ensure this is imported
+import 'package:whisper_warriors/game/inventory/itemselectionscreen.dart';
 import 'package:flame/game.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/components.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'dart:math';
-import 'package:whisper_warriors/game/ui/experience.dart';
+import 'package:whisper_warriors/game/ui/spiritlevelbar.dart';
 import 'package:whisper_warriors/game/ui/notifications.dart';
 import 'package:whisper_warriors/game/utils/customcamera.dart';
 import 'package:whisper_warriors/game/ui/hud.dart';
@@ -31,6 +31,21 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
+  await Hive.openBox('playerProgressBox');
+  /*// Uncomment to reset progress on every launch
+  PlayerProgressManager.resetProgressForTestingTemporary();
+  // ✅ TEST: Set initial XP & Level if not already stored
+
+  if (PlayerProgressManager.getXp() == 0) {
+    PlayerProgressManager.setXp(50);
+  }
+  if (PlayerProgressManager.getLevel() == 1) {
+    PlayerProgressManager.setLevel(1);
+  } */
+
+  print("🌟 Player XP: ${PlayerProgressManager.getXp()}");
+  print("🌟 Player Level: ${PlayerProgressManager.getLevel()}");
+
   // Register Hive adapters
   Hive.registerAdapter(InventoryItemAdapter());
   Hive.registerAdapter(UmbralFangAdapter());
@@ -38,10 +53,11 @@ void main() async {
   Hive.registerAdapter(ShardOfUmbrathosAdapter());
   Hive.registerAdapter(GoldCoinAdapter()); // ✅ Register GoldCoin
   Hive.registerAdapter(BlueCoinAdapter()); // ✅ Register BlueCoin
-  //await Hive.deleteBoxFromDisk('inventoryBox'); remove database.. for debugging only
-  //final inventoryBox = await Hive.openBox<InventoryItem>('inventoryBox');
+  //await Hive.deleteBoxFromDisk('inventoryBox'); remove database and start game is .clear() doesnt work.. for debugging only
+  //final inventoryBox = await Hive.openBox<InventoryItem>('inventoryBox'); //if debugging and removing database uncomment this line and comment the next line
   await Hive.openBox<InventoryItem>('inventoryBox');
-  //await inventoryBox.clear(); // ✅ Clear box before adding items
+  //await Hive.box('inventoryBox').clear(); // ✅ Clear box before adding items - for debugging only
+  //await Hive.box('playerProgressBox').clear(); // ✅ Clears progress
   //print("debug inventory wiped on startup");
 
   // ✅ Load equipped items **AFTER Hive is initialized**
