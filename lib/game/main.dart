@@ -36,8 +36,13 @@ void main() async {
   Hive.registerAdapter(UmbralFangAdapter());
   Hive.registerAdapter(VeilOfTheForgottenAdapter());
   Hive.registerAdapter(ShardOfUmbrathosAdapter());
-
+  Hive.registerAdapter(GoldCoinAdapter()); // ✅ Register GoldCoin
+  Hive.registerAdapter(BlueCoinAdapter()); // ✅ Register BlueCoin
+  //await Hive.deleteBoxFromDisk('inventoryBox'); remove database.. for debugging only
+  //final inventoryBox = await Hive.openBox<InventoryItem>('inventoryBox');
   await Hive.openBox<InventoryItem>('inventoryBox');
+  //await inventoryBox.clear(); // ✅ Clear box before adding items
+  //print("debug inventory wiped on startup");
 
   // ✅ Load equipped items **AFTER Hive is initialized**
   List<InventoryItem> loadEquippedItems() {
@@ -73,20 +78,15 @@ class _MyAppState extends State<MyApp> {
   late RogueShooterGame gameInstance; // Define the gameInstance variable
 
   List<InventoryItem> getAvailableItems() {
-    return [
-      InventoryItem(
-        item: UmbralFang(),
-        isEquipped: false,
-      ),
-      InventoryItem(
-        item: VeilOfTheForgotten(),
-        isEquipped: false,
-      ),
-      InventoryItem(
-        item: ShardOfUmbrathos(),
-        isEquipped: false,
-      ),
-    ];
+    final box = Hive.box<InventoryItem>('inventoryBox');
+
+    // ✅ Fetch all stored inventory items
+    List<InventoryItem> items = box.values.toList();
+
+    print(
+        "🔍 Available Items Retrieved: ${items.map((item) => item.item.name).toList()}");
+
+    return items;
   }
 
   @override
@@ -428,8 +428,6 @@ class RogueShooterGame extends FlameGame
   }
 
   void _shakeScreen(CustomCamera camera) {
-    print("🌪 SCREEN SHAKE!");
-
     Vector2 originalPosition = camera.position.clone();
 
     for (int i = 0; i < 6; i++) {
@@ -447,8 +445,6 @@ class RogueShooterGame extends FlameGame
   }
 
   void _spawnBoss() {
-    print("💀 BOSS ARRIVING!");
-
     // ✅ Remove all existing enemies
     for (var enemy in children.whereType<BaseEnemy>()) {
       enemy.removeFromParent();
@@ -500,8 +496,6 @@ class RogueShooterGame extends FlameGame
 
       // ✅ Trigger impact effect when the boss lands
       _triggerBossImpactEffect(boss.position);
-
-      print("🔥 BOSS LANDED IN CENTER AT $bossSpawnPosition!");
     });
     bossHealthNotifier.value = 500; // ✅ Show Boss HP for testing purposes
 
@@ -536,14 +530,10 @@ class RogueShooterGame extends FlameGame
       print("Player is dead");
       return;
     }
-    print("🔹 EVENT TRIGGERED at ${formatTime(elapsedTime)}");
 
     if (elapsedTime == 20) {
       spawnEnemyWave(20);
-      print("⚔ 00:20 - Spawned 20 enemies!");
     } else if (elapsedTime == 60) {
-      print("💀 Boss is arriving, removing all enemies!");
-
       remove(enemySpawnerTimer);
 
       for (var enemy in children.whereType<BaseEnemy>()) {

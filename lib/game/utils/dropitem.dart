@@ -2,6 +2,9 @@ import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/animation.dart';
+import 'package:hive/hive.dart';
+import 'package:whisper_warriors/game/inventory/inventory.dart';
+import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/items/items.dart';
@@ -74,6 +77,22 @@ class DropItem extends SpriteComponent
         EffectController(duration: 0.3, curve: Curves.easeOut),
         onComplete: () {
           gameRef.player.gainSpiritExp(item.expValue.toDouble()); // ✅ Give EXP
+
+          // ✅ Check if the item is NOT a GoldCoin before saving
+          if (item is! GoldCoin && item is! BlueCoin) {
+            // ✅ Check for duplicates before saving
+            final box = Hive.box<InventoryItem>('inventoryBox');
+            if (!box.values.any((i) => i.item.name == item.name)) {
+              InventoryManager.addItem(
+                  InventoryItem(item: item, isEquipped: false));
+              print("💾 Item Saved to Hive: ${item.name}");
+            } else {
+              print("⚠️ Item already exists in Hive: ${item.name}");
+            }
+          } else {
+            print("⚠️ GoldCoin collected, but not saved to inventory.");
+          }
+
           removeFromParent(); // ✅ Remove item after collection
           print("💰 Player collected ${item.expValue} EXP from ${item.name}!");
         },

@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
+import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 
 class InventoryManager {
@@ -8,8 +9,13 @@ class InventoryManager {
 
   /// Add an item to inventory
   static void addItem(InventoryItem item) {
-    _inventoryBox.put(item.name, item);
-    print("👜 Item added: ${item.name}");
+    if (item.item is! GoldCoin && item.item is! BlueCoin) {
+      // ✅ Skip saving GoldCoin and BlueCoin
+      _inventoryBox.put(item.name, item);
+      print("👜 Item added: ${item.name}");
+    } else {
+      print("⚠️ GoldCoin not saved to inventory.");
+    }
   }
 
   /// Remove an item from inventory
