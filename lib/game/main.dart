@@ -1,5 +1,6 @@
 import 'dart:async'; //
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:whisper_warriors/game/ai/spawncontroller.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/itemselectionscreen.dart';
 import 'package:flame/game.dart';
@@ -15,17 +16,12 @@ import 'package:whisper_warriors/game/ui/notifications.dart';
 import 'package:whisper_warriors/game/utils/customcamera.dart';
 import 'package:whisper_warriors/game/ui/hud.dart';
 import 'package:whisper_warriors/game/player/player.dart';
-import 'package:whisper_warriors/game/ai/enemy.dart';
-import 'package:whisper_warriors/game/ai/wave1Enemy.dart';
-import 'package:whisper_warriors/game/ai/wave2Enemy.dart';
+
 import 'package:whisper_warriors/game/ui/mainmenu.dart';
 import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/abilities/abilityselectionscreen.dart';
 import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
-import 'package:whisper_warriors/game/bosses/boss1.dart';
-import 'package:whisper_warriors/game/effects/explosion.dart';
-import 'package:whisper_warriors/game/utils/dropitem.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -230,14 +226,15 @@ class RogueShooterGame extends FlameGame
   late final AudioPlayer bgmPlayer;
   late ValueNotifier<int> gameHudNotifier;
   late ValueNotifier<double?> bossHealthNotifier;
-  late ValueNotifier<double>
-      bossStaggerNotifier; // ✅ Correct (Non-nullable) // ✅ Correct (Non-nullable)  int enemyCount = 0;
-  int enemyCount = 0; // ✅ Add this if missing
+  late ValueNotifier<double> bossStaggerNotifier; // ✅ Correct (Non-nullable)
+  late ValueNotifier<String?> activeBossNameNotifier; // ✅ Add this line
+  int enemyCount = 0;
   int maxEnemies = 30;
   final List<String> selectedAbilities;
   final List<InventoryItem> equippedItems;
   final Random random = Random(); // ✅ Define Random instance
   late LootNotificationBar lootNotificationBar;
+  SpawnController? spawnController;
 
   bool isPaused = false;
   int elapsedTime = 0;
@@ -246,6 +243,8 @@ class RogueShooterGame extends FlameGame
       {required this.selectedAbilities, required this.equippedItems}) {
     bossHealthNotifier = ValueNotifier<double?>(null);
     bossStaggerNotifier = ValueNotifier<double>(0); // ✅ Initialize at 0
+    activeBossNameNotifier = ValueNotifier<String?>(null);
+
 // ✅ Initialize as null
   }
   // ✅ Stops background music
@@ -302,22 +301,32 @@ class RogueShooterGame extends FlameGame
   @override
   Future<void> onLoad() async {
     super.onLoad();
-    // loot notification bar
+    gameTimer = TimerComponent(period: 1.0, repeat: true, onTick: () {});
+
+    // ✅ Now safely start the timer
+    startGameTimer();
+// ✅ Ensure this runs when the game starts
+    // ✅ Loot notification bar
     lootNotificationBar = LootNotificationBar(this);
     add(lootNotificationBar);
     print("✅ LootNotificationBar added to the game");
 
+    // ✅ Background music setup
     bgmPlayer = AudioPlayer();
     await bgmPlayer.setReleaseMode(ReleaseMode.loop);
     await bgmPlayer.play(AssetSource('music/soft_etheral.mp3'));
     await bgmPlayer.setVolume(.2);
+
+    // ✅ Initialize HUD notifier
     gameHudNotifier = ValueNotifier<int>(elapsedTime);
 
+    // ✅ Initialize custom camera
     customCamera = CustomCamera(
       screenSize: size, // Ensure screen size is passed
       worldSize: Vector2(1280, 1280), // Set the world size
     );
 
+    // ✅ Load the game map
     grassMap = SpriteComponent(
       sprite: await loadSprite('grass_map.png'),
       size: Vector2(1280, 1280),
@@ -325,6 +334,7 @@ class RogueShooterGame extends FlameGame
     );
     add(grassMap);
 
+    // ✅ Create and add player
     player = Player(
       selectedAbilities: selectedAbilities, // ✅ Pass abilities
       equippedItems: equippedItems, // ✅ Ensure only equipped items are passed
@@ -335,12 +345,18 @@ class RogueShooterGame extends FlameGame
 
     _applyAbilitiesToPlayer();
 
+    // ✅ Initialize spirit/XP bar
     experienceBar = SpiritBar();
     customCamera.follow(player.position, 0);
+
+    // ✅ Show HUD
     overlays.add('hud');
 
-    startEnemySpawner();
-    startGameTimer();
+    // ✅ Initialize the Spawn Controller (Handles all spawns now)
+    spawnController = SpawnController(game: this);
+    if (spawnController != null) {
+      add(spawnController!);
+    }
   }
 
   @override
@@ -374,76 +390,26 @@ class RogueShooterGame extends FlameGame
 
   void startGameTimer() {
     gameTimer = TimerComponent(
-      period: 1.0,
+      period: 1.0, // ✅ Fires every 1 second
       repeat: true,
       onTick: () {
-        elapsedTime++; // ✅ Increment time instead of decrementing
+        elapsedTime++; // ✅ Increment time
         gameHudNotifier.value = elapsedTime;
-        triggerEvent(); // ✅ Events now trigger based on elapsed time
+        spawnController
+            ?.checkAndTriggerEvents(elapsedTime); // ✅ Calls event logic
       },
     );
     add(gameTimer);
   }
 
-  void startEnemySpawner() {
-    enemySpawnerTimer = TimerComponent(
-      period: 5.0,
-      repeat: true,
-      onTick: () {
-        checkLevelUpScaling();
-        spawnEnemyWave(10);
-      },
-    );
-    add(enemySpawnerTimer);
-  }
-
-  void spawnEnemyWave(int count, {bool postBoss = false}) {
-    for (int i = 0; i < count; i++) {
-      final spawnPosition = _getRandomSpawnPosition();
-
-      BaseEnemy enemy;
-      if (elapsedTime >= 60) {
-        // ✅ After 60 seconds, allow Wave2Enemy to spawn
-        enemy = (i % 2 == 0)
-            ? Wave1Enemy(
-                player: player,
-                speed: 70,
-                health: 50,
-                size: Vector2(64, 64),
-              )
-            : Wave2Enemy(
-                player: player,
-                speed: 100,
-                health: 800,
-                size: Vector2(128, 128),
-              );
-      } else {
-        // ✅ Before 60 seconds, only spawn Wave1Enemy
-        enemy = Wave1Enemy(
-          player: player,
-          speed: 100,
-          health: 50,
-          size: Vector2(64, 64),
-        );
-      }
-
-      // ✅ **Enhance Enemies After Boss Fight**
-      if (postBoss) {
-        enemy.health *= 2; // 🔥 **Double Health**
-        enemy.speed *= 1.5; // 🔥 **Faster Movement**
-      }
-
-      enemy.position = spawnPosition;
-      enemy.onRemoveCallback = () {
-        enemyCount--;
-      };
-
-      enemyCount++;
-      add(enemy);
+  void _stopEnemySpawns() {
+    if (enemySpawnerTimer.isMounted) {
+      remove(enemySpawnerTimer);
+      print("🛑 Enemy spawns stopped.");
     }
   }
 
-  void _shakeScreen(CustomCamera camera) {
+  void shakeScreen(CustomCamera camera) {
     Vector2 originalPosition = camera.position.clone();
 
     for (int i = 0; i < 6; i++) {
@@ -460,104 +426,15 @@ class RogueShooterGame extends FlameGame
     });
   }
 
-  void _spawnBoss() {
-    // ✅ Remove all existing enemies
-    for (var enemy in children.whereType<BaseEnemy>()) {
-      enemy.removeFromParent();
-    }
-    remove(enemySpawnerTimer); // ✅ Stop enemy spawns
-
-    // ✅ Ensure the boss spawns at the **center of the game world**
-    Vector2 bossSpawnPosition = Vector2(640, 640); // Adjust for your map size
-
-    final boss = Boss1(
-      player: player,
-      speed: 20,
-      //health: 50000,
-      health: 500, // for testing purposes
-      size: Vector2(128, 128),
-      onHealthChanged: (double health) => bossHealthNotifier.value = health,
-      onDeath: () {},
-      onStaggerChanged: (double stagger) => bossStaggerNotifier.value = stagger,
-      bossStaggerNotifier: bossStaggerNotifier, // ✅ NEW
-// ✅ Stagger bar updates
-    );
-
-    boss.onDeath = () {
-      bossHealthNotifier.value = null; // ✅ Hide Boss HP on death
-      _postBossEnemySpawn();
-
-      // ✅ Drop Gold Coin at Boss Position
-      final goldCoinItem = GoldCoin();
-      final goldCoin = DropItem(
-        item: goldCoinItem,
-      )..position = boss.position.clone();
-
-      add(goldCoin);
-      print("💰 Boss dropped a Gold Coin (5000 EXP)!");
-    };
-
-    // ✅ Set **initial boss position** outside the screen
-    boss.position = Vector2(size.x / 2, -300);
-    boss.anchor = Anchor.center;
-    add(boss); // ✅ Add the boss to the game
-    bossStaggerNotifier.value = 0; // ✅ Show stagger bar
-
-    Future.delayed(Duration(milliseconds: 1500), () {
-      // ✅ Move the boss **into the center of the map**
-      boss.position = bossSpawnPosition;
-
-      // ✅ Apply a screen shake effect
-      _shakeScreen(customCamera);
-
-      // ✅ Trigger impact effect when the boss lands
-      _triggerBossImpactEffect(boss.position);
-    });
-    bossHealthNotifier.value = 500; // ✅ Show Boss HP for testing purposes
-
-    //bossHealthNotifier.value = 50000; // ✅ Show Boss HP
-  }
-
-  void _postBossEnemySpawn() {
-    print("🔥 Post-boss enemies now spawning!");
-
-    // ✅ Resume enemy spawner with a **faster rate & tougher enemies**
-    enemySpawnerTimer = TimerComponent(
-      period: 4.0, // ✅ Faster spawn rate after boss
-      repeat: true,
-      onTick: () => spawnEnemyWave(12, postBoss: true), // ✅ More enemies
-    );
-    add(enemySpawnerTimer);
-  }
-
-  void _triggerBossImpactEffect(Vector2 position) {
-    print("💥 Boss slammed into the ground!");
-    add(Explosion(position)); // ✅ Explosion at impact location
+  void setActiveBoss(String name, double maxHealth) {
+    activeBossNameNotifier.value = name;
+    bossHealthNotifier.value = maxHealth;
   }
 
   String formatTime(int seconds) {
     int minutes = seconds ~/ 60;
     int secs = seconds % 60;
     return "$minutes:${secs.toString().padLeft(2, '0')}"; // Ensures two-digit seconds
-  }
-
-  void triggerEvent() {
-    if (player.isDead) {
-      print("Player is dead");
-      return;
-    }
-
-    if (elapsedTime == 20) {
-      spawnEnemyWave(20);
-    } else if (elapsedTime == 60) {
-      remove(enemySpawnerTimer);
-
-      for (var enemy in children.whereType<BaseEnemy>()) {
-        enemy.removeFromParent();
-      }
-
-      _spawnBoss();
-    }
   }
 
   void endGame() {
@@ -619,11 +496,16 @@ class RogueShooterGame extends FlameGame
           await bgmPlayer.setVolume(.2);
           print("🎵 Background music restarted.");
 
-          // ✅ 7. Restart Game Timers
-          startEnemySpawner();
+          // ✅ 7. Restart Spawn Controller (Handles enemy & boss spawns)
+          spawnController = SpawnController(game: this);
+          if (spawnController != null) {
+            add(spawnController!);
+          }
+
+          // ✅ 8. Restart Game Timer (Events handled inside SpawnController)
           startGameTimer();
 
-          // ✅ 8. Fade-Back To Game (Triggered by `FadeTransitionOverlay`)
+          print("✅ Game Restarted!");
         },
       ),
     );
@@ -638,7 +520,7 @@ class RogueShooterGame extends FlameGame
         repeat: true,
         onTick: () {
           if (enemyCount < maxEnemies) {
-            spawnEnemyWave(10);
+            spawnController?.spawnEnemyWave(10);
           }
         },
       );
@@ -660,35 +542,5 @@ class RogueShooterGame extends FlameGame
         ),
       ),
     ));
-  }
-
-  Vector2 _getRandomSpawnPosition() {
-    final random = Random();
-    final spawnMargin = 50.0;
-    Vector2 spawnPosition;
-
-    do {
-      final side = random.nextInt(4);
-      switch (side) {
-        case 0:
-          spawnPosition = Vector2(random.nextDouble() * size.x, -spawnMargin);
-          break;
-        case 1:
-          spawnPosition =
-              Vector2(size.x + spawnMargin, random.nextDouble() * size.y);
-          break;
-        case 2:
-          spawnPosition =
-              Vector2(random.nextDouble() * size.x, size.y + spawnMargin);
-          break;
-        case 3:
-          spawnPosition = Vector2(-spawnMargin, random.nextDouble() * size.y);
-          break;
-        default:
-          spawnPosition = Vector2.zero();
-      }
-    } while ((spawnPosition - player.position).length < 100.0);
-
-    return spawnPosition;
   }
 }

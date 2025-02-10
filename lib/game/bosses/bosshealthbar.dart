@@ -12,18 +12,22 @@ class BossHealthBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double healthPercentage = (bossHealth / maxBossHealth).clamp(0.0, 1.0);
+
     return Container(
       width: 200,
       height: 15,
       decoration: BoxDecoration(
         border: Border.all(color: Colors.white),
         borderRadius: BorderRadius.circular(5),
-        color: Colors.black,
+        color: Colors.black, // Background color
       ),
       child: Stack(
         children: [
+          // 🔴 Health Bar (Red - Shrinks Dynamically)
           FractionallySizedBox(
-            widthFactor: bossHealth / maxBossHealth, // ✅ Dynamic width
+            widthFactor: healthPercentage, // ✅ Correctly scales width
+            alignment: Alignment.centerLeft,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.red,
@@ -31,9 +35,11 @@ class BossHealthBar extends StatelessWidget {
               ),
             ),
           ),
+
+          // 🔢 Health Number (Always Centered)
           Center(
             child: Text(
-              "${bossHealth.toInt()} / ${maxBossHealth.toInt()}",
+              "${bossHealth.toInt()}", // ✅ Only show current health
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,

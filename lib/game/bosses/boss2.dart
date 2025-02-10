@@ -105,11 +105,12 @@ class Boss2 extends BaseEnemy with Staggerable {
 
   @override
   Future<void> onLoad() async {
+    gameRef.setActiveBoss("Void Prism", 80000);
     idleAnimation = await gameRef.loadSpriteAnimation(
       'boss2.png',
       SpriteAnimationData.sequenced(
         amount: 2,
-        textureSize: Vector2(128, 128),
+        textureSize: Vector2(256, 256),
         stepTime: 0.6,
       ),
     );
@@ -118,7 +119,7 @@ class Boss2 extends BaseEnemy with Staggerable {
       'boss2.png',
       SpriteAnimationData.sequenced(
         amount: 4,
-        textureSize: Vector2(128, 128),
+        textureSize: Vector2(256, 256),
         stepTime: 0.3,
       ),
     );

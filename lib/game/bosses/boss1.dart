@@ -92,7 +92,15 @@ class Boss1 extends BaseEnemy with Staggerable {
     _handleAttacks(dt);
   }
 
+  bool _hasLanded = false; // ✅ Private variable
+// ✅ Public setter
+  void setLanded(bool value) {
+    _hasLanded = value;
+  }
+
   void _updateMovement(double dt) {
+    if (!_hasLanded) return; // ✅ Do nothing until the boss has "landed"
+
     final Vector2 direction = (player.position - position).normalized();
 
     if ((player.position - position).length > 20) {
@@ -169,7 +177,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
 
     health -= finalDamage;
-    onHealthChanged(health.toDouble());
+    onHealthChanged(health.toDouble()); // ✅ Update the UI
 
     if (health <= maxHealth * 0.5 && !isFading) {
       _enterFadingPhase();
@@ -195,7 +203,7 @@ class Boss1 extends BaseEnemy with Staggerable {
       timeSinceLastDamageNumber = 0.0;
 
       if (isFading) {
-        damageNumber.priority = 1000; // ✅ Ensures it's drawn above everything
+        damageNumber.priority = 1000;
       }
     }
 
@@ -264,25 +272,36 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (!hasDroppedItem) {
       hasDroppedItem = true;
       final dropItems = _getDropItems();
+
+      // ✅ Create and spawn the loot box with items
       final lootBox =
           LootBox(items: dropItems.map((dropItem) => dropItem.item).toList());
       lootBox.position = position.clone();
       gameRef.add(lootBox);
+
       print("🗃️ LootBox spawned at position: ${lootBox.position}");
     }
 
     onDeath();
     gameRef.add(Explosion(position));
-    removeFromParent();
+    removeFromParent(); // ✅ Ensure Boss1 is removed
+
+    // ✅ Delegate boss transition to SpawnController
+    if (gameRef.spawnController != null) {
+      gameRef.spawnController!.onBoss1Death();
+    } else {
+      print("⚠️ SpawnController is missing! Boss2 won't spawn.");
+    }
   }
 
+  /// ✅ Loot Drop Logic (Remains Unchanged)
   List<DropItem> _getDropItems() {
     final List<DropItem> dropItems = [];
 
-    // Add the gold coin
+    // ✅ Add the gold coin
     dropItems.add(DropItem(item: GoldCoin()));
 
-    // Add the random loot item
+    // ✅ Add a random loot item
     final item = LootTable.getRandomLoot();
     if (item != null) {
       dropItems.add(DropItem(item: item));

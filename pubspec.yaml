@@ -88,12 +88,13 @@ flutter:
     - assets/images/whispering_flames.png
     - assets/images/will_of_the_forgotten.png
     - assets/images/shard_of_umbrathos.png
-    - assets/images/veil_of_the_forgotten.png
+    - assets/images/veil_of_the_forgotten_sprite.png
     - assets/images/umbral_fang.png
     - assets/images/fire_aura.png
     - assets/images/explosion.png
     - assets/images/boss1_idle.png
     - assets/images/boss1_walk.png
+    - assets/images/boss2.png
     - assets/images/boss_projectile.png
     - assets/images/0.png
     - assets/images/1.png

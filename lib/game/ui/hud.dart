@@ -6,7 +6,6 @@ import 'package:whisper_warriors/game/ui/spiritlevelbar.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/abilities/abilitybar.dart';
 import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
-import 'dart:ui' as ui;
 
 class HUD extends StatelessWidget {
   final void Function(Vector2 delta) onJoystickMove;
@@ -70,82 +69,49 @@ class HUD extends StatelessWidget {
         ),
 
         // 👑 Boss UI (Health Bar + Stagger Bar)
+        // 👑 Boss UI (Health Bar + Stagger Bar)
         Positioned(
           top: safeTop + 40,
           left: MediaQuery.of(context).size.width / 2 - 100, // ✅ Centered UI
-          child: ValueListenableBuilder<double?>(
-            valueListenable: bossHealthNotifier,
-            builder: (context, bossHealth, _) {
-              if (bossHealth == null) return const SizedBox.shrink();
+          child: ValueListenableBuilder<String?>(
+            valueListenable:
+                game.activeBossNameNotifier, // ✅ Listen for changes
+            builder: (context, bossName, _) {
+              return ValueListenableBuilder<double?>(
+                valueListenable: bossHealthNotifier,
+                builder: (context, bossHealth, _) {
+                  if (bossHealth == null || bossName == null) {
+                    return const SizedBox.shrink();
+                  }
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 👑 Boss Name
-                  Text(
-                    'Umbrathos, The Fading King',
-                    textAlign: TextAlign.center, // ✅ Centered text
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'MyCustomFont',
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-
-                  // 🔴 **Boss Health Bar (Now Centered)**
-                  SizedBox(
-                    width: 200, // ✅ Fixed width for proper centering
-                    child: BossHealthBar(
-                      bossHealth: bossHealth,
-                      maxBossHealth: 500, //for testing purposes
-                      //  maxBossHealth: 50000,
-                    ),
-                  ),
-
-                  const SizedBox(height: 5), // ✅ Small spacing between bars
-
-                  // ⚡ **Stagger Bar (Perfectly Aligned Below Health Bar)**
-                  ValueListenableBuilder<double?>(
-                    valueListenable: bossStaggerNotifier,
-                    builder: (context, stagger, child) {
-                      if (stagger == null) return SizedBox.shrink();
-                      return SizedBox(
-                        width: 200, // ✅ Matches health bar width
-                        height: 8, // ✅ Slightly smaller than health bar
-                        child: ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(5), // ✅ Rounded Corners
-                          child: Stack(
-                            children: [
-                              // Background (Black Border)
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black,
-                                  border:
-                                      Border.all(color: Colors.white, width: 2),
-                                ),
-                              ),
-
-                              // **Fill Bar** (Stagger Progress)
-                              FractionallySizedBox(
-                                widthFactor: stagger / 100, // ✅ Adjust per boss
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5),
-                                    color: Colors
-                                        .amber, // ✅ Gold Color for Stagger
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 👑 Dynamic Boss Name
+                      Text(
+                        bossName, // ✅ Uses dynamic boss name
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'MyCustomFont',
                         ),
-                      );
-                    },
-                  ),
-                ],
+                      ),
+                      const SizedBox(height: 5),
+
+                      // 🔴 **Boss Health Bar (Now Centered)**
+                      SizedBox(
+                        width: 200,
+                        child: BossHealthBar(
+                          bossHealth: bossHealth,
+                          maxBossHealth:
+                              5000, // ✅ Ensure this matches the boss’s max HP
+                        ),
+                      ),
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -357,8 +323,14 @@ class SpiritBarPainter extends CustomPainter {
 
 class BossHealthBarPainter extends CustomPainter {
   final double health;
+  final double maxHealth;
+  final String bossName;
 
-  BossHealthBarPainter(this.health);
+  BossHealthBarPainter({
+    required this.health,
+    required this.maxHealth,
+    required this.bossName,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -370,30 +342,43 @@ class BossHealthBarPainter extends CustomPainter {
       ..color = Colors.red
       ..style = PaintingStyle.fill;
 
-    // Draw background bar
-    canvas.drawRect(
-        Rect.fromLTWH(0, 0, size.width, size.height), paintBackground);
+    // Ensure health width doesn't go negative
+    double healthWidth = (health / maxHealth).clamp(0.0, 1.0) * size.width;
 
-    // Draw health bar
-    double healthWidth = (health / 5000) * size.width; // ✅ Scale health bar
-    canvas.drawRect(Rect.fromLTWH(0, 0, healthWidth, size.height), paintHealth);
+    // Draw background bar (black border)
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(5),
+      ),
+      paintBackground,
+    );
 
-    // Draw boss name "Umbrathos, The Fading King"
+    // Draw shrinking health bar (red)
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, healthWidth, size.height),
+        Radius.circular(5),
+      ),
+      paintHealth,
+    );
+
+    // Draw boss name dynamically
     final textStyle = TextStyle(
       color: Colors.white,
-      fontSize: size.height * 0.7, // Scale text size to fit
+      fontSize: size.height * 0.7,
       fontWeight: FontWeight.bold,
     );
 
     final textSpan = TextSpan(
-      text: "Umbrathos, The Fading King",
+      text: bossName, // ✅ Uses dynamic boss name
       style: textStyle,
     );
 
     final textPainter = TextPainter(
       text: textSpan,
       textAlign: TextAlign.center,
-      textDirection: ui.TextDirection.ltr,
+      textDirection: TextDirection.ltr,
     );
 
     textPainter.layout(
@@ -408,7 +393,9 @@ class BossHealthBarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant BossHealthBarPainter oldDelegate) {
+    return oldDelegate.health != health || oldDelegate.maxHealth != maxHealth;
+  }
 }
 
 class RetryOverlay extends StatelessWidget {
