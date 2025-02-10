@@ -8,7 +8,6 @@ import 'package:whisper_warriors/game/bosses/boss1.dart';
 import 'package:whisper_warriors/game/bosses/boss2.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/main.dart';
-import 'package:whisper_warriors/game/player/player.dart';
 
 class SpawnController extends Component {
   final RogueShooterGame game;
@@ -16,7 +15,6 @@ class SpawnController extends Component {
   bool _bossActive = false;
   int enemyCount = 0;
   int elapsedTime = 0;
-  bool _boss2Active = false;
   bool _isSpawning = true;
 
   SpawnController({required this.game});
@@ -27,21 +25,28 @@ class SpawnController extends Component {
   }
 
   /// ✅ **Start enemy waves every 10 seconds**
+  /// ✅ **Start enemy waves every 10 seconds**
   void _startEnemyWaves() {
-    // ✅ Spawn enemies immediately when the game starts
     Future.delayed(Duration(seconds: 2), () {
-      spawnEnemyWave(10); // ✅ First wave spawns after delay
+      if (_bossActive) {
+        print("⚠️ Initial enemy spawn blocked - A boss is active.");
+        return; // ✅ Prevents any spawn if Boss1 or Boss2 is active
+      }
+      spawnEnemyWave(10);
     });
 
     enemySpawnerTimer = TimerComponent(
-      period: 5, // ✅ Every 10 seconds
+      period: 5, // ✅ Every 5 seconds
       repeat: true,
       onTick: () {
-        if (!_bossActive && !_boss2Active) {
-          spawnEnemyWave(15);
+        if (_bossActive) {
+          print("⚠️ Enemy spawning blocked! A boss is active.");
+          return; // ✅ Fully stops any spawning if Boss1 or Boss2 is active
         }
+        spawnEnemyWave(15);
       },
     );
+
     game.add(enemySpawnerTimer);
   }
 
@@ -52,18 +57,18 @@ class SpawnController extends Component {
     }
   }
 
+  void decreaseEnemyCount() {
+    enemyCount = (enemyCount - 1).clamp(0, 50); // ✅ Prevents negative values
+    print("📉 Enemy removed! New count: $enemyCount");
+  }
+
   /// ✅ **Clear all remaining enemies**
   void _clearEnemyWaves() {
-    print("💨 Clearing all remaining enemies...");
-
-    final enemies = game.children.whereType<BaseEnemy>().toList();
-
-    for (var enemy in enemies) {
-      print("❌ Removing ${enemy.runtimeType} at ${enemy.position}");
-      enemy.removeFromParent(); // ✅ Removes each enemy
+    for (var enemy in game.children.whereType<BaseEnemy>()) {
+      enemy.removeFromParent();
     }
-
-    print("✅ All enemies removed before Boss2.");
+    enemyCount = 0; // ✅ **Ensure count resets when clearing**
+    print("💨 All enemies cleared! Count reset to $enemyCount");
   }
 
   void stopSpawning() {
@@ -71,84 +76,76 @@ class SpawnController extends Component {
   }
 
   void spawnEnemyWave(int count, {bool postBoss = false}) {
-    print("🔥 Spawning $count enemies. postBoss = $postBoss");
+    print("🔥 Attempting to spawn $count enemies. postBoss = $postBoss");
 
-    for (int i = 0; i < count; i++) {
+    int availableSlots = 50 - enemyCount;
+    if (availableSlots <= 0) {
+      print("⚠️ Max enemies reached! Skipping spawn.");
+      return;
+    }
+
+    int spawnAmount = count > availableSlots ? availableSlots : count;
+    print("🛠️ Adjusted spawn amount: $spawnAmount (Max: 50 at once)");
+
+    for (int i = 0; i < spawnAmount; i++) {
       final spawnPosition = _getRandomSpawnPosition();
       print("🚀 Enemy spawn position: $spawnPosition");
 
       BaseEnemy enemy;
 
-      // ✅ Post-Boss logic should **increase Wave2Enemy probability**
-      if (postBoss) {
-        if (i % 2 == 0) {
-          print("👾 Post-Boss: Spawning Wave1Enemy...");
-          enemy = Wave1Enemy(
-            player: game.player,
-            speed: 80, // Slightly increased speed post-boss
-            health: 300, // More health after boss
-            size: Vector2(64, 64),
-          );
-        } else {
-          print("🔥 Post-Boss: Spawning Wave2Enemy...");
+      if (game.elapsedTime >= 60) {
+        // ✅ 50% chance to spawn Wave2Enemy instead of alternating
+        if (Random().nextBool()) {
+          print("🔥 Spawning Wave2Enemy...");
           enemy = Wave2Enemy(
             player: game.player,
-            speed: 100, // Faster than Wave1Enemy
-            health: 600, // More tanky than Wave1Enemy
+            speed: 90,
+            health: 500,
             size: Vector2(128, 128),
           );
-        }
-      } else {
-        // ✅ **Pre-Boss Enemy Logic**
-        if (elapsedTime >= 60) {
-          // ✅ Before Boss1: **Mix Wave1 & Wave2**
-          if (i % 2 == 0) {
-            print("👾 Spawning Wave1Enemy...");
-            enemy = Wave1Enemy(
-              player: game.player,
-              speed: 70,
-              health: 200,
-              size: Vector2(64, 64),
-            );
-          } else {
-            print("🔥 Spawning Wave2Enemy...");
-            enemy = Wave2Enemy(
-              player: game.player,
-              speed: 90,
-              health: 500,
-              size: Vector2(128, 128),
-            );
-          }
         } else {
-          // ✅ **Before 60 seconds, only Wave1Enemy**
-          print("👾 Pre-Boss: Spawning Wave1Enemy...");
+          print("👾 Spawning Wave1Enemy...");
           enemy = Wave1Enemy(
             player: game.player,
             speed: 70,
-            health: 100,
+            health: 200,
             size: Vector2(64, 64),
           );
         }
+      } else {
+        print("👾 Pre-Boss: Spawning Wave1Enemy...");
+        enemy = Wave1Enemy(
+          player: game.player,
+          speed: 70,
+          health: 100,
+          size: Vector2(64, 64),
+        );
       }
 
       // ✅ **Enhance Enemies After Boss Fight**
       if (postBoss) {
         print("⚡ Post-Boss Scaling: Boosting enemy stats!");
-        enemy.health *= 2; // 🔥 Double Health
-        enemy.speed *= 0.1; // 🔥 Slightly Faster
+        enemy.health *= 2;
+        enemy.speed *= 0.5;
       }
 
-      enemy.position = spawnPosition; // ✅ Ensure it's placed correctly
+      // ✅ **Ensure enemies are removed from count**
       enemy.onRemoveCallback = () {
-        enemyCount--;
-        print("⚠️ Enemy Removed: ${enemy.runtimeType}");
+        game.spawnController?.decreaseEnemyCount();
       };
 
-      enemyCount++;
-      game.add(enemy);
-      print("✅ Enemy added: ${enemy.runtimeType} at $spawnPosition");
+      enemy.position = spawnPosition; // ✅ Set position FIRST
+      if (enemyCount < 50) {
+        enemyCount++;
+        game.add(enemy);
+        print(
+            "✅ Enemy added: ${enemy.runtimeType} at $spawnPosition. Total: $enemyCount");
+      } else {
+        print("⚠️ Max enemies reached! Skipping spawn.");
+      }
     }
   }
+  //      enemy.position = spawnPosition;
 
   Vector2 _getRandomSpawnPosition() {
     final random = Random();
@@ -185,12 +182,19 @@ class SpawnController extends Component {
   void _postBossEnemySpawn() {
     print("🔥 Post-boss enemies now spawning!");
 
-    // ✅ Resume enemy spawner with a **faster rate & tougher enemies**
     enemySpawnerTimer = TimerComponent(
       period: 4.0, // ✅ Faster spawn rate after boss
       repeat: true,
-      onTick: () => spawnEnemyWave(12, postBoss: true), // ✅ More enemies
+      onTick: () {
+        if (_bossActive) {
+          // ✅ Stop spawns if any boss is active
+          print("⚠️ Enemy spawning stopped! A boss is active.");
+          return;
+        }
+        spawnEnemyWave(12, postBoss: true); // ✅ More enemies
+      },
     );
+
     game.add(enemySpawnerTimer);
   }
 
@@ -200,8 +204,7 @@ class SpawnController extends Component {
   }
 
   void checkAndTriggerEvents(int elapsedTime) {
-    print(
-        "🕒 Time: $elapsedTime - Boss Active: $_bossActive - Boss2 Active: $_boss2Active");
+    print("🕒 Time: $elapsedTime - Boss Active: $_bossActive");
 
     if (elapsedTime == 60 && !_bossActive) {
       print("🔥 Spawning Boss1...");
@@ -213,35 +216,54 @@ class SpawnController extends Component {
   void onBoss2Death() {
     print("💀 Void Prism has been defeated!");
     game.bossHealthNotifier.value = null;
-    _boss2Active = false;
+    _bossActive = false; // ✅ Now enemies can spawn again
+
+    Future.delayed(Duration(seconds: 3), () {
+      if (!_bossActive) {
+        // ✅ Ensure no boss is active before restarting
+        print("🔄 Restarting enemy waves after Boss2 death.");
+        _startEnemyWaves();
+      }
+    });
   }
 
   /// ✅ **Spawn Boss 2 (Void Prism)**
   void spawnBoss2() {
-    print("⚔️ Void Prism has entered the battlefield!");
-    _boss2Active = true;
+    print("⚔️ Void Prism is preparing to enter the battlefield!");
+    _bossActive = true;
+    _isSpawning = false; // ✅ Stop enemy spawning
     _stopEnemySpawns();
 
-    Future.delayed(Duration(milliseconds: 500), () {
-      _clearEnemyWaves(); // ✅ Ensure all enemies are removed after a short delay
+    // ✅ **Make sure no enemies spawn again**
+    if (enemySpawnerTimer.isMounted) {
+      game.remove(enemySpawnerTimer);
+      print("🛑 Enemy spawner removed!");
+    }
+
+    // ✅ **Clear enemies & add a delay**
+    _clearEnemyWaves();
+    Future.delayed(Duration(seconds: 2), () {
+      print("💨 All enemy waves cleared! Boss 2 now spawning...");
+
+      final boss2 = Boss2(
+        player: game.player,
+        health: 60000,
+        speed: 0,
+        size: Vector2(256, 256),
+        onHealthChanged: (double health) =>
+            game.bossHealthNotifier.value = health,
+        onDeath: () => onBoss2Death(),
+        onStaggerChanged: (double stagger) =>
+            game.bossStaggerNotifier.value = stagger,
+        bossStaggerNotifier: game.bossStaggerNotifier,
+      );
+
+      boss2.position = Vector2(1280 / 2, 1280 / 2);
+      game.add(boss2);
+      game.setActiveBoss("Void Prism", 60000);
+
+      print("⚔️ Boss 2 (Void Prism) has entered the battlefield!");
     });
-
-    final boss2 = Boss2(
-      player: game.player,
-      health: 60000,
-      speed: 0,
-      size: Vector2(256, 256),
-      onHealthChanged: (double health) =>
-          game.bossHealthNotifier.value = health,
-      onDeath: () => onBoss2Death(),
-      onStaggerChanged: (double stagger) =>
-          game.bossStaggerNotifier.value = stagger,
-      bossStaggerNotifier: game.bossStaggerNotifier,
-    );
-
-    boss2.position = Vector2(1280 / 2, 1280 / 2);
-    game.add(boss2);
-    game.setActiveBoss("Void Prism", 60000);
   }
 
   /// ✅ **After Boss 1 Dies - Resume Enemy Waves**

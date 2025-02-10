@@ -97,6 +97,11 @@ class BaseEnemy extends SpriteAnimationComponent
     PlayerProgressManager.addXp(xpEarned);
     print("⚔️ Enemy Defeated! +$xpEarned XP");
 
+    // ✅ Notify SpawnController that an enemy has been removed
+    if (gameRef.spawnController != null) {
+      gameRef.spawnController!.decreaseEnemyCount();
+    }
+
     removeFromParent(); // ✅ Ensure the enemy is removed from the game world
   }
 }

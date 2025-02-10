@@ -69,13 +69,12 @@ class HUD extends StatelessWidget {
         ),
 
         // 👑 Boss UI (Health Bar + Stagger Bar)
-        // 👑 Boss UI (Health Bar + Stagger Bar)
         Positioned(
           top: safeTop + 40,
           left: MediaQuery.of(context).size.width / 2 - 100, // ✅ Centered UI
           child: ValueListenableBuilder<String?>(
             valueListenable:
-                game.activeBossNameNotifier, // ✅ Listen for changes
+                game.activeBossNameNotifier, // ✅ Listen for boss name
             builder: (context, bossName, _) {
               return ValueListenableBuilder<double?>(
                 valueListenable: bossHealthNotifier,
@@ -100,14 +99,59 @@ class HUD extends StatelessWidget {
                       ),
                       const SizedBox(height: 5),
 
-                      // 🔴 **Boss Health Bar (Now Centered)**
+                      // 🔴 **Boss Health Bar**
                       SizedBox(
                         width: 200,
                         child: BossHealthBar(
                           bossHealth: bossHealth,
                           maxBossHealth:
-                              5000, // ✅ Ensure this matches the boss’s max HP
+                              5000, // ✅ Ensure this matches the boss's HP
                         ),
+                      ),
+
+                      const SizedBox(height: 5), // ✅ Small spacing between bars
+
+                      // ⚡ **Boss Stagger Bar**
+                      ValueListenableBuilder<double?>(
+                        valueListenable:
+                            bossStaggerNotifier, // ✅ Listen for stagger
+                        builder: (context, stagger, _) {
+                          if (stagger == null || stagger <= 0) {
+                            return SizedBox.shrink(); // ✅ Hide if 0
+                          }
+                          return SizedBox(
+                            width: 200, // ✅ Matches health bar width
+                            height: 8, // ✅ Slightly smaller than health bar
+                            child: ClipRRect(
+                              borderRadius:
+                                  BorderRadius.circular(5), // ✅ Rounded Corners
+                              child: Stack(
+                                children: [
+                                  // Background (Black Border)
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      border: Border.all(
+                                          color: Colors.white, width: 2),
+                                    ),
+                                  ),
+                                  // **Fill Bar** (Stagger Progress)
+                                  FractionallySizedBox(
+                                    widthFactor:
+                                        stagger / 100, // ✅ Dynamic width
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(5),
+                                        color: Colors
+                                            .amber, // ✅ Gold Color for Stagger
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   );

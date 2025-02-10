@@ -511,23 +511,6 @@ class RogueShooterGame extends FlameGame
     );
   }
 
-  void checkLevelUpScaling() {
-    if (player.spiritLevel >= 3 && maxEnemies != 20) {
-      maxEnemies = 20;
-      remove(enemySpawnerTimer);
-      enemySpawnerTimer = TimerComponent(
-        period: 1.0,
-        repeat: true,
-        onTick: () {
-          if (enemyCount < maxEnemies) {
-            spawnController?.spawnEnemyWave(10);
-          }
-        },
-      );
-      add(enemySpawnerTimer);
-    }
-  }
-
   void showNotification(String message) {
     // Implement your notification display logic here
     // For example, you can use a TextComponent or any other UI element
