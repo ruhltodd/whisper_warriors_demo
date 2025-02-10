@@ -50,7 +50,7 @@ class WhisperWarrior extends SpriteAnimationComponent
       srcSize: Vector2(128, 128),
     );
     animations['hit'] =
-        hitSpriteSheet.createAnimation(row: 0, stepTime: 0.15, from: 0, to: 5);
+        hitSpriteSheet.createAnimation(row: 0, stepTime: 0.25, from: 0, to: 5);
 
     // ✅ Load the death animation from `whisper_warrior_death.png`
     final deathSpriteSheet = SpriteSheet(
@@ -66,12 +66,14 @@ class WhisperWarrior extends SpriteAnimationComponent
   }
 
   void playAnimation(String animationName) {
-    if (!isLoaded) {
-      return;
-    }
+    if (!isLoaded) return;
 
     if (animations.containsKey(animationName)) {
       animation = animations[animationName];
+
+      if (animationName == 'hit') {
+        animation!.loop = false; // ✅ Prevent looping so it plays fully
+      }
 
       if (animationName == 'death') {
         // ✅ Prevent looping by setting `loop` to false
@@ -88,7 +90,7 @@ class WhisperWarrior extends SpriteAnimationComponent
           );
         });
       }
-    } else {}
+    }
   }
 
   @override

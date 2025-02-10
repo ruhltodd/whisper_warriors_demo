@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flame/collisions.dart';
+import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/items/items.dart';
@@ -340,9 +341,16 @@ class Player extends PositionComponent
   // Take damage and handle death
   void takeDamage(int damage) async {
     if (isDead) return; // Prevent extra damage when player dies
-
     double reducedDamage = damage * (1 - (defense / 100));
+// ✅ Show red floating damage number above the player
 
+    final playerDamageNumber = DamageNumber(
+      -reducedDamage.toInt(), // Show negative damage
+      position.clone() + Vector2(0, -20), // Position above player
+      isCritical: false, // Not a critical hit
+      isPlayer: true, // ✅ Marks it as player damage
+    );
+    gameRef.add(playerDamageNumber);
     // Apply Veil of the Forgotten effect if HP < 50%
     if (equippedItems.any((item) => item is VeilOfTheForgotten) &&
         currentHealth < maxHealth * 0.5) {
@@ -359,7 +367,15 @@ class Player extends PositionComponent
 
     gameRef.experienceBar
         .updateSpirit(spiritExp, spiritExpToNextLevel, spiritLevel);
+
     whisperWarrior.playAnimation('hit');
+
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (!isDead) {
+        whisperWarrior
+            .playAnimation('idle'); // ✅ Only return to idle after delay
+      }
+    });
 
     if (currentHealth <= 0 && !isDead) {
       isDead = true;

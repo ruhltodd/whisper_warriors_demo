@@ -96,6 +96,7 @@ flutter:
     - assets/images/boss1_walk.png
     - assets/images/boss2.png
     - assets/images/boss_projectile.png
+    - assets/images/minus.png
     - assets/images/0.png
     - assets/images/1.png
     - assets/images/2.png

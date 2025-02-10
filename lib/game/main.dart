@@ -230,6 +230,7 @@ class RogueShooterGame extends FlameGame
   late ValueNotifier<String?> activeBossNameNotifier; // ✅ Add this line
   int enemyCount = 0;
   int maxEnemies = 30;
+  double maxBossHealth = 50000; // ✅ Default value
   final List<String> selectedAbilities;
   final List<InventoryItem> equippedItems;
   final Random random = Random(); // ✅ Define Random instance
@@ -429,6 +430,7 @@ class RogueShooterGame extends FlameGame
   void setActiveBoss(String name, double maxHealth) {
     activeBossNameNotifier.value = name;
     bossHealthNotifier.value = maxHealth;
+    maxBossHealth = maxHealth; // ✅ Store max HP separately
   }
 
   String formatTime(int seconds) {

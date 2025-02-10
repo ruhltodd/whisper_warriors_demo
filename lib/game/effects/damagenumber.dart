@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 import 'package:flame/effects.dart';
@@ -6,13 +7,16 @@ import 'package:whisper_warriors/game/main.dart';
 class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
   final Vector2 initialPosition;
   final int damage;
-  final bool isCritical; // ✅ Detect if it's a crit hit
-  double timer = 1.0; // Display time in seconds
+  final bool isCritical;
+  final bool isPlayer; // ✅ Flag to differentiate player damage
+  double timer = 1.0;
   late List<SpriteComponent> digitSprites = [];
 
-  static final Map<int, Sprite> numberSprites = {}; // Store loaded sprites
+  static final Map<int, Sprite> numberSprites = {}; // ✅ Store loaded sprites
+  static Sprite? minusSprite; // ✅ Cache minus sign sprite
 
-  DamageNumber(this.damage, this.initialPosition, {this.isCritical = false}) {
+  DamageNumber(this.damage, this.initialPosition,
+      {this.isCritical = false, this.isPlayer = false}) {
     position = initialPosition;
   }
 
@@ -27,8 +31,8 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
     // ✅ Floating Effect (moves upward)
     add(MoveEffect.by(Vector2(0, -30), EffectController(duration: 0.5)));
 
-    if (isCritical) {
-      // ✅ Magnify & Shrink Effect for Crits
+    if (isCritical && !isPlayer) {
+      // ✅ Magnify & Shrink Effect for Crits (Only for enemies)
       add(ScaleEffect.to(Vector2.all(2.5), EffectController(duration: 0.1))
         ..onComplete = () => add(
             ScaleEffect.to(Vector2.all(1.2), EffectController(duration: 0.1))));
@@ -38,28 +42,48 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
     add(RemoveEffect(delay: 1.0));
   }
 
-  /// Loads sprites into a map if they haven't been loaded yet
+  /// Loads number sprites & minus sign if not already loaded
   Future<void> _loadSpritesIfNeeded() async {
     if (numberSprites.isEmpty) {
       for (int i = 0; i <= 9; i++) {
         numberSprites[i] = await gameRef.loadSprite('$i.png');
       }
     }
+
+    if (minusSprite == null) {
+      minusSprite = await gameRef.loadSprite('minus.png'); // ✅ Load "-" sprite
+    }
   }
 
   /// Creates and positions sprite digits
   void _createDamageNumberSprites() {
-    String damageString = damage.toString();
+    String damageString =
+        damage.abs().toString(); // ✅ Convert to absolute value
     double offsetX = 0;
+
+    if (isPlayer) {
+      // ✅ Add a minus sign only for player damage
+      if (minusSprite != null) {
+        SpriteComponent minus = SpriteComponent(
+          sprite: minusSprite,
+          size: Vector2(10, 10), // ✅ Smaller minus sign
+          position: Vector2(offsetX, 0),
+          anchor: Anchor.center,
+        );
+        digitSprites.add(minus);
+        add(minus);
+        offsetX += 8; // ✅ Adjust spacing
+      }
+    }
 
     for (int i = 0; i < damageString.length; i++) {
       int digit = int.parse(damageString[i]);
 
       SpriteComponent digitSprite = SpriteComponent(
         sprite: numberSprites[digit],
-        size: isCritical
-            ? Vector2(24, 24)
-            : Vector2(16, 16), // ✅ Bigger for crits
+        size: isPlayer
+            ? Vector2(10, 10)
+            : Vector2(16, 16), // ✅ Smaller for player
         position: Vector2(offsetX, 0),
         anchor: Anchor.center,
       );
@@ -67,7 +91,19 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
       digitSprites.add(digitSprite);
       add(digitSprite);
 
-      offsetX += isCritical ? 18 : 14; // ✅ Slightly larger spacing for crits
+      offsetX += isPlayer ? 8 : 14; // ✅ Smaller spacing for player damage
+    }
+
+    // ✅ Tint player damage numbers red (enemy numbers remain unchanged)
+    if (isPlayer) {
+      for (var sprite in digitSprites) {
+        sprite.add(
+          ColorEffect(
+            const Color(0xFFFF4444), // 🔴 Red for player damage
+            EffectController(duration: 0.2),
+          ),
+        );
+      }
     }
   }
 }
