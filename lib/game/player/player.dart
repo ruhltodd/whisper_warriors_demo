@@ -45,6 +45,9 @@ class Player extends PositionComponent
   double get critChance => baseCritChance * spiritMultiplier;
   double get critMultiplier =>
       baseCritMultiplier + ((spiritMultiplier - 1) * 0.5);
+  double get pickupRange =>
+      100.0 *
+      spiritMultiplier; // Base range of 100, scales with spirit multiplier
 
   // Current Health (tracks real-time health)
   double currentHealth = 100.0;

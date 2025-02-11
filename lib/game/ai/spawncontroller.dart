@@ -149,7 +149,7 @@ class SpawnController extends Component {
 
   Vector2 _getRandomSpawnPosition() {
     final random = Random();
-    final spawnMargin = 50.0;
+    final spawnMargin = 50.0; // Margin around the spawn edge
     Vector2 spawnPosition;
 
     do {
@@ -174,7 +174,8 @@ class SpawnController extends Component {
         default:
           spawnPosition = Vector2.zero();
       }
-    } while ((spawnPosition - game.player.position).length < 100.0);
+    } while ((spawnPosition - game.player.position).length <
+        256.0); // Ensure spawn is at least 256 pixels away from the player
 
     return spawnPosition;
   }
@@ -292,7 +293,7 @@ class SpawnController extends Component {
     final boss1 = Boss1(
       player: game.player,
       speed: 20,
-      health: 5000,
+      health: 50000,
       size: Vector2(128, 128),
       onHealthChanged: (double health) {
         game.bossHealthNotifier.value = health; // ✅ Ensure UI updates

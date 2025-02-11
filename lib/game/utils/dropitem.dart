@@ -67,8 +67,8 @@ class DropItem extends SpriteComponent
     final player = gameRef.player;
     final distance = (player.position - position).length;
 
-    if (distance < 50) {
-      // ✅ Increased pickup range
+    if (distance < player.pickupRange) {
+      // ✅ Increased pickup range based on spirit multiplier
       _moveToPlayer();
     }
   }
