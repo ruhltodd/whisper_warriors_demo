@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart'; // Import for VoidCallback
+import 'package:whisper_warriors/game/ai/wave2Enemy.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/main.dart';
@@ -87,13 +88,14 @@ class BaseEnemy extends SpriteAnimationComponent
 
     if (!hasDroppedItem) {
       hasDroppedItem = true;
-      final blueCoinItem = BlueCoin();
-      final drop = DropItem(item: blueCoinItem)..position = position.clone();
+      final coinItem = this is Wave2Enemy ? GreenCoin() : BlueCoin();
+      final drop = DropItem(item: coinItem)..position = position.clone();
+
       gameRef.add(drop);
     }
 
     // ✅ Grant XP for defeating this enemy
-    int xpEarned = 20; // Adjust based on enemy type
+    int xpEarned = this is Wave2Enemy ? 160 : 80; // ✅ Green Coin = Double XP
     PlayerProgressManager.addXp(xpEarned);
     print("⚔️ Enemy Defeated! +$xpEarned XP");
 

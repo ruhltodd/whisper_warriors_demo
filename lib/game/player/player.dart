@@ -31,10 +31,10 @@ class Player extends PositionComponent
   double baseCritMultiplier = 1.5; // 1.5x damage on crit
 
   // Spirit Level System
-  double spiritMultiplier = 2.0; // Scales with Spirit Level
+  double spiritMultiplier = 5.0; // Scales with Spirit Level
   int spiritLevel = 1;
   double spiritExp = 0.0;
-  double spiritExpToNextLevel = 1000.0;
+  double spiritExpToNextLevel = 500.0;
 
   // Derived Stats (calculated from Spirit Level)
   double get maxHealth => baseHealth * spiritMultiplier;

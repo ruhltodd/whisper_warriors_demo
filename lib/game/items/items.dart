@@ -144,7 +144,7 @@ class GoldCoin extends Item {
           description: "A shiny gold coin.",
           rarity: "Common",
           stats: {},
-          expValue: 5000,
+          expValue: 10000,
           spriteName: 'gold_coin.png',
         );
 
@@ -167,8 +167,31 @@ class BlueCoin extends Item {
           description: "A shiny blue coin.",
           rarity: "Common",
           stats: {},
-          expValue: 10,
+          expValue: 80,
           spriteName: 'blue_coin.png',
+        );
+
+  @override
+  void applyEffect(Player player) {
+    // Define any effects if needed
+  }
+
+  @override
+  void removeEffect(Player player) {
+    // Define any removal effects if needed
+  }
+}
+
+@HiveType(typeId: 6) // ✅ Unique typeId
+class GreenCoin extends Item {
+  GreenCoin()
+      : super(
+          name: "Green Coin",
+          description: "A shiny green coin.",
+          rarity: "Common",
+          stats: {},
+          expValue: 160,
+          spriteName: 'green_coin.png',
         );
 
   @override

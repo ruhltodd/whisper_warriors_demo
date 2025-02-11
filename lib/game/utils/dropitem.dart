@@ -79,7 +79,7 @@ class DropItem extends SpriteComponent
           gameRef.player.gainSpiritExp(item.expValue.toDouble()); // ✅ Give EXP
 
           // ✅ Check if the item is NOT a GoldCoin before saving
-          if (item is! GoldCoin && item is! BlueCoin) {
+          if (item is! GoldCoin && item is! BlueCoin && item is! GreenCoin) {
             // ✅ Check for duplicates before saving
             final box = Hive.box<InventoryItem>('inventoryBox');
             if (!box.values.any((i) => i.item.name == item.name)) {

@@ -9,8 +9,10 @@ class InventoryManager {
 
   /// Add an item to inventory
   static void addItem(InventoryItem item) {
-    if (item.item is! GoldCoin && item.item is! BlueCoin) {
-      // ✅ Skip saving GoldCoin and BlueCoin
+    if (item.item is! GoldCoin &&
+        item.item is! BlueCoin &&
+        item.item is! GreenCoin) {
+      // ✅ Skip saving GoldCoin and BlueCoin and Greencoin
       _inventoryBox.put(item.name, item);
       print("👜 Item added: ${item.name}");
     } else {

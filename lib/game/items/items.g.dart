@@ -260,3 +260,41 @@ class BlueCoinAdapter extends TypeAdapter<BlueCoin> {
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
+
+class GreenCoinAdapter extends TypeAdapter<GreenCoin> {
+  @override
+  final int typeId = 6;
+
+  @override
+  GreenCoin read(BinaryReader reader) {
+    return GreenCoin();
+  }
+
+  @override
+  void write(BinaryWriter writer, GreenCoin obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.name)
+      ..writeByte(1)
+      ..write(obj.description)
+      ..writeByte(2)
+      ..write(obj.rarity)
+      ..writeByte(3)
+      ..write(obj.stats)
+      ..writeByte(4)
+      ..write(obj.expValue)
+      ..writeByte(5)
+      ..write(obj.spriteName);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GreenCoinAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
