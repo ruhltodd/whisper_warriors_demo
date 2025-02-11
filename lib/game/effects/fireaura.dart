@@ -38,10 +38,11 @@ class FireAura extends SpriteAnimationComponent
     position = player.position.clone();
 
     // ✅ Add a circular hitbox slightly larger than the sprite
-    add(
-      CircleHitbox.relative(1.2, parentSize: size)
-        ..collisionType = CollisionType.passive,
-    );
+    add(CircleHitbox(
+      radius: range, // 🔥 Match aura range directly (150)
+      position: size / 2, // ✅ Ensure it's centered
+      anchor: Anchor.center,
+    )..collisionType = CollisionType.passive);
   }
 
   @override
@@ -76,6 +77,17 @@ class FireAura extends SpriteAnimationComponent
           }
         }
       }
+    }
+  }
+
+  @override
+  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollision(intersectionPoints, other);
+
+    // Only process collisions with BaseEnemy instances
+    if (other is BaseEnemy) {
+      print("🔥 Fire Aura damaged enemy: ${other.runtimeType}");
+      other.takeDamage(damage.toInt()); // ✅ Apply damage
     }
   }
 }

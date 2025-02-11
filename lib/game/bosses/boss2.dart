@@ -10,29 +10,107 @@ import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
-import 'package:whisper_warriors/game/projectiles/projectile.dart';
 import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'staggerable.dart';
 
-class LaserBeam extends PositionComponent with HasGameRef<RogueShooterGame> {
+/// The LaserBeam class represents a laser beam component in the game.
+/// It is used to create laser beams that rotate and deal damage to the player
+/// if they are in the path of the beam. The beams can be spawned in a circular
+/// pattern around a boss character and can alternate their rotation direction.
+class LaserWheel extends Component with HasGameRef<RogueShooterGame> {
+  final Vector2 bossPosition;
+  final int numberOfBeams;
+  final double beamLength;
+  final double beamWidth;
+  final double damagePerSecond;
+
+  double elapsedTime = 0.0;
+  static const double oscillationDuration = 3.0;
+  double rotationDirection = 1.0; // ✅ 1 for normal, -1 for reverse
+  List<LaserBeam> beams = [];
+
+  LaserWheel({
+    required this.bossPosition,
+    this.numberOfBeams = 8,
+    this.beamLength = 1000,
+    this.beamWidth = 4,
+    this.damagePerSecond = 1,
+  });
+
+  @override
+  Future<void> onLoad() async {
+    super.onLoad();
+
+    double angleStep = (2 * pi) / numberOfBeams;
+
+    for (int i = 0; i < numberOfBeams; i++) {
+      double angle = i * angleStep;
+
+      final beam = LaserBeam(
+        startPosition: bossPosition.clone(),
+        length: beamLength,
+        width: beamWidth,
+        damagePerSecond: damagePerSecond,
+        initialAngle: angle,
+      );
+
+      beams.add(beam);
+      gameRef.add(beam);
+    }
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    elapsedTime += dt;
+
+    // ✅ Reverse direction every 3 seconds
+    if (elapsedTime >= oscillationDuration) {
+      rotationDirection *= -1; // 🔄 Reverse the movement
+      elapsedTime = 0.0;
+    }
+
+    double rotationSpeed = pi / 32;
+    for (var beam in beams) {
+      beam.angle += rotationSpeed * rotationDirection * dt;
+    }
+  }
+}
+
+class LaserBeam extends PositionComponent
+    with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   final Vector2 startPosition;
-  final Vector2 direction;
   final double length;
   final double width;
   final double damagePerSecond;
+  final double initialAngle;
+  double timeSinceLastDamage = 0.0;
 
   LaserBeam({
     required this.startPosition,
-    required this.direction,
     required this.length,
     required this.width,
     required this.damagePerSecond,
+    required this.initialAngle,
   }) {
     position = startPosition;
     size = Vector2(length, width);
-    angle = direction.angleTo(Vector2(1, 0)); // ✅ Rotate laser toward player
+    angle = initialAngle;
+
+    final hitboxParent = PositionComponent(
+      size: Vector2(length, width),
+      angle: initialAngle, // ✅ Ensures the hitbox follows the beam rotation
+      anchor: Anchor.center,
+    );
+    hitboxParent.add(
+      RectangleHitbox()
+        ..size = Vector2(length, width)
+        ..anchor = Anchor.center,
+    );
+    add(hitboxParent);
   }
 
   @override
@@ -40,6 +118,8 @@ class LaserBeam extends PositionComponent with HasGameRef<RogueShooterGame> {
     final paint = Paint()
       ..shader = LinearGradient(
         colors: [Colors.redAccent, Colors.orange, Colors.yellow],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ).createShader(Rect.fromLTWH(0, 0, length, width))
       ..strokeWidth = width
       ..style = PaintingStyle.stroke;
@@ -51,18 +131,31 @@ class LaserBeam extends PositionComponent with HasGameRef<RogueShooterGame> {
   void update(double dt) {
     super.update(dt);
 
-    // ✅ Check if the player is inside the beam
     if (_playerInBeam()) {
-      gameRef.player
-          .takeDamage((damagePerSecond * dt).toInt()); // ✅ Now gameRef works!
+      timeSinceLastDamage += dt;
+      if (timeSinceLastDamage >= 1.0) {
+        gameRef.player.takeDamage(damagePerSecond.toInt());
+        timeSinceLastDamage = 0.0;
+      }
     }
   }
 
   bool _playerInBeam() {
     final player = gameRef.player;
-    final playerDistance = (player.position - startPosition).length;
-    return playerDistance <= length &&
-        (player.position - startPosition).normalized().dot(direction) > 0.9;
+    final Vector2 beamDirection = Vector2(cos(angle), sin(angle));
+    final Vector2 playerOffset = player.position - startPosition;
+
+    bool withinRange = playerOffset.length <= length;
+    bool alignedWithBeam =
+        playerOffset.normalized().dot(beamDirection).abs() > 0.95;
+
+    return withinRange && alignedWithBeam;
+  }
+
+  @override
+  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollision(intersectionPoints, other);
+    print('LaserBeam collided with ${other.runtimeType}');
   }
 }
 
@@ -123,7 +216,6 @@ class Boss2 extends BaseEnemy with Staggerable {
         stepTime: 0.3,
       ),
     );
-
     animation = idleAnimation;
     add(RectangleHitbox());
   }
@@ -132,12 +224,9 @@ class Boss2 extends BaseEnemy with Staggerable {
   void update(double dt) {
     super.update(dt);
     updateStagger(dt);
-
     if (isStaggered) return;
-
     timeSinceLastAttack += dt;
     timeSinceLastDamageNumber += dt;
-
     _updateMovement(dt);
     _handleAttacks(dt);
   }
@@ -147,7 +236,6 @@ class Boss2 extends BaseEnemy with Staggerable {
     animation = (player.position - position).length < 10
         ? attackAnimation
         : idleAnimation;
-
     if ((player.position - position).length < 10) {
       player.takeDamage(10);
     }
@@ -155,7 +243,6 @@ class Boss2 extends BaseEnemy with Staggerable {
 
   void _handleAttacks(double dt) {
     timeSinceLastAttack += dt;
-
     if (timeSinceLastAttack >= attackCooldown) {
       _activateLaserBeam();
       timeSinceLastAttack = 0.0;
@@ -163,40 +250,14 @@ class Boss2 extends BaseEnemy with Staggerable {
   }
 
   void _activateLaserBeam() {
-    Vector2 direction = (player.position - position).normalized();
-
-    // ✅ Laser properties
-    double beamLength = 300; // Adjust beam range
-    double beamWidth = 10;
-    double damagePerSecond = 20;
-
-    // ✅ Create a laser beam effect
-    gameRef.add(LaserBeam(
-      startPosition: position.clone(),
-      direction: direction,
-      length: beamLength,
-      width: beamWidth,
-      damagePerSecond: damagePerSecond,
-    ));
-
-    List<double> angles = [0, 45, 90, 135, 180, 225, 270, 315];
-    for (double angle in angles) {
-      double radians = angle * (pi / 180);
-
-      Vector2 projectileVelocity = Vector2(cos(radians), sin(radians)) * 800;
-      Vector2 spawnOffset = projectileVelocity.normalized() * 50;
-      Vector2 spawnPosition = position.clone() + spawnOffset;
-
-      final bossProjectile = Projectile.bossProjectile(
-        damage: 20,
-        velocity: projectileVelocity,
-      )
-        ..position = spawnPosition
-        ..size = Vector2(40, 40)
-        ..anchor = Anchor.center;
-
-      gameRef.add(bossProjectile);
+    // ✅ Ensure only ONE LaserWheel exists at a time
+    if (gameRef.children.whereType<LaserWheel>().isNotEmpty) {
+      print("⚠️ LaserWheel already exists, skipping spawn.");
+      return;
     }
+
+    print("🚀 Spawning LaserWheel!");
+    gameRef.add(LaserWheel(bossPosition: position));
   }
 
   @override
@@ -204,25 +265,19 @@ class Boss2 extends BaseEnemy with Staggerable {
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
-
     int finalDamage =
         isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
-
     if (isStaggered) {
       finalDamage *= 2;
     }
-
     health -= finalDamage;
     onHealthChanged(health.toDouble());
-
     staggerProgress += baseDamage * 0.04;
     staggerProgress = staggerProgress.clamp(0, 100);
     bossStaggerNotifier.value = staggerProgress;
-
     if (staggerProgress >= 100) {
       triggerStagger();
     }
-
     if (timeSinceLastDamageNumber >= damageNumberInterval ||
         timeSinceLastDamageNumber == 0.0) {
       final damageNumber = DamageNumber(
@@ -230,7 +285,6 @@ class Boss2 extends BaseEnemy with Staggerable {
         position.clone() + Vector2(0, -20),
         isCritical: isCritical,
       );
-
       gameRef.add(damageNumber);
       timeSinceLastDamageNumber = 0.0;
     }
@@ -257,9 +311,7 @@ class Boss2 extends BaseEnemy with Staggerable {
       const Color(0xFFFF0000),
       EffectController(duration: 3.0, reverseDuration: 0.5),
     ));
-
     add(OpacityEffect.to(1.0, EffectController(duration: 0.5)));
-
     Future.delayed(Duration(seconds: 3), () {
       isStaggered = false;
       speed /= 0.5;
@@ -298,9 +350,15 @@ class Boss2 extends BaseEnemy with Staggerable {
       print("🗃️ LootBox spawned at position: ${lootBox.position}");
     }
 
+    // ✅ Remove all laser beams from the game when the boss dies
+    for (var laser in gameRef.children.whereType<LaserBeam>()) {
+      laser.removeFromParent();
+    }
+    print("🛑 All laser beams removed!");
+
     onDeath();
     gameRef.add(Explosion(position));
-    removeFromParent();
+    removeFromParent(); // ✅ Boss is removed from the game world
   }
 
   List<DropItem> _getDropItems() {

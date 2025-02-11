@@ -87,7 +87,10 @@ class Projectile extends SpriteAnimationComponent
       );
     }
 
-    add(CircleHitbox()); // ✅ Ensure hitbox exists
+    add(
+      RectangleHitbox()
+        ..collisionType = CollisionType.active, // ✅ Still hits enemies
+    );
   }
 
   @override
@@ -112,37 +115,33 @@ class Projectile extends SpriteAnimationComponent
 
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
-    if (!isBossProjectile) {
-      if (other is BaseEnemy || other is Wave2Enemy) {
-        BaseEnemy enemy = other as BaseEnemy;
+    super.onCollision(intersectionPoints, other);
 
-        // ✅ **Prevent hitting the same enemy multiple times per frame**
-        if (!enemiesHit.contains(enemy)) {
-          enemiesHit.add(enemy); // ✅ Mark enemy as hit
-          enemy.takeDamage(damage);
-
-          // ✅ Trigger `onHit` effects (Cursed Echo, etc.)
-          onHit?.call(enemy);
-        }
-
-        // ✅ Check if **Umbral Fang is equipped** to allow piercing
-        if (player?.hasItem("umbral_fang") ?? false) {
-          shouldPierce = true; // ✅ **Re-enable piercing correctly**
-          print("🗡️ Umbral Fang active! Projectiles pierce.");
-        }
-
-        // ✅ Remove projectile **only if it should NOT pierce**
-        if (!shouldPierce) {
-          removeFromParent();
-        }
-      }
-    } else {
-      if (other is Player) {
-        other.takeDamage(damage);
-        removeFromParent();
-      }
+    // ✅ Ensure player projectiles don't collide with the player
+    if (!isBossProjectile && other is Player) {
+      return;
     }
 
-    super.onCollision(intersectionPoints, other);
+    // ✅ Ensure player projectiles hit enemies
+    if (!isBossProjectile && other is BaseEnemy) {
+      print("🗡️ Projectile hit enemy: ${other.runtimeType}");
+      other.takeDamage(damage);
+
+      if (!shouldPierce) {
+        removeFromParent();
+      }
+      return; // ✅ Prevents further execution
+    }
+
+    // ✅ Ensure boss projectiles hit the player
+    if (isBossProjectile && other is Player) {
+      print("💥 Boss projectile hit Player!");
+      other.takeDamage(damage);
+      removeFromParent();
+      return;
+    }
+
+    // ✅ Ignore other unexpected collisions
+    print("⚠️ Ignoring unexpected collision with ${other.runtimeType}");
   }
 }

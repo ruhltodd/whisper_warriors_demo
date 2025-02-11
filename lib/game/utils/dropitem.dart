@@ -17,6 +17,11 @@ class DropItem extends SpriteComponent
 
   DropItem({required this.item}) : super(size: Vector2(15, 15)) {
     add(CircleHitbox());
+    add(
+      RectangleHitbox()
+        ..collisionType =
+            CollisionType.inactive, // ✅ Fully disable collision effects
+    );
   }
 
   @override

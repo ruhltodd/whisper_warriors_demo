@@ -113,9 +113,9 @@ class Player extends PositionComponent
     print(
         "🛡 Player Constructor - Received Equipped Items: ${equippedItems.map((e) => e.item.name).toList()}");
 
-    add(CircleHitbox.relative(
-      0.5, // 50% of player size (adjust as needed)
-      parentSize: size,
+    add(RectangleHitbox(
+      size: Vector2(32, 32), // Adjust as needed (half the sprite size)
+      anchor: Anchor.center, // Centers the hitbox
     ));
 
     // ✅ Ensure inventory includes equipped items
@@ -566,4 +566,10 @@ class Player extends PositionComponent
 
   // Remove a passive effect from the player
   void removePassiveEffect(String s) {}
+
+  @override
+  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollision(intersectionPoints, other);
+    print('Player collided with ${other.runtimeType}');
+  }
 }

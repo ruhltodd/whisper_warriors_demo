@@ -302,6 +302,7 @@ class RogueShooterGame extends FlameGame
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    //debugMode = true; // ✅ Show hitboxes and outlines
     gameTimer = TimerComponent(period: 1.0, repeat: true, onTick: () {});
 
     // ✅ Now safely start the timer
@@ -316,7 +317,7 @@ class RogueShooterGame extends FlameGame
     bgmPlayer = AudioPlayer();
     await bgmPlayer.setReleaseMode(ReleaseMode.loop);
     await bgmPlayer.play(AssetSource('music/soft_etheral.mp3'));
-    await bgmPlayer.setVolume(.2);
+    await bgmPlayer.setVolume(.0);
 
     // ✅ Initialize HUD notifier
     gameHudNotifier = ValueNotifier<int>(elapsedTime);
@@ -495,7 +496,7 @@ class RogueShooterGame extends FlameGame
           await bgmPlayer.stop();
           await bgmPlayer.setReleaseMode(ReleaseMode.loop);
           await bgmPlayer.play(AssetSource('music/soft_etheral.mp3'));
-          await bgmPlayer.setVolume(.2);
+          await bgmPlayer.setVolume(0);
           print("🎵 Background music restarted.");
 
           // ✅ 7. Restart Spawn Controller (Handles enemy & boss spawns)
