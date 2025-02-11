@@ -4,12 +4,14 @@ platform :ios, '12.0'
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
+# Ensure the project uses the correct base configuration
 project 'Runner', {
   'Debug' => :debug,
   'Profile' => :release,
   'Release' => :release,
 }
 
+# Set FLUTTER_ROOT
 def flutter_root
   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
   unless File.exist?(generated_xcode_build_settings_path)
@@ -31,14 +33,33 @@ target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
+  # Ensure base configuration is properly set
+  config = File.join(__dir__, 'Flutter', 'Generated.xcconfig')
+  if File.exist?(config)
+    xcconfig_path = 'Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig'
+    ENV['FLUTTER_XCODE_CONFIGURATION'] = xcconfig_path
+  end
+
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
   target 'RunnerTests' do
     inherit! :search_paths
   end
 end
 
+# Post-install fix to resolve potential issues
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # Disable Flipper (if present) to prevent conflicts
+    target.build_configurations.each do |config|
+      config.build_settings['ENABLE_FLIPPER'] = 'NO'
+    end
+
+    # Ensure iOS Path Provider works correctly
+    config = target.build_configurations.each do |config|
+      config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'NO'
+    end
   end
 end

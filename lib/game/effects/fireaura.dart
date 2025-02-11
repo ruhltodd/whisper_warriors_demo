@@ -84,10 +84,6 @@ class FireAura extends SpriteAnimationComponent
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
 
-    // Only process collisions with BaseEnemy instances
-    if (other is BaseEnemy) {
-      print("🔥 Fire Aura damaged enemy: ${other.runtimeType}");
-      other.takeDamage(damage.toInt()); // ✅ Apply damage
-    }
+    // Remove damage application from onCollision
   }
 }
