@@ -6,6 +6,7 @@ import 'package:whisper_warriors/game/ui/spiritlevelbar.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/abilities/abilitybar.dart';
 import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
+import 'package:whisper_warriors/game/bosses/staggerbar.dart'; // Add this line
 
 class HUD extends StatelessWidget {
   final void Function(Vector2 delta) onJoystickMove;
@@ -80,45 +81,67 @@ class HUD extends StatelessWidget {
               return ValueListenableBuilder<double?>(
                 valueListenable: bossHealthNotifier,
                 builder: (context, bossHealth, _) {
-                  if (bossHealth == null || bossName == null) {
-                    return const SizedBox.shrink();
-                  }
+                  return ValueListenableBuilder<double?>(
+                    valueListenable:
+                        game.bossStaggerNotifier, // ✅ Stagger Notifier
+                    builder: (context, bossStagger, _) {
+                      if (bossHealth == null || bossName == null) {
+                        return const SizedBox.shrink();
+                      }
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // 👑 Dynamic Boss Name
-                      Text(
-                        bossName, // ✅ Uses dynamic boss name
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'MyCustomFont',
-                        ),
-                      ),
-                      const SizedBox(height: 5),
+                      // Assuming maxStagger is a constant or can be retrieved
+                      double maxStagger =
+                          100.0; // You can replace this with the actual value if needed
 
-                      // 🔴 **Boss Health Bar (Now Centered)**
-                      SizedBox(
-                        width: 200,
-                        child: BossHealthBar(
-                          bossHealth: game.bossHealthNotifier.value ??
-                              1, // ✅ Avoids null
-                          maxBossHealth:
-                              game.maxBossHealth, // ✅ Uses stored max HP
-                          // ✅ Ensure this matches the boss’s max HP
-                        ),
-                      ),
-                    ],
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // 👑 Dynamic Boss Name
+                          Text(
+                            bossName, // ✅ Uses dynamic boss name
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'MyCustomFont',
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+
+                          // 🔴 **Boss Health Bar**
+                          SizedBox(
+                            width: 200,
+                            child: BossHealthBar(
+                              bossHealth: game.bossHealthNotifier.value ?? 1,
+                              maxBossHealth: game.maxBossHealth,
+                            ),
+                          ),
+
+                          const SizedBox(height: 5), // ✅ Space between bars
+
+                          // ⚡ **Stagger Bar (Now Re-Added)**
+                          if (bossStagger !=
+                              null) // ✅ Only show if stagger exists
+                            SizedBox(
+                              width: 200,
+                              child: CustomPaint(
+                                size: Size(200, 8), // Size of the stagger bar
+                                painter: StaggerBarPainter(
+                                  bossStagger, // current stagger value
+                                  maxStagger, // max stagger value
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   );
                 },
               );
             },
           ),
         ),
-
         // 🔥 Ability Bar (Top Left)
         Positioned(
           top: safeTop + 10,
@@ -482,5 +505,39 @@ class _FadeTransitionOverlayState extends State<FadeTransitionOverlay>
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+}
+
+class StaggerBarPainter extends CustomPainter {
+  final double currentStagger;
+  final double maxStagger;
+
+  StaggerBarPainter(this.currentStagger, this.maxStagger);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Background Bar with rounded edges
+    Paint backgroundPaint = Paint()..color = const Color(0xFF444444);
+    RRect backgroundRRect = RRect.fromRectAndRadius(
+      Rect.fromLTRB(0, 0, size.width, size.height),
+      Radius.circular(8), // Radius for rounded corners
+    );
+    canvas.drawRRect(backgroundRRect, backgroundPaint);
+
+    // Fill Bar - Represents the current stagger value with rounded edges
+    if (currentStagger > 0) {
+      Paint fillPaint = Paint()..color = const Color(0xFFFFD700); // Gold color
+      double barWidth = (currentStagger / maxStagger) * size.width;
+      RRect fillRRect = RRect.fromRectAndRadius(
+        Rect.fromLTRB(0, 0, barWidth, size.height),
+        Radius.circular(8), // Radius for rounded corners
+      );
+      canvas.drawRRect(fillRRect, fillPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true; // Repaint whenever the stagger value changes
   }
 }

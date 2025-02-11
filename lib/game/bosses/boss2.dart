@@ -27,13 +27,13 @@ class LaserWheel extends Component with HasGameRef<RogueShooterGame> {
   final double damagePerSecond;
 
   double elapsedTime = 0.0;
-  static const double oscillationDuration = 3.0;
+  static const double oscillationDuration = 10.0;
   double rotationDirection = 1.0; // ✅ 1 for normal, -1 for reverse
   List<LaserBeam> beams = [];
 
   LaserWheel({
     required this.bossPosition,
-    this.numberOfBeams = 8,
+    this.numberOfBeams = 6,
     this.beamLength = 1000,
     this.beamWidth = 4,
     this.damagePerSecond = 1,
@@ -73,7 +73,7 @@ class LaserWheel extends Component with HasGameRef<RogueShooterGame> {
       elapsedTime = 0.0;
     }
 
-    double rotationSpeed = pi / 32;
+    double rotationSpeed = pi / 16;
     for (var beam in beams) {
       beam.angle += rotationSpeed * rotationDirection * dt;
     }
@@ -160,6 +160,16 @@ class LaserBeam extends PositionComponent
 }
 
 class Boss2 extends BaseEnemy with Staggerable {
+  @override
+  void applyStaggerVisuals() {
+    // Implement the method to apply stagger visuals
+    add(ColorEffect(
+      const Color(0xFFFF0000),
+      EffectController(duration: 3.0, reverseDuration: 0.5),
+    ));
+    add(OpacityEffect.to(1.0, EffectController(duration: 0.5)));
+  }
+
   bool enraged = false;
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
@@ -193,7 +203,7 @@ class Boss2 extends BaseEnemy with Staggerable {
           size: size,
         ) {
     maxHealth = health.toDouble();
-    staggerBar = StaggerBar(maxStagger: staggerThreshold);
+    staggerBar = StaggerBar(maxStagger: staggerThreshold, currentStagger: 0);
   }
 
   @override

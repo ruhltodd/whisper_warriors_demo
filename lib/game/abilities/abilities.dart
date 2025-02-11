@@ -137,6 +137,9 @@ class ShadowBlades extends Ability {
 class CursedEcho extends Ability {
   double baseProcChance = 0.2; // 20% base chance
   double delayBetweenRepeats = 0.2; // Delay before repeating attack
+  double procCooldown = 1.0; // Cooldown to prevent excessive procs
+
+  double _lastProcTime = 0.0;
 
   CursedEcho()
       : super(
@@ -153,7 +156,12 @@ class CursedEcho extends Ability {
   @override
   void onHit(Player player, PositionComponent target, int damage,
       {bool isCritical = false}) {
+    double currentTime = player.gameRef.currentTime();
+    if (currentTime - _lastProcTime < procCooldown)
+      return; // Prevent excessive procs
+
     if (player.gameRef.random.nextDouble() < getProcChance(player)) {
+      _lastProcTime = currentTime;
       Future.delayed(
           Duration(milliseconds: (delayBetweenRepeats * 1000).toInt()), () {
         if (target.isMounted) {

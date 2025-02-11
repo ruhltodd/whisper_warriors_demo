@@ -17,6 +17,15 @@ import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'staggerable.dart';
 
 class Boss1 extends BaseEnemy with Staggerable {
+  @override
+  void applyStaggerVisuals() {
+    // Implement the method as required
+    add(ColorEffect(
+      const Color(0xFFFF0000),
+      EffectController(duration: 0.5, reverseDuration: 0.5),
+    ));
+  }
+
   bool enraged = false;
   bool isFading = false; // ✅ Boss enters fading phase at 50% health
   double attackCooldown = 4.0;
@@ -51,7 +60,7 @@ class Boss1 extends BaseEnemy with Staggerable {
           size: size,
         ) {
     maxHealth = health.toDouble();
-    staggerBar = StaggerBar(maxStagger: staggerThreshold);
+    staggerBar = StaggerBar(maxStagger: staggerThreshold, currentStagger: 0);
   }
 
   @override
@@ -76,12 +85,23 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     animation = idleAnimation;
     add(RectangleHitbox());
+
+    staggerBar = StaggerBar(maxStagger: staggerThreshold, currentStagger: 0);
+    gameRef.add(
+        staggerBar); // Ensure this is added to the game (or a UI component)
+  }
+
+  void updateStaggerBar() {
+    staggerBar.currentStagger = staggerProgress;
+    bossStaggerNotifier.value =
+        staggerProgress; // Update the notifier to reflect changes
   }
 
   @override
   void update(double dt) {
     super.update(dt);
     updateStagger(dt);
+    updateStaggerBar();
 
     if (isStaggered) return;
 
@@ -172,39 +192,15 @@ class Boss1 extends BaseEnemy with Staggerable {
     int finalDamage =
         isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
 
-    if (isStaggered) {
-      finalDamage *= 2;
-    }
-
     health -= finalDamage;
-    onHealthChanged(health.toDouble()); // ✅ Update the UI
+    onHealthChanged(health.toDouble()); // Update the UI
+
+    // Apply damage to stagger
+    applyStaggerDamage(finalDamage,
+        isCritical: isCritical); // Apply damage to the stagger bar
 
     if (health <= maxHealth * 0.5 && !isFading) {
       _enterFadingPhase();
-    }
-
-    staggerProgress += baseDamage * 0.04;
-    staggerProgress = staggerProgress.clamp(0, 100);
-    bossStaggerNotifier.value = staggerProgress;
-
-    if (staggerProgress >= 100) {
-      triggerStagger();
-    }
-
-    if (timeSinceLastDamageNumber >= damageNumberInterval ||
-        timeSinceLastDamageNumber == 0.0) {
-      final damageNumber = DamageNumber(
-        finalDamage,
-        position.clone() + Vector2(0, -20),
-        isCritical: isCritical,
-      );
-
-      gameRef.add(damageNumber);
-      timeSinceLastDamageNumber = 0.0;
-
-      if (isFading) {
-        damageNumber.priority = 1000;
-      }
     }
 
     if (health <= (maxHealth * 0.3) && !enraged) {
@@ -217,16 +213,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
   }
 
-  void _enterFadingPhase() {
-    isFading = true;
-    add(OpacityEffect.to(0.0, EffectController(duration: 2.0)));
-  }
-
-  @override
-  void triggerStagger() {
-    if (isStaggered) return;
-
-    isStaggered = true;
+  /* isStaggered = true;
     speed *= 0.5;
     attackCooldown *= 1.5;
 
@@ -235,19 +222,14 @@ class Boss1 extends BaseEnemy with Staggerable {
       EffectController(duration: 3.0, reverseDuration: 0.5),
     ));
 
-    add(OpacityEffect.to(1.0, EffectController(duration: 0.5)));
+    add(OpacityEffect.to(1.0, EffectController(duration: 0.5)));*/
 
-    Future.delayed(Duration(seconds: 3), () {
-      isStaggered = false;
-      speed /= 0.5;
-      attackCooldown /= 1.5;
-      staggerProgress = 0;
-      bossStaggerNotifier.value = 0;
+  //  if (isFading) {
+  //    add(OpacityEffect.to(0.0, EffectController(duration: 1.0)));
 
-      if (isFading) {
-        add(OpacityEffect.to(0.0, EffectController(duration: 1.0)));
-      }
-    });
+  void _enterFadingPhase() {
+    isFading = true;
+    add(OpacityEffect.to(0.0, EffectController(duration: 2.0)));
   }
 
   void _enterEnrageMode() {

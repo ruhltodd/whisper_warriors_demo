@@ -181,13 +181,9 @@ class _MyAppState extends State<MyApp> {
 
                   // ✅ Delay applying effects to prevent null issues
                   Future.delayed(Duration(milliseconds: 500), () {
-                    if (gameInstance.player != null) {
-                      gameInstance.player.applyEquippedItems();
-                      print("🛡 Applied Equipped Items after Player Loaded.");
-                    } else {
-                      print(
-                          "⚠️ Player is still null, skipping applyEquippedItems.");
-                    }
+                    gameInstance.player.applyEquippedItems();
+                    debugPrint(
+                        "🛡 Applied Equipped Items after Player Loaded.");
                   });
                 },
               ),
