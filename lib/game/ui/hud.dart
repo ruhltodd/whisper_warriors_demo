@@ -34,18 +34,22 @@ class HUD extends StatelessWidget {
         Positioned(
           top: safeTop + 10,
           right: 20,
-          child: ValueListenableBuilder<int>(
+          child: ValueListenableBuilder<dynamic>(
             valueListenable: game.gameHudNotifier,
-            builder: (context, time, _) {
-              return Text(
-                game.formatTime(time),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'MyCustomFont',
-                ),
-              );
+            builder: (context, value, _) {
+              if (value is int) {
+                return Text(
+                  game.formatTime(value),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'MyCustomFont',
+                  ),
+                );
+              }
+              return const SizedBox
+                  .shrink(); // Don't show string values (damage report) in HUD
             },
           ),
         ),
@@ -434,23 +438,43 @@ class RetryOverlay extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
+          const Text(
             "Game Over",
             style: TextStyle(
-                fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              game.restartGame(context); // ✅ Pass `context` argument
-              game.overlays.remove('retryOverlay'); // ✅ Hide overlay
-            },
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              textStyle: TextStyle(fontSize: 20),
-              backgroundColor: const Color.fromARGB(255, 6, 6, 6),
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-            child: Text("Retry"),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () async {
+                  await game.restartGame(context);
+                  game.overlays.remove('retryOverlay');
+                },
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  textStyle: const TextStyle(fontSize: 20),
+                  backgroundColor: const Color.fromARGB(255, 6, 6, 6),
+                ),
+                child: const Text("Retry"),
+              ),
+              const SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: () => game.quitToMainMenu(context),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  textStyle: const TextStyle(fontSize: 20),
+                  backgroundColor: const Color.fromARGB(255, 6, 6, 6),
+                ),
+                child: const Text("Quit to Main Menu"),
+              ),
+            ],
           ),
         ],
       ),

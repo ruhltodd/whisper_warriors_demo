@@ -14,12 +14,13 @@ abstract class Ability {
   final String name;
   final String description;
   final AbilityType type;
+  final DamageReport damageReport;
 
   Ability({
     required this.name,
     required this.description,
     required this.type,
-  });
+  }) : damageReport = DamageReport(name);
 
   // Override these methods for specific ability behavior
   void applyEffect(Player player) {}
@@ -30,84 +31,83 @@ abstract class Ability {
 }
 
 /// 🔥 **Whispering Flames Ability** - Fire aura that damages nearby enemies
-class WhisperingFlames extends SpriteAnimationComponent
+class WhisperingFlames extends Component
     with HasGameRef<RogueShooterGame>
     implements Ability {
-  double baseDamagePerSecond = 3.0; // Base damage per second
-  double range = 150.0; // Range in which enemies take damage
-  double _elapsedTime = 0.0; // Timer for damage ticks
-
+  double _elapsedTime = 0.0;
+  final double baseDamagePerSecond = 10;
+  final double range = 150;
   final String name = "Whispering Flames";
-  final String description = "A fire aura that burns enemies near you.";
+  final String description = "Deals continuous damage to nearby enemies.";
   final AbilityType type = AbilityType.aura;
+  final DamageReport damageReport;
+  late final Player _player; // Add reference to player
 
-  WhisperingFlames() : super(size: Vector2(100, 100), anchor: Anchor.center);
+  WhisperingFlames() : damageReport = DamageReport("Whispering Flames");
 
   @override
   Future<void> onLoad() async {
-    final spriteSheet = await gameRef.loadSprite('fire_aura.png');
-    final spriteSize = Vector2(100, 100);
-    final frameCount = 3;
-
-    animation = SpriteAnimation.fromFrameData(
-      spriteSheet.image,
-      SpriteAnimationData.sequenced(
-        amount: frameCount,
-        stepTime: 0.1,
-        textureSize: spriteSize,
-      ),
-    );
-
-    add(CircleHitbox(
-      radius: range,
-      position: size / 2,
-      anchor: Anchor.center,
-    )..collisionType = CollisionType.passive);
-  }
-
-  @override
-  void applyEffect(Player player) {
-    position = player.position.clone();
-  }
-
-  @override
-  void onUpdate(Player player, double dt) {
-    // This method is required by the Ability interface
-    // The actual update logic is handled in the Component's update method
+    super.onLoad();
+    _player = gameRef.player;
   }
 
   @override
   void update(double dt) {
-    super.update(dt);
-    if (gameRef == null) return;
+    // Safety check to prevent crashes during cleanup
+    if (!isMounted || parent == null) return;
 
-    // Update aura position to follow player
-    final player = gameRef.player;
-    if (player != null) {
-      position = player.position.clone();
-    }
+    super.update(dt);
+    onUpdate(_player, dt);
+  }
+
+  @override
+  void onUpdate(Player player, double dt) {
+    // Safety check to prevent crashes during cleanup
+    if (!isMounted || parent == null) return;
 
     _elapsedTime += dt;
-
     if (_elapsedTime >= 1.0) {
-      _elapsedTime = 0.0; // Reset timer
+      _elapsedTime = 0.0;
       double scaledDamage = baseDamagePerSecond * player.spiritMultiplier;
 
-      // Damage all enemies within range
-      for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
-        double distance = (enemy.position - position).length;
-        if (distance < range) {
-          bool isCritical =
-              gameRef.random.nextDouble() < player.critChance / 100;
-          int finalDamage = isCritical
-              ? (scaledDamage * player.critMultiplier).toInt()
-              : scaledDamage.toInt();
+      // Debug print to track updates
+      print(
+          "🔥 WhisperingFlames updating... Range: $range, Base Damage: $baseDamagePerSecond");
 
-          enemy.takeDamage(finalDamage, isCritical: isCritical);
+      try {
+        for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
+          double distance = (enemy.position - player.position).length;
+          if (distance < range) {
+            bool isCritical =
+                gameRef.random.nextDouble() < (player.critChance / 100);
+            int finalDamage = isCritical
+                ? (scaledDamage * player.critMultiplier).toInt()
+                : scaledDamage.toInt();
+
+            enemy.takeDamage(finalDamage, isCritical: isCritical);
+            damageReport.recordHit(finalDamage, isCritical);
+
+            print(
+                "🔥 Whispering Flames hit enemy at distance $distance for $finalDamage damage (Crit: $isCritical)");
+          }
         }
+      } catch (e) {
+        // If we get an error during cleanup, just stop processing
+        print("WhisperingFlames caught error during cleanup: $e");
+        return;
       }
     }
   }
+
+  @override
+  void onRemove() {
+    super.onRemove();
+    // Any cleanup needed when the ability is removed
+    print("🔥 WhisperingFlames removed");
+  }
+
+  @override
+  void applyEffect(Player player) {}
 
   @override
   void onKill(Player player, Vector2 enemyPosition) {}
@@ -141,6 +141,7 @@ class ShadowBladesAbility extends Ability {
       damage: (12 * player.spiritMultiplier).toInt(),
       velocity: direction * 750,
       rotationAngle: rotationAngle,
+      ability: this,
     )..position = player.position.clone();
 
     player.gameRef.add(blade);
@@ -155,6 +156,7 @@ class ShadowBladesAbility extends Ability {
           damage: (12 * player.spiritMultiplier).toInt(),
           velocity: direction * 750,
           rotationAngle: rotationAngle,
+          ability: this,
         )..position = player.position.clone());
       });
     }
@@ -190,19 +192,23 @@ class ShadowBladesAbility extends Ability {
 class ShadowBladeProjectile extends SpriteAnimationComponent
     with CollisionCallbacks, HasGameRef<RogueShooterGame> {
   final Player player;
+  final ShadowBladesAbility ability;
   final double bladeSpeed = 750;
   double maxDistance = 1200;
   Vector2 startPosition = Vector2.zero();
   final Vector2 velocity;
   final double rotationAngle;
   final int damage;
+  final DamageReport damageReport;
 
   ShadowBladeProjectile({
     required this.player,
     required this.velocity,
     required this.rotationAngle,
     required this.damage,
-  }) : super(size: Vector2(48, 16), anchor: Anchor.center) {
+    required this.ability,
+  })  : damageReport = DamageReport("Shadow Blades"),
+        super(size: Vector2(48, 16), anchor: Anchor.center) {
     angle = rotationAngle;
     add(RectangleHitbox());
   }
@@ -239,6 +245,7 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
           isCritical ? (damage * player.critMultiplier).toInt() : damage;
 
       other.takeDamage(finalDamage, isCritical: isCritical);
+      ability.damageReport.recordHit(finalDamage, isCritical);
     } else if (other is Projectile && other is! ShadowBladeProjectile) {
       return;
     }
@@ -252,7 +259,6 @@ class CursedEcho extends Ability {
   double baseProcChance = 0.2; // 20% base chance
   double delayBetweenRepeats = 0.2; // Delay before repeating attack
   double procCooldown = 1.0; // Cooldown to prevent excessive procs
-
   double _lastProcTime = 0.0;
 
   CursedEcho()
@@ -271,16 +277,27 @@ class CursedEcho extends Ability {
   void onHit(Player player, PositionComponent target, int damage,
       {bool isCritical = false}) {
     double currentTime = player.gameRef.currentTime();
-    if (currentTime - _lastProcTime < procCooldown)
-      return; // Prevent excessive procs
+    if (currentTime - _lastProcTime < procCooldown) return;
 
     if (player.gameRef.random.nextDouble() < getProcChance(player)) {
       _lastProcTime = currentTime;
+
+      // Debug print for proc
+      print(
+          "🔁 Cursed Echo triggered with ${(getProcChance(player) * 100).toStringAsFixed(1)}% chance");
+
       Future.delayed(
           Duration(milliseconds: (delayBetweenRepeats * 1000).toInt()), () {
         if (target.isMounted) {
-          print("🔁 Cursed Echo triggered! Repeating attack...");
-          player.shootProjectile(damage, target, isCritical: isCritical);
+          // Record the echoed hit
+          damageReport.recordHit(damage, isCritical);
+
+          print("🔁 Cursed Echo dealt $damage damage (Crit: $isCritical)");
+
+          // Apply the damage
+          if (target is BaseEnemy) {
+            target.takeDamage(damage, isCritical: isCritical);
+          }
         }
       });
     }
@@ -327,5 +344,38 @@ extension ExplosionCooldown on Player {
         enemy.takeDamage(damage);
       }
     }
+  }
+}
+
+class DamageReport {
+  final String abilityName;
+  int totalDamage = 0;
+  int hits = 0;
+  int criticalHits = 0;
+
+  DamageReport(this.abilityName);
+
+  double get averageDamage => hits > 0 ? totalDamage / hits : 0;
+  double get critRate => hits > 0 ? (criticalHits / hits) * 100 : 0;
+
+  void recordHit(int damage, bool isCritical) {
+    totalDamage += damage;
+    hits++;
+    if (isCritical) criticalHits++;
+
+    // Debug print to verify recording
+    print('📊 $abilityName recorded hit: $damage damage (Crit: $isCritical)');
+    print('   Total: $totalDamage | Hits: $hits | Crits: $criticalHits');
+  }
+
+  @override
+  String toString() {
+    return '''
+🎯 $abilityName Stats:
+   Total Damage: $totalDamage
+   Hits: $hits
+   Critical Hits: $criticalHits (${critRate.toStringAsFixed(1)}%)
+   Average Damage: ${averageDamage.toStringAsFixed(1)}
+''';
   }
 }
