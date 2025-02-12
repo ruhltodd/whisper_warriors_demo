@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/scheduler.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/ai/spawncontroller.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
@@ -223,18 +224,23 @@ class RogueShooterGame extends FlameGame
   late SpriteComponent grassMap;
   late TimerComponent enemySpawnerTimer;
   late TimerComponent gameTimer;
+  late LootNotificationBar lootNotificationBar;
   late final AudioPlayer bgmPlayer;
   late ValueNotifier<int> gameHudNotifier;
   late ValueNotifier<double?> bossHealthNotifier;
   late ValueNotifier<double> bossStaggerNotifier; // ✅ Correct (Non-nullable)
-  late ValueNotifier<String?> activeBossNameNotifier; // ✅ Add this line
+  late ValueNotifier<String?> activeBossNameNotifier;
+  late Ticker _ticker;
+  double _elapsedTime = 0.0;
+  final double targetFps = 60.0;
+  final double targetTimeStep = 1 / 60.0; // ✅ Add this line
   int enemyCount = 0;
   int maxEnemies = 30;
   double maxBossHealth = 50000; // ✅ Default value
   final List<String> selectedAbilities;
   final List<InventoryItem> equippedItems;
   final Random random = Random(); // ✅ Define Random instance
-  late LootNotificationBar lootNotificationBar;
+
   SpawnController? spawnController;
 
   bool isPaused = false;
@@ -302,9 +308,11 @@ class RogueShooterGame extends FlameGame
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    // Start the ticker to control frame rate
+    _ticker = Ticker(_onTick);
+    _ticker.start();
     //debugMode = true; // ✅ Show hitboxes and outlines
     gameTimer = TimerComponent(period: 1.0, repeat: true, onTick: () {});
-
     // ✅ Now safely start the timer
     startGameTimer();
 // ✅ Ensure this runs when the game starts
@@ -359,6 +367,23 @@ class RogueShooterGame extends FlameGame
     if (spawnController != null) {
       add(spawnController!);
     }
+  }
+
+  void _onTick(Duration elapsed) {
+    // Calculate elapsed time in seconds
+    _elapsedTime += elapsed.inMicroseconds / 1000000.0;
+
+    // Update game logic at 60 FPS
+    if (_elapsedTime >= targetTimeStep) {
+      _updateGameLogic();
+      _elapsedTime = 0.0;
+    }
+  }
+
+  void _updateGameLogic() {
+    // Your game update logic goes here (e.g., movement, collisions, etc.)
+    // This will only run at a maximum of 60 FPS
+    print("Game updated at 60 FPS");
   }
 
   @override
@@ -528,5 +553,11 @@ class RogueShooterGame extends FlameGame
         ),
       ),
     ));
+  }
+
+  @override
+  void onRemove() {
+    super.onRemove();
+    _ticker.stop(); // Ensure ticker is stopped when game is removed
   }
 }

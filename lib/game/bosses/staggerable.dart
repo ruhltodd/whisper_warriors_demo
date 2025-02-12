@@ -57,16 +57,17 @@ mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
   }
 
   void applyStaggerDamage(int damage, {bool isCritical = false}) {
-    if (isStaggered) return;
-
+    // Do not skip the damage application when staggered
     _damageReceived += damage;
     _staggerTimer = staggerWindow;
     _applyStaggerProgress();
 
+    // Trigger stagger when progress reaches 100%
     if (staggerProgress >= 100.0 && _staggerCooldownTimer <= 0) {
       triggerStagger();
     }
 
+    // Create and display damage number regardless of stagger state
     final damageNumber = DamageNumber(
       damage,
       position.clone() + Vector2(0, -20),
