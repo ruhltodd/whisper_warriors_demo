@@ -1,4 +1,4 @@
-import 'dart:async'; //
+import 'dart:async';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/ai/spawncontroller.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
@@ -16,7 +16,6 @@ import 'package:whisper_warriors/game/ui/notifications.dart';
 import 'package:whisper_warriors/game/utils/customcamera.dart';
 import 'package:whisper_warriors/game/ui/hud.dart';
 import 'package:whisper_warriors/game/player/player.dart';
-
 import 'package:whisper_warriors/game/ui/mainmenu.dart';
 import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/abilities/abilityselectionscreen.dart';
@@ -51,7 +50,12 @@ void main() async {
   Hive.registerAdapter(BlueCoinAdapter()); // ✅ Register BlueCoin
   //await Hive.deleteBoxFromDisk('inventoryBox'); remove database and start game is .clear() doesnt work.. for debugging only
   //final inventoryBox = await Hive.openBox<InventoryItem>('inventoryBox'); //if debugging and removing database uncomment this line and comment the next line
-  await Hive.openBox<InventoryItem>('inventoryBox');
+  try {
+    await Hive.openBox<InventoryItem>('inventoryBox');
+  } catch (e) {
+    print("Error opening inventoryBox: $e");
+    // Handle the error appropriately, e.g., show a message to the user
+  }
   //await Hive.box('inventoryBox').clear(); // ✅ Clear box before adding items - for debugging only
   //await Hive.box('playerProgressBox').clear(); // ✅ Clears progress
   //print("debug inventory wiped on startup");
