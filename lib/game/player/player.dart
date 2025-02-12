@@ -17,7 +17,6 @@ import 'package:whisper_warriors/game/player/whisperwarrior.dart';
 import 'package:whisper_warriors/game/effects/healingnumber.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
-import 'package:whisper_warriors/game/effects/fireaura.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
@@ -389,7 +388,8 @@ class Player extends PositionComponent
         gameRef.overlays.add('retryOverlay');
       });
 
-      final fireAura = gameRef.children.whereType<FireAura>().firstOrNull;
+      final fireAura =
+          gameRef.children.whereType<WhisperingFlames>().firstOrNull;
       if (fireAura != null) {
         fireAura.removeFromParent();
       }
@@ -572,6 +572,12 @@ class Player extends PositionComponent
   @override
   void onRemove() {
     abilityNotifier.dispose();
+
+    final fireAura = gameRef.children.whereType<WhisperingFlames>().firstOrNull;
+    if (fireAura != null) {
+      fireAura.removeFromParent();
+    }
+
     super.onRemove();
   }
 

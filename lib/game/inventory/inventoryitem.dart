@@ -1,7 +1,7 @@
 import 'package:hive/hive.dart';
-import 'package:whisper_warriors/game/effects/fireaura.dart';
 import 'package:whisper_warriors/game/items/items.dart'; // ✅ Import items.dart to access Item class
 import 'package:whisper_warriors/game/player/player.dart'; // ✅ Import Player to access stats modification
+import 'package:whisper_warriors/game/abilities/abilities.dart'; // Add this import
 
 part 'inventoryitem.g.dart'; // ✅ Ensure this is included
 
@@ -76,17 +76,18 @@ class InventoryItem extends HiveObject {
 
     print("🎭 Applied ${item.name} to Player.");
 
-    // Ensure FireAura is added **AFTER** the Player is mounted
+    // Ensure WhisperingFlames is added **AFTER** the Player is mounted
     Future.delayed(Duration(milliseconds: 100), () {
       if (player.isMounted && player.gameRef != null) {
-        if (!player.gameRef.children.any((child) => child is FireAura)) {
-          player.gameRef.add(FireAura(player: player));
-          print("🔥 FireAura applied to Player!");
+        if (!player.gameRef.children
+            .any((child) => child is WhisperingFlames)) {
+          player.gameRef.add(WhisperingFlames());
+          print("🔥 WhisperingFlames applied to Player!");
         } else {
-          print("🔥 FireAura already active.");
+          print("🔥 WhisperingFlames already active.");
         }
       } else {
-        print("⚠️ Cannot add FireAura: player is not mounted yet.");
+        print("⚠️ Cannot add WhisperingFlames: player is not mounted yet.");
       }
     });
   }

@@ -1,9 +1,10 @@
 import 'package:flame/components.dart';
+import 'package:flame/collisions.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
-import 'package:whisper_warriors/game/effects/fireaura.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
-import 'shadowblades.dart'; // ✅ Import the Shadow Blade effect
+import 'package:whisper_warriors/game/projectiles/projectile.dart';
+import 'package:whisper_warriors/game/main.dart';
 
 /// Enum for ability types (optional, for categorization)
 enum AbilityType { passive, onHit, onKill, aura, scaling, projectile }
@@ -29,34 +30,63 @@ abstract class Ability {
 }
 
 /// 🔥 **Whispering Flames Ability** - Fire aura that damages nearby enemies
-class WhisperingFlames extends Ability {
+class WhisperingFlames extends SpriteAnimationComponent
+    with HasGameRef<RogueShooterGame>
+    implements Ability {
   double baseDamagePerSecond = 3.0; // Base damage per second
-  double range = 200.0; // Range in which enemies take damage
+  double range = 150.0; // Range in which enemies take damage
   double _elapsedTime = 0.0; // Timer for damage ticks
 
-  WhisperingFlames()
-      : super(
-          name: "Whispering Flames",
-          description: "A fire aura that burns enemies near you.",
-          type: AbilityType.aura,
-        );
+  final String name = "Whispering Flames";
+  final String description = "A fire aura that burns enemies near you.";
+  final AbilityType type = AbilityType.aura;
+
+  WhisperingFlames() : super(size: Vector2(100, 100), anchor: Anchor.center);
+
+  @override
+  Future<void> onLoad() async {
+    final spriteSheet = await gameRef.loadSprite('fire_aura.png');
+    final spriteSize = Vector2(100, 100);
+    final frameCount = 3;
+
+    animation = SpriteAnimation.fromFrameData(
+      spriteSheet.image,
+      SpriteAnimationData.sequenced(
+        amount: frameCount,
+        stepTime: 0.1,
+        textureSize: spriteSize,
+      ),
+    );
+
+    add(CircleHitbox(
+      radius: range,
+      position: size / 2,
+      anchor: Anchor.center,
+    )..collisionType = CollisionType.passive);
+  }
 
   @override
   void applyEffect(Player player) {
-    super.applyEffect(player);
-    // Delay adding FireAura to ensure the player is fully initialized
-    Future.delayed(Duration.zero, () {
-      if (player.isMounted && player.gameRef != null) {
-        player.gameRef.add(FireAura(player: player));
-      } else {
-        print("⚠️ Cannot add FireAura: player is not mounted yet.");
-      }
-    });
+    position = player.position.clone();
   }
 
   @override
   void onUpdate(Player player, double dt) {
-    if (player.gameRef == null) return;
+    // This method is required by the Ability interface
+    // The actual update logic is handled in the Component's update method
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (gameRef == null) return;
+
+    // Update aura position to follow player
+    final player = gameRef.player;
+    if (player != null) {
+      position = player.position.clone();
+    }
+
     _elapsedTime += dt;
 
     if (_elapsedTime >= 1.0) {
@@ -64,11 +94,11 @@ class WhisperingFlames extends Ability {
       double scaledDamage = baseDamagePerSecond * player.spiritMultiplier;
 
       // Damage all enemies within range
-      for (var enemy in player.gameRef.children.whereType<BaseEnemy>()) {
-        double distance = (enemy.position - player.position).length;
+      for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
+        double distance = (enemy.position - position).length;
         if (distance < range) {
           bool isCritical =
-              player.gameRef.random.nextDouble() < player.critChance / 100;
+              gameRef.random.nextDouble() < player.critChance / 100;
           int finalDamage = isCritical
               ? (scaledDamage * player.critMultiplier).toInt()
               : scaledDamage.toInt();
@@ -78,30 +108,28 @@ class WhisperingFlames extends Ability {
       }
     }
   }
+
+  @override
+  void onKill(Player player, Vector2 enemyPosition) {}
+
+  @override
+  void onHit(Player player, PositionComponent target, int damage,
+      {bool isCritical = false}) {}
 }
 
-/// 🗡️ **Shadow Blades Ability** - Throws auto-targeted spectral blades
-class ShadowBlades extends Ability {
+/// 🗡️ **Shadow Blades Ability Controller**
+class ShadowBladesAbility extends Ability {
   double cooldown = 0.5; // Time between blade throws
   double elapsedTime = 0.0;
 
-  ShadowBlades()
+  ShadowBladesAbility()
       : super(
           name: "Shadow Blades",
           description: "Throws a spectral blade at the closest enemy.",
           type: AbilityType.projectile,
         );
 
-  @override
-  void onUpdate(Player player, double dt) {
-    elapsedTime += dt;
-    if (elapsedTime >= cooldown) {
-      elapsedTime = 0.0;
-      _throwBlade(player);
-    }
-  }
-
-  void _throwBlade(Player player) {
+  void _spawnBlade(Player player) {
     BaseEnemy? target = _findClosestTarget(player);
     if (target == null) return;
 
@@ -109,26 +137,113 @@ class ShadowBlades extends Ability {
     double rotationAngle = direction.angleTo(Vector2(1, 0));
 
     final blade = ShadowBladeProjectile(
-      damage: (12 * player.spiritMultiplier).toInt(),
-      velocity: direction * (750 + (player.spiritLevel * 20)),
       player: player,
+      damage: (12 * player.spiritMultiplier).toInt(),
+      velocity: direction * 750,
       rotationAngle: rotationAngle,
-    )
-      ..position = player.position.clone()
-      ..size = Vector2(48, 16)
-      ..anchor = Anchor.center;
+    )..position = player.position.clone();
 
     player.gameRef.add(blade);
+
+    // Roll Cursed Echo ONCE per blade thrown
+    if (player.hasAbility<CursedEcho>() &&
+        player.gameRef.random.nextDouble() < 0.20) {
+      print("🔄 Cursed Echo triggered for Shadow Blade!");
+      Future.delayed(Duration(milliseconds: 100), () {
+        player.gameRef.add(ShadowBladeProjectile(
+          player: player,
+          damage: (12 * player.spiritMultiplier).toInt(),
+          velocity: direction * 750,
+          rotationAngle: rotationAngle,
+        )..position = player.position.clone());
+      });
+    }
   }
 
   BaseEnemy? _findClosestTarget(Player player) {
     final enemies = player.gameRef.children.whereType<BaseEnemy>().toList();
     if (enemies.isEmpty) return null;
 
-    return enemies.reduce((a, b) => (a.position - player.position).length <
-            (b.position - player.position).length
-        ? a
-        : b);
+    BaseEnemy? closest;
+    double closestDistance = double.infinity;
+    for (final enemy in enemies) {
+      double distance = (enemy.position - player.position).length;
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closest = enemy;
+      }
+    }
+    return closest;
+  }
+
+  @override
+  void onUpdate(Player player, double dt) {
+    elapsedTime += dt;
+    if (elapsedTime >= cooldown) {
+      elapsedTime = 0.0;
+      _spawnBlade(player);
+    }
+  }
+}
+
+/// 🗡️ **Shadow Blade Projectile Component**
+class ShadowBladeProjectile extends SpriteAnimationComponent
+    with CollisionCallbacks, HasGameRef<RogueShooterGame> {
+  final Player player;
+  final double bladeSpeed = 750;
+  double maxDistance = 1200;
+  Vector2 startPosition = Vector2.zero();
+  final Vector2 velocity;
+  final double rotationAngle;
+  final int damage;
+
+  ShadowBladeProjectile({
+    required this.player,
+    required this.velocity,
+    required this.rotationAngle,
+    required this.damage,
+  }) : super(size: Vector2(48, 16), anchor: Anchor.center) {
+    angle = rotationAngle;
+    add(RectangleHitbox());
+  }
+
+  @override
+  Future<void> onLoad() async {
+    animation = SpriteAnimation.fromFrameData(
+      await gameRef.images.load('shadowblades.png'),
+      SpriteAnimationData.sequenced(
+        amount: 4,
+        stepTime: 0.1,
+        textureSize: Vector2(48, 16),
+        loop: true,
+      ),
+    );
+    startPosition = position.clone();
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    position += velocity * dt;
+
+    if ((position - startPosition).length >= maxDistance) {
+      removeFromParent();
+    }
+  }
+
+  @override
+  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    if (other is BaseEnemy) {
+      bool isCritical = gameRef.random.nextDouble() < (player.critChance / 100);
+      int finalDamage =
+          isCritical ? (damage * player.critMultiplier).toInt() : damage;
+
+      other.takeDamage(finalDamage, isCritical: isCritical);
+    } else if (other is Projectile && other is! ShadowBladeProjectile) {
+      return;
+    }
+
+    super.onCollision(intersectionPoints, other);
   }
 }
 
