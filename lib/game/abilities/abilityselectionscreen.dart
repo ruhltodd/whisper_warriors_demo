@@ -21,24 +21,21 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
 
   final Map<String, String> abilities = {
     'Whispering Flames':
-        'Whispering Flames - A fire aura that burns enemies near you.',
+        'Whispering Flames: A fire aura that burns enemies near you.',
     'Soul Fracture':
-        'Soul Fracture - Enemies explode into ghostly shrapnel on death.',
-    'Shadow Blades': 'Throws shadow blades that pierce through enemies.',
-    'Cursed Echo': 'Every attack has a 20% chance to repeat itself.',
-    'Fading Crescent':
-        'Fading Crescent - Deals more damage with fewer abilities left.',
-    'Vampiric Touch': 'Vampiric Touch - Heal 5% of enemy HP on kill.',
-    'Unholy Fortitude':
-        'Unholy Fortitude - Damage taken is converted into temporary HP.',
-    'Will of the Forgotten':
-        'Will of the Forgotten - The fewer abilities left, the stronger you get.',
-    'Spectral Chain': 'Spectral Chain - Attacks link enemies, sharing damage.',
-    'Chrono Echo': 'Chrono Echo - Increases the duration of all buffs.',
-    'Time Dilation':
-        'Time Dilation - The lower your health, the slower time moves.',
-    'Revenants Stride':
-        'Revenants Stride - Lose speed but gain attack power per sacrifice.',
+        'Soul Fracture: Enemies explode into ghostly shrapnel on death.',
+    'Shadow Blades':
+        'Shadow Blades: Throws shadow blades that pierce through enemies.',
+    'Cursed Echo':
+        'Cursed Echo: Every attack has a 20% chance to repeat itself.',
+    'Fading Crescent': 'Deals more damage with fewer abilities left.',
+    'Vampiric Touch': 'Heal 5% of enemy HP on kill.',
+    'Unholy Fortitude': 'Damage taken is converted into temporary HP.',
+    'Will of the Forgotten': 'The fewer abilities left, the stronger you get.',
+    'Spectral Chain': 'Attacks link enemies, sharing damage.',
+    'Chrono Echo': 'Increases the duration of all buffs.',
+    'Time Dilation': 'The lower your health, the slower time moves.',
+    'Revenants Stride': 'Lose speed but gain attack power per sacrifice.',
   };
 
   @override
@@ -46,11 +43,6 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
     super.initState();
     _audioPlayer = AudioPlayer();
     _playMusic();
-
-    unlockedAbilities =
-        PlayerProgressManager.getUnlockedAbilities(); // ✅ Load dynamically
-
-    // ✅ Load unlocked abilities
     unlockedAbilities = PlayerProgressManager.getUnlockedAbilities();
   }
 
@@ -90,7 +82,7 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
                 child: GridView.builder(
                   padding: EdgeInsets.all(16),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 10,
+                    crossAxisCount: 8,
                     crossAxisSpacing: 4,
                     mainAxisSpacing: 4,
                     childAspectRatio: 1,

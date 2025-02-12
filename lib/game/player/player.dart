@@ -92,34 +92,24 @@ class Player extends PositionComponent
     return inventory.any((item) => item.name == itemName);
   }
 
-  // Apply selected abilities to the player
-  void applySelectedAbilities() {
-    List<String> unlockedAbilities = PlayerProgressManager
-        .getUnlockedAbilities(); // ✅ Ensure latest abilities are retrieved
-
-    for (var abilityName in unlockedAbilities) {
-      if (!abilities.any((a) => a.name == abilityName)) {
-        Ability? ability = AbilityFactory.createAbility(abilityName);
-        if (ability != null) {
-          addAbility(ability);
-        }
-      } else {
-        print("⚠️ Ability $abilityName already in list, skipping...");
-      }
-    }
-  }
-
-  // Constructor for Player
   // Constructor for Player
   Player({required this.selectedAbilities, required this.equippedItems})
       : super(size: Vector2(128, 128)) {
-    print(
-        "🛡 Player Constructor - Received Equipped Items: ${equippedItems.map((e) => e.item.name).toList()}");
+    print("🛡 Player Constructor - Selected Abilities: $selectedAbilities");
 
     add(RectangleHitbox(
-      size: Vector2(32, 32), // Adjust as needed (half the sprite size)
-      anchor: Anchor.center, // Centers the hitbox
+      size: Vector2(32, 32),
+      anchor: Anchor.center,
     ));
+
+    // Initialize abilities based on selected abilities
+    for (var abilityName in selectedAbilities) {
+      Ability? ability = AbilityFactory.createAbility(abilityName);
+      if (ability != null) {
+        abilities.add(ability);
+      }
+    }
+    abilityNotifier.value = List.from(abilities);
 
     // ✅ Ensure inventory includes equipped items
     inventory.addAll(equippedItems.map((invItem) => invItem.item));
@@ -453,14 +443,37 @@ class Player extends PositionComponent
     print("📦 Added ${item.name} to inventory.");
   }
 
-  // Add an ability to the player
-  void addAbility(Ability ability) {
-    if (abilities.any((a) => a.runtimeType == ability.runtimeType)) {
-      print("⚠️ Ability ${ability.name} already exists, skipping...");
-      return; // ✅ Prevents duplicate abilities in the HUD
+  // Update applySelectedAbilities to handle duplicates better
+  void applySelectedAbilities() {
+    List<String> unlockedAbilities =
+        PlayerProgressManager.getUnlockedAbilities();
+
+    for (var abilityName in selectedAbilities) {
+      if (unlockedAbilities.contains(abilityName) &&
+          !abilities.any((a) => a.name == abilityName)) {
+        Ability? ability = AbilityFactory.createAbility(abilityName);
+        if (ability != null) {
+          addAbility(ability);
+        }
+      }
     }
+  }
+
+  // Update addAbility to be more robust
+  void addAbility(Ability ability) {
+    if (!selectedAbilities.contains(ability.name)) {
+      print(
+          "⚠️ Ability ${ability.name} not in selected abilities, skipping...");
+      return;
+    }
+
+    if (abilities.any((a) => a.name == ability.name)) {
+      print("⚠️ Ability ${ability.name} already exists, skipping...");
+      return;
+    }
+
     abilities.add(ability);
-    abilityNotifier.value = List.from(abilities); // ✅ Triggers HUD update
+    abilityNotifier.value = List.from(abilities);
     ability.applyEffect(this);
     print("🔥 Added Ability: ${ability.name}");
   }
@@ -571,5 +584,13 @@ class Player extends PositionComponent
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
+  }
+
+  void clearAbilities() {
+    abilities.clear();
+  }
+
+  List<Ability> getAbilities() {
+    return abilities;
   }
 }

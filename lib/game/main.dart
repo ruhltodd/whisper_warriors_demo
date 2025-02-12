@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/scheduler.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/ai/spawncontroller.dart';
+import 'package:whisper_warriors/game/inventory/inventory.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/itemselectionscreen.dart';
 import 'package:flame/game.dart';
@@ -22,6 +23,34 @@ import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/abilities/abilityselectionscreen.dart';
 import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
+
+Future<List<InventoryItem>> loadInventoryItems() async {
+  // Renamed for clarity
+  try {
+    // Ensure the box is open before trying to access it
+    if (!Hive.isBoxOpen('inventoryBox')) {
+      await Hive.openBox<InventoryItem>('inventoryBox');
+      InventoryManager.initializeInventory();
+    }
+
+    final box = Hive.box<InventoryItem>('inventoryBox');
+    List<InventoryItem> allItems = box.values.cast<InventoryItem>().toList();
+
+    // Split into equipped and unequipped items
+    List<InventoryItem> equippedItems =
+        allItems.where((item) => item.isEquipped).toList();
+
+    print(
+        "🔍 Loaded ALL Items from Hive: ${allItems.map((item) => item.item.name).toList()}");
+    print(
+        "⚔️ Currently Equipped: ${equippedItems.map((item) => item.item.name).toList()}");
+
+    return allItems; // Return all items, not just equipped ones
+  } catch (e) {
+    print("⚠️ Error loading inventory items: $e");
+    return [];
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,38 +79,30 @@ void main() async {
   Hive.registerAdapter(GoldCoinAdapter()); // ✅ Register GoldCoin
   Hive.registerAdapter(BlueCoinAdapter()); // ✅ Register BlueCoin
   //await Hive.deleteBoxFromDisk('inventoryBox'); remove database and start game is .clear() doesnt work.. for debugging only
-  //final inventoryBox = await Hive.openBox<InventoryItem>('inventoryBox'); //if debugging and removing database uncomment this line and comment the next line
+  //final inventoryBox = await Hive.openBox<InventoryItem>('inventoryBox'); if debugging and removing database uncomment this line and comment the next line
   try {
     await Hive.openBox<InventoryItem>('inventoryBox');
+    InventoryManager.initializeInventory(); // Add await here
   } catch (e) {
-    print("Error opening inventoryBox: $e");
-    // Handle the error appropriately, e.g., show a message to the user
+    print("⚠️ Database corruption detected. Attempting recovery...");
+    await Hive.deleteBoxFromDisk('inventoryBox');
+    await Hive.openBox<InventoryItem>('inventoryBox');
+    InventoryManager.initializeInventory(); // Add await here
+    print("✅ Recovery complete - fresh inventory initialized");
   }
-  //await Hive.box('inventoryBox').clear(); // ✅ Clear box before adding items - for debugging only
-  //await Hive.box('playerProgressBox').clear(); // ✅ Clears progress
+
+  //await Hive.box('inventoryBox').clear(); ✅ Clear box before adding items - for debugging only
+  //await Hive.box('playerProgressBox').clear(); ✅ Clears progress
   //print("debug inventory wiped on startup");
 
-  // ✅ Load equipped items **AFTER Hive is initialized**
-  List<InventoryItem> loadEquippedItems() {
-    final box = Hive.box<InventoryItem>('inventoryBox');
-
-    // ✅ Retrieve **all equipped items** from stored map
-    List<InventoryItem> items = box.values.cast<InventoryItem>().toList();
-
-    print(
-        "🔍 Loaded Equipped Items from Hive: ${items.map((item) => item.item.name).toList()}");
-
-    return items;
-  }
-
-  List<InventoryItem> equippedItems = loadEquippedItems(); // ✅ Load safely
-
-  runApp(MyApp(equippedItems: equippedItems));
+  // Load ALL inventory items
+  List<InventoryItem> inventoryItems = await loadInventoryItems();
+  runApp(MyApp(inventoryItems: inventoryItems)); // Rename parameter to match
 }
 
 class MyApp extends StatefulWidget {
-  final List<InventoryItem> equippedItems;
-  MyApp({required this.equippedItems}); // Add equippedItems
+  final List<InventoryItem> inventoryItems;
+  MyApp({required this.inventoryItems});
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -94,22 +115,25 @@ class _MyAppState extends State<MyApp> {
   List<InventoryItem> equippedItems = []; // Declare the equipped items list
   late RogueShooterGame gameInstance; // Define the gameInstance variable
 
-  List<InventoryItem> getAvailableItems() {
-    final box = Hive.box<InventoryItem>('inventoryBox');
-
-    // ✅ Fetch all stored inventory items
-    List<InventoryItem> items = box.values.toList();
-
-    print(
-        "🔍 Available Items Retrieved: ${items.map((item) => item.item.name).toList()}");
-
-    return items;
-  }
-
   @override
   void initState() {
     super.initState();
-    equippedItems = widget.equippedItems; // Store the equipped items
+    equippedItems = widget.inventoryItems; // Store the equipped items
+  }
+
+  Future<List<InventoryItem>> getAvailableItems() async {
+    try {
+      // Ensure the box is open
+      if (!Hive.isBoxOpen('inventoryBox')) {
+        await Hive.openBox<InventoryItem>('inventoryBox');
+      }
+
+      final box = Hive.box<InventoryItem>('inventoryBox');
+      return box.values.toList();
+    } catch (e) {
+      print("⚠️ Error getting available items: $e");
+      return [];
+    }
   }
 
   void startGame() {
@@ -136,83 +160,96 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Stack(
-          children: [
-            // Main Menu
-            if (!_gameStarted && !_selectingAbilities && !_selectingItems)
-              MainMenu(
-                startGame: startGame,
-                openOptions: openOptions,
+    return FutureBuilder<List<InventoryItem>>(
+        future: getAvailableItems(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return CircularProgressIndicator(); // Or your loading widget
+          }
+
+          final items = snapshot.data ?? [];
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: Scaffold(
+              body: Stack(
+                children: [
+                  // Main Menu
+                  if (!_gameStarted && !_selectingAbilities && !_selectingItems)
+                    MainMenu(
+                      startGame: startGame,
+                      openOptions: openOptions,
+                    ),
+
+                  // Ability Selection (new condition)
+                  if (_selectingAbilities)
+                    AbilitySelectionScreen(
+                      onAbilitiesSelected: onAbilitiesSelected,
+                    ),
+
+                  // Inventory selection
+                  if (_selectingItems)
+                    InventoryScreen(
+                      availableItems: items,
+                      onConfirm: (finalSelectedItems) async {
+                        print(
+                            "🎒 Final Confirmed Items: ${finalSelectedItems.map((item) => item.item.name).toList()}");
+
+                        final box = Hive.box<InventoryItem>('inventoryBox');
+
+                        // Update equipped status for all items
+                        for (var item in items) {
+                          bool isSelected = finalSelectedItems.any(
+                              (selectedItem) =>
+                                  selectedItem.item.name == item.item.name);
+                          item.isEquipped = isSelected;
+                          await box.put(item.item.name, item);
+                        }
+
+                        setState(() {
+                          _selectingItems = false;
+                          _gameStarted = true;
+                          equippedItems = List.from(finalSelectedItems);
+                        });
+
+                        print(
+                            "🛡 Equipped Items Updated in Hive: ${equippedItems.map((item) => item.item.name).toList()}");
+
+                        gameInstance = RogueShooterGame(
+                          selectedAbilities: selectedAbilities,
+                          equippedItems: equippedItems,
+                        );
+
+                        // ✅ Delay applying effects to prevent null issues
+                        Future.delayed(Duration(milliseconds: 500), () {
+                          gameInstance.player.applyEquippedItems();
+                          debugPrint(
+                              "🛡 Applied Equipped Items after Player Loaded.");
+                        });
+                      },
+                    ),
+                  // Game UI & HUD
+                  if (_gameStarted)
+                    GameWidget(
+                      game: gameInstance,
+                      overlayBuilderMap: {
+                        'hud': (_, game) => HUD(
+                              onJoystickMove: (delta) =>
+                                  (game).player.updateJoystick(delta),
+                              experienceBar:
+                                  (game as RogueShooterGame).experienceBar,
+                              game: game,
+                              bossHealthNotifier: (game).bossHealthNotifier,
+                              bossStaggerNotifier: (game).bossStaggerNotifier,
+                            ),
+                        'retryOverlay': (_, game) =>
+                            RetryOverlay(game: game as RogueShooterGame),
+                      },
+                    ),
+                ],
               ),
-
-            // Ability Selection (new condition)
-            if (_selectingAbilities)
-              AbilitySelectionScreen(
-                onAbilitiesSelected: onAbilitiesSelected,
-              ),
-
-            // Inventory selection
-            if (_selectingItems)
-              InventoryScreen(
-                availableItems: getAvailableItems(),
-                onConfirm: (finalSelectedItems) async {
-                  print(
-                      "🎒 Final Confirmed Items: ${finalSelectedItems.map((item) => item.item.name).toList()}");
-
-                  final box = Hive.box<InventoryItem>('inventoryBox');
-                  await box.clear(); // ✅ Ensure previous items are removed
-
-                  // ✅ Store items properly
-                  for (var item in finalSelectedItems) {
-                    await box.put(item.item.name, item);
-                  }
-
-                  setState(() {
-                    _selectingItems = false;
-                    _gameStarted = true;
-                    equippedItems = List.from(finalSelectedItems);
-                  });
-
-                  print(
-                      "🛡 Equipped Items Updated in Hive: ${equippedItems.map((item) => item.item.name).toList()}");
-
-                  gameInstance = RogueShooterGame(
-                    selectedAbilities: selectedAbilities,
-                    equippedItems: equippedItems,
-                  );
-
-                  // ✅ Delay applying effects to prevent null issues
-                  Future.delayed(Duration(milliseconds: 500), () {
-                    gameInstance.player.applyEquippedItems();
-                    debugPrint(
-                        "🛡 Applied Equipped Items after Player Loaded.");
-                  });
-                },
-              ),
-            // Game UI & HUD
-            if (_gameStarted)
-              GameWidget(
-                game: gameInstance,
-                overlayBuilderMap: {
-                  'hud': (_, game) => HUD(
-                        onJoystickMove: (delta) =>
-                            (game).player.updateJoystick(delta),
-                        experienceBar: (game as RogueShooterGame).experienceBar,
-                        game: game,
-                        bossHealthNotifier: (game).bossHealthNotifier,
-                        bossStaggerNotifier: (game).bossStaggerNotifier,
-                      ),
-                  'retryOverlay': (_, game) =>
-                      RetryOverlay(game: game as RogueShooterGame),
-                },
-              ),
-          ],
-        ),
-      ),
-    );
+            ),
+          );
+        });
   }
 }
 
@@ -383,7 +420,6 @@ class RogueShooterGame extends FlameGame
   void _updateGameLogic() {
     // Your game update logic goes here (e.g., movement, collisions, etc.)
     // This will only run at a maximum of 60 FPS
-    print("Game updated at 60 FPS");
   }
 
   @override
@@ -407,12 +443,22 @@ class RogueShooterGame extends FlameGame
   }
 
   void _applyAbilitiesToPlayer() {
+    print("🎮 Applying only selected abilities: $selectedAbilities");
+
+    // Clear any existing abilities first
+    player.clearAbilities();
+
+    // Only apply the abilities that were specifically selected
     for (String abilityName in selectedAbilities) {
       Ability? ability = AbilityFactory.createAbility(abilityName);
       if (ability != null) {
         player.addAbility(ability);
+        print("✅ Added ability: $abilityName");
       }
     }
+
+    print(
+        "✨ Final player abilities: ${player.getAbilities().map((a) => a.name).toList()}");
   }
 
   void startGameTimer() {

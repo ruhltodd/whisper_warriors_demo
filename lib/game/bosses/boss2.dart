@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/collisions.dart';
+import 'package:flame/sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/bosses/staggerbar.dart';
 import 'package:whisper_warriors/game/inventory/loottable.dart';
@@ -10,7 +11,6 @@ import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
-import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'staggerable.dart';
@@ -25,57 +25,62 @@ class LaserWheel extends Component with HasGameRef<RogueShooterGame> {
   final double beamLength;
   final double beamWidth;
   final double damagePerSecond;
-
+  final VoidCallback onLaserWheelRemove; // Callback to reset the flag
   double elapsedTime = 0.0;
-  static const double oscillationDuration = 10.0;
-  double rotationDirection = 1.0; // ✅ 1 for normal, -1 for reverse
   List<LaserBeam> beams = [];
+  double attackDuration = 10.0; // ✅ Duration of the laser attack in seconds
+  double rotationSpeed = pi / 8; // Rotation speed in radians per second
 
   LaserWheel({
     required this.bossPosition,
+    required this.onLaserWheelRemove,
     this.numberOfBeams = 6,
     this.beamLength = 1000,
     this.beamWidth = 4,
     this.damagePerSecond = 1,
   });
-
   @override
   Future<void> onLoad() async {
     super.onLoad();
-
     double angleStep = (2 * pi) / numberOfBeams;
 
-    for (int i = 0; i < numberOfBeams; i++) {
+    // Create all beams first
+    beams = List.generate(numberOfBeams, (i) {
       double angle = i * angleStep;
-
-      final beam = LaserBeam(
+      return LaserBeam(
         startPosition: bossPosition.clone(),
         length: beamLength,
         width: beamWidth,
         damagePerSecond: damagePerSecond,
         initialAngle: angle,
       );
+    });
 
-      beams.add(beam);
-      gameRef.add(beam);
-    }
+    // Add all beams to the game at once
+    gameRef.addAll(beams);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-
     elapsedTime += dt;
 
-    // ✅ Reverse direction every 3 seconds
-    if (elapsedTime >= oscillationDuration) {
-      rotationDirection *= -1; // 🔄 Reverse the movement
-      elapsedTime = 0.0;
+    double angleStep = (2 * pi) / numberOfBeams;
+    for (int i = 0; i < beams.length; i++) {
+      double currentAngle = i * angleStep + elapsedTime * rotationSpeed;
+      beams[i].updatePosition(bossPosition, currentAngle);
     }
-
-    double rotationSpeed = pi / 16;
-    for (var beam in beams) {
-      beam.angle += rotationSpeed * rotationDirection * dt;
+    // ✅ Check if the attack duration has been reached
+    if (elapsedTime >= attackDuration) {
+      // Remove all beams from the game
+      for (var beam in beams) {
+        beam.removeFromParent();
+      }
+      beams.clear();
+      // Remove this component as well
+      removeFromParent();
+      onLaserWheelRemove(); // Call the callback to reset the flag
+      return;
     }
   }
 }
@@ -111,6 +116,17 @@ class LaserBeam extends PositionComponent
         ..anchor = Anchor.center,
     );
     add(hitboxParent);
+  }
+  void updatePosition(Vector2 bossPosition, double newAngle) {
+    // Set the position of the beam to the boss's position
+    position.setFrom(bossPosition);
+
+    // Keep the beam length constant regardless of angle
+    size = Vector2(length, width);
+    angle = newAngle;
+
+    // Keep anchor at center for consistent rotation
+    anchor = Anchor.center;
   }
 
   @override
@@ -171,11 +187,11 @@ class Boss2 extends BaseEnemy with Staggerable {
   late final double maxHealth;
   late final SpriteAnimation idleAnimation;
   late final SpriteAnimation attackAnimation;
+  final Map<String, SpriteAnimation> animations = {};
   late StaggerBar staggerBar;
   final Random random = Random();
   final ValueNotifier<double> bossStaggerNotifier;
   int attackCount = 0;
-  bool alternatePattern = false;
 
   Boss2({
     required Player player,
@@ -198,27 +214,42 @@ class Boss2 extends BaseEnemy with Staggerable {
 
   @override
   Future<void> onLoad() async {
-    gameRef.setActiveBoss("Void Prism", 80000);
-    idleAnimation = await gameRef.loadSpriteAnimation(
-      'boss2.png',
-      SpriteAnimationData.sequenced(
-        amount: 2,
-        textureSize: Vector2(256, 256),
-        stepTime: 0.6,
-      ),
+    gameRef.setActiveBoss("Void Prism", 160000);
+
+    final idleSpriteSheet = SpriteSheet(
+      image: await gameRef.images.load('boss2.png'),
+      srcSize: Vector2(256, 256),
     );
 
-    attackAnimation = await gameRef.loadSpriteAnimation(
-      'boss2.png',
-      SpriteAnimationData.sequenced(
-        amount: 4,
-        textureSize: Vector2(256, 256),
-        stepTime: 0.3,
-      ),
+    animations['idle'] = idleSpriteSheet.createAnimation(
+      row: 0,
+      stepTime: 0.3,
+      from: 0,
+      to: 1,
     );
-    animation = idleAnimation;
+
+    final attackSpriteSheet = SpriteSheet(
+      image: await gameRef.images.load('boss2.png'),
+      srcSize: Vector2(256, 256),
+    );
+
+    animations['attack'] = attackSpriteSheet.createAnimation(
+      row: 0,
+      stepTime: 0.3,
+      from: 2,
+      to: 3,
+    );
+
+    idleAnimation = animations['idle']!;
+    attackAnimation = animations['attack']!;
     add(RectangleHitbox());
     gameRef.add(staggerBar);
+    _spawnLaserWheel();
+  }
+
+  void _spawnLaserWheel() {
+    gameRef.add(LaserWheel(bossPosition: position, onLaserWheelRemove: () {}));
+    print("🚀 Spawning LaserWheel!");
   }
 
   void updateStaggerBar() {
@@ -226,21 +257,6 @@ class Boss2 extends BaseEnemy with Staggerable {
     bossStaggerNotifier.value = staggerProgress;
   }
 
-  void update(double dt) {
-    super.update(dt);
-    updateStagger(dt);
-    updateStaggerBar();
-
-    if (isStaggered) return;
-
-    timeSinceLastAttack += dt;
-    timeSinceLastDamageNumber += dt;
-
-    _updateMovement(dt);
-    _handleAttacks(dt);
-  }
-
-// boss2 doesn't move, so we can remove the walkAnimation and _updateMovement method
   void _updateMovement(double dt) {
     animation = (player.position - position).length < 10
         ? attackAnimation
@@ -250,23 +266,11 @@ class Boss2 extends BaseEnemy with Staggerable {
     }
   }
 
-  void _handleAttacks(double dt) {
-    timeSinceLastAttack += dt;
-    if (timeSinceLastAttack >= attackCooldown) {
-      _activateLaserBeam();
-      timeSinceLastAttack = 0.0;
-    }
-  }
-
-  void _activateLaserBeam() {
-    // ✅ Ensure only ONE LaserWheel exists at a time
-    if (gameRef.children.whereType<LaserWheel>().isNotEmpty) {
-      print("⚠️ LaserWheel already exists, skipping spawn.");
-      return;
-    }
-
-    print("🚀 Spawning LaserWheel!");
-    gameRef.add(LaserWheel(bossPosition: position));
+  void update(double dt) {
+    super.update(dt);
+    updateStagger(dt);
+    updateStaggerBar();
+    _updateMovement(dt);
   }
 
   @override
@@ -278,7 +282,7 @@ class Boss2 extends BaseEnemy with Staggerable {
         isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
     health -= finalDamage;
     onHealthChanged(health.toDouble());
-    applyStaggerDamage(finalDamage, isCritical: isCritical); //stagger update
+    applyStaggerDamage(finalDamage, isCritical: isCritical);
 
     if (health <= (maxHealth * 0.3) && !enraged) {
       enraged = true;
@@ -314,7 +318,7 @@ class Boss2 extends BaseEnemy with Staggerable {
       print("🗃️ LootBox spawned at position: ${lootBox.position}");
     }
 
-    // ✅ Remove all laser beams from the game when the boss dies
+    // Remove laser beams
     for (var laser in gameRef.children.whereType<LaserBeam>()) {
       laser.removeFromParent();
     }
@@ -322,16 +326,13 @@ class Boss2 extends BaseEnemy with Staggerable {
 
     onDeath();
     gameRef.add(Explosion(position));
-    removeFromParent(); // ✅ Boss is removed from the game world
+    removeFromParent();
   }
 
   List<DropItem> _getDropItems() {
     final List<DropItem> dropItems = [];
-
-    // Add the gold coin
     dropItems.add(DropItem(item: GoldCoin()));
 
-    // Add the random loot item
     final item = LootTable.getRandomLoot();
     if (item != null) {
       dropItems.add(DropItem(item: item));

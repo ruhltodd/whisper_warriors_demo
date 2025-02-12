@@ -516,9 +516,6 @@ class StaggerBarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    print(
-        "Current Stagger: $currentStagger / Max Stagger: $maxStagger"); // Debugging
-
     // Background Bar with rounded edges
     Paint backgroundPaint = Paint()..color = const Color(0xFF444444);
     RRect backgroundRRect = RRect.fromRectAndRadius(

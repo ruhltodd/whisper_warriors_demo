@@ -73,7 +73,7 @@ class DropItem extends SpriteComponent
     }
   }
 
-  void _moveToPlayer() {
+  Future<void> _moveToPlayer() async {
     isCollected = true; // Prevent multiple pickups
 
     add(

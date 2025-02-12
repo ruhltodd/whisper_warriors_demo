@@ -227,7 +227,7 @@ class SpawnController extends Component {
 
       final boss2 = Boss2(
         player: game.player,
-        health: 60000,
+        health: 160000,
         speed: 0,
         size: Vector2(256, 256),
         onHealthChanged: (double health) =>
@@ -240,7 +240,7 @@ class SpawnController extends Component {
 
       boss2.position = Vector2(1280 / 2, 1280 / 2);
       game.add(boss2);
-      game.setActiveBoss("Void Prism", 60000);
+      game.setActiveBoss("Void Prism", 160000);
 
       print("⚔️ Boss 2 (Void Prism) has entered the battlefield!");
     });

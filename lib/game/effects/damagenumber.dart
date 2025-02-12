@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:math' show Random;
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 import 'package:flame/effects.dart';
@@ -11,13 +12,25 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
   final bool isPlayer; // ✅ Flag to differentiate player damage
   double timer = 1.0;
   late List<SpriteComponent> digitSprites = [];
+  final Random _random = Random();
 
   static final Map<int, Sprite> numberSprites = {}; // ✅ Store loaded sprites
   static Sprite? minusSprite; // ✅ Cache minus sign sprite
 
   DamageNumber(this.damage, this.initialPosition,
       {this.isCritical = false, this.isPlayer = false}) {
-    position = initialPosition;
+    position = initialPosition + _getRandomOffset();
+  }
+
+  Vector2 _getRandomOffset() {
+    return Vector2(
+      _random.nextDouble() * 20 - 10,
+      _random.nextDouble() * 20 - 10,
+    );
+  }
+
+  double _getRandomHorizontalMove() {
+    return _random.nextDouble() * 40 - 20;
   }
 
   @override
@@ -28,8 +41,10 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
     await _loadSpritesIfNeeded();
     _createDamageNumberSprites();
 
-    // ✅ Floating Effect (moves upward)
-    add(MoveEffect.by(Vector2(0, -30), EffectController(duration: 0.5)));
+    add(MoveEffect.by(
+      Vector2(_getRandomHorizontalMove(), -30),
+      EffectController(duration: 0.5),
+    ));
 
     if (isCritical && !isPlayer) {
       // ✅ Magnify & Shrink Effect for Crits (Only for enemies)

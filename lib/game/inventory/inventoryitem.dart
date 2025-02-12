@@ -13,7 +13,36 @@ class InventoryItem extends HiveObject {
   @HiveField(1)
   bool isEquipped; // ✅ Tracks whether item is equipped
 
-  InventoryItem({required this.item, this.isEquipped = false});
+  InventoryItem({
+    required this.item,
+    this.isEquipped = false,
+  }) {
+    // Remove the automatic save from constructor
+    // this.save(); // This line was causing the error
+  }
+
+  // Add a method to safely add the item to inventory
+  static Future<InventoryItem> create({
+    required Item item,
+    bool isEquipped = false,
+  }) async {
+    final box = Hive.box<InventoryItem>('inventoryBox');
+    final inventoryItem = InventoryItem(
+      item: item,
+      isEquipped: isEquipped,
+    );
+
+    // Add to box with the item's name as key
+    await box.put(item.name, inventoryItem);
+    return inventoryItem;
+  }
+
+  // Add this method to ensure state is properly loaded
+  void ensureStateIsSaved() {
+    if (!isInBox) {
+      save();
+    }
+  }
 
   /// ✅ **Getter Methods to Access `Item` Properties**
   String get name => item.name; // ✅ Retrieve from item
@@ -86,14 +115,19 @@ class InventoryItem extends HiveObject {
     print("⛔ Removed ${item.name} effects.");
   }
 
-  // ✅ Equip or Unequip the item
+  // Modify toggleEquip to be more robust
   void toggleEquip(Player player) {
-    if (isEquipped) {
-      removeEffect(player);
-    } else {
-      applyEffect(player);
-    }
     isEquipped = !isEquipped;
-    save(); // ✅ Save change to Hive
+
+    if (isEquipped) {
+      applyEffect(player);
+    } else {
+      removeEffect(player);
+    }
+
+    // Ensure the state change is saved
+    ensureStateIsSaved();
+    save();
+    print("🔄 ${item.name} equipped state changed to: $isEquipped");
   }
 }

@@ -12,9 +12,13 @@ class InventoryManager {
     if (item.item is! GoldCoin &&
         item.item is! BlueCoin &&
         item.item is! GreenCoin) {
-      // ✅ Skip saving GoldCoin and BlueCoin and Greencoin
+      // First add to box, then save
       _inventoryBox.put(item.name, item);
+      item.save(); // Now it's safe to save since the item is in the box
       print("👜 Item added: ${item.name}");
+
+      // Debug: Print current inventory state after adding
+      debugPrintInventory();
     } else {
       print("⚠️ GoldCoin not saved to inventory.");
     }
@@ -40,6 +44,7 @@ class InventoryManager {
         }
         itemFound = true;
       } else if (item.isEquipped) {
+        // Only unequip previously equipped items
         item.isEquipped = false;
         item.save();
       }
@@ -62,13 +67,55 @@ class InventoryManager {
     }
   }
 
-  /// Load inventory from Hive
+  /// Load inventory from Hive with state verification
   static List<InventoryItem> getInventory() {
-    return _inventoryBox.values.toList();
+    try {
+      final items = _inventoryBox.values.toList();
+      // Verify each item's state and ensure it's properly saved
+      for (var item in items) {
+        if (!_inventoryBox.containsKey(item.name)) {
+          _inventoryBox.put(item.name, item);
+        }
+      }
+      print("📦 Loaded ${items.length} items from inventory");
+      return items;
+    } catch (e) {
+      print("⚠️ Error loading inventory: $e");
+      return [];
+    }
   }
 
   /// Get currently equipped items
   static List<InventoryItem> getEquippedItems() {
     return _inventoryBox.values.where((item) => item.isEquipped).toList();
+  }
+
+  /// Initialize or verify inventory state
+  static void initializeInventory() {
+    try {
+      final items = _inventoryBox.values.toList();
+
+      // Verify existing items only
+      for (var item in items) {
+        // Ensure each item's state is properly saved
+        if (!_inventoryBox.containsKey(item.name)) {
+          _inventoryBox.put(item.name, item);
+        }
+        item.save();
+        print("📦 Verified item: ${item.name} (Equipped: ${item.isEquipped})");
+      }
+      print("✅ Inventory initialized with ${items.length} items");
+    } catch (e) {
+      print("⚠️ Error initializing inventory: $e");
+    }
+  }
+
+  /// Debug method to print current inventory state
+  static void debugPrintInventory() {
+    final items = _inventoryBox.values.toList();
+    print("📦 Current Inventory State:");
+    for (var item in items) {
+      print("- ${item.name} (Equipped: ${item.isEquipped})");
+    }
   }
 }
