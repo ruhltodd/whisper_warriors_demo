@@ -28,6 +28,19 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
     });
   }
 
+  Color _getRarityColor(String rarity) {
+    switch (rarity) {
+      case "Rare":
+        return Colors.blue;
+      case "Epic":
+        return Colors.purple;
+      case "Legendary":
+        return Colors.orange;
+      default:
+        return Colors.white; // Default for other rarities
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,6 +124,7 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
   }
 
   /// Inventory Grid with Hover Effect
+  /// Inventory Grid with Hover Effect
   Widget _buildInventoryGrid() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -125,6 +139,8 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
         itemBuilder: (context, index) {
           InventoryItem item = widget.availableItems[index];
           bool isSelected = _selectedItems.contains(item);
+          Color borderColor = _getRarityColor(
+              item.item.rarity); // Default border color based on rarity
 
           return MouseRegion(
             onEnter: (_) => setState(() => _hoveredItem = item),
@@ -136,13 +152,16 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? Colors.grey : Colors.white,
+                    color:
+                        borderColor, // Always show rarity color for the border
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Opacity(
-                  opacity: isSelected ? 0.5 : 1,
+                  opacity: isSelected
+                      ? 0.5
+                      : 1, // Make the selected item semi-transparent
                   child: Image.asset(
                     'assets/images/${item.item.name.toLowerCase().replaceAll(" ", "_")}.png',
                     fit: BoxFit.cover,
