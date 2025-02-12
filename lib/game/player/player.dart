@@ -441,9 +441,7 @@ class Player extends PositionComponent
       Future.delayed(Duration(milliseconds: 100), () {
         if (closestEnemy != null) {
           shootProjectile(damage, closestEnemy!, isCritical: isCritical);
-        } else {
-          print("⚠️ No enemy found to shoot at!");
-        }
+        } else {}
       });
     }
   }
@@ -573,6 +571,5 @@ class Player extends PositionComponent
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
-    print('Player collided with ${other.runtimeType}');
   }
 }

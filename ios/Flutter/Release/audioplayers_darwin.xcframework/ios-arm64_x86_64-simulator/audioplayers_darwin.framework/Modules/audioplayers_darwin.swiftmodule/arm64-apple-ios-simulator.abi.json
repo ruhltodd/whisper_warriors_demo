@@ -1,0 +1,4499 @@
+{
+  "ABIRoot": {
+    "kind": "Root",
+    "name": "audioplayers_darwin",
+    "printedName": "audioplayers_darwin",
+    "children": [
+      {
+        "kind": "Import",
+        "name": "MediaPlayer",
+        "printedName": "MediaPlayer",
+        "declKind": "Import",
+        "moduleName": "audioplayers_darwin"
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "AudioContext",
+        "printedName": "AudioContext",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "category",
+            "printedName": "category",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Category",
+                "printedName": "AVFAudio.AVAudioSession.Category",
+                "usr": "c:@T@AVAudioSessionCategory"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin12AudioContextV8categorySo22AVAudioSessionCategoryavp",
+            "mangledName": "$s19audioplayers_darwin12AudioContextV8categorySo22AVAudioSessionCategoryavp",
+            "moduleName": "audioplayers_darwin",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 0,
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Category",
+                    "printedName": "AVFAudio.AVAudioSession.Category",
+                    "usr": "c:@T@AVAudioSessionCategory"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin12AudioContextV8categorySo22AVAudioSessionCategoryavg",
+                "mangledName": "$s19audioplayers_darwin12AudioContextV8categorySo22AVAudioSessionCategoryavg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "options",
+            "printedName": "options",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[AVFAudio.AVAudioSession.CategoryOptions]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CategoryOptions",
+                    "printedName": "AVFAudio.AVAudioSession.CategoryOptions",
+                    "usr": "c:@E@AVAudioSessionCategoryOptions"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin12AudioContextV7optionsSaySo29AVAudioSessionCategoryOptionsVGvp",
+            "mangledName": "$s19audioplayers_darwin12AudioContextV7optionsSaySo29AVAudioSessionCategoryOptionsVGvp",
+            "moduleName": "audioplayers_darwin",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 1,
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[AVFAudio.AVAudioSession.CategoryOptions]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CategoryOptions",
+                        "printedName": "AVFAudio.AVAudioSession.CategoryOptions",
+                        "usr": "c:@E@AVAudioSessionCategoryOptions"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin12AudioContextV7optionsSaySo29AVAudioSessionCategoryOptionsVGvg",
+                "mangledName": "$s19audioplayers_darwin12AudioContextV7optionsSaySo29AVAudioSessionCategoryOptionsVGvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AudioContext",
+                "printedName": "audioplayers_darwin.AudioContext",
+                "usr": "s:19audioplayers_darwin12AudioContextV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:19audioplayers_darwin12AudioContextVACycfc",
+            "mangledName": "$s19audioplayers_darwin12AudioContextVACycfc",
+            "moduleName": "audioplayers_darwin",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(category:options:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AudioContext",
+                "printedName": "audioplayers_darwin.AudioContext",
+                "usr": "s:19audioplayers_darwin12AudioContextV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Category",
+                "printedName": "AVFAudio.AVAudioSession.Category",
+                "usr": "c:@T@AVAudioSessionCategory"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[AVFAudio.AVAudioSession.CategoryOptions]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CategoryOptions",
+                    "printedName": "AVFAudio.AVAudioSession.CategoryOptions",
+                    "usr": "c:@E@AVAudioSessionCategoryOptions"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:19audioplayers_darwin12AudioContextV8category7optionsACSo22AVAudioSessionCategorya_SaySo0ghI7OptionsVGtcfc",
+            "mangledName": "$s19audioplayers_darwin12AudioContextV8category7optionsACSo22AVAudioSessionCategorya_SaySo0ghI7OptionsVGtcfc",
+            "moduleName": "audioplayers_darwin",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "activateAudioSession",
+            "printedName": "activateAudioSession(active:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin12AudioContextV08activateC7Session6activeySb_tF",
+            "mangledName": "$s19audioplayers_darwin12AudioContextV08activateC7Session6activeySb_tF",
+            "moduleName": "audioplayers_darwin",
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "apply",
+            "printedName": "apply()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin12AudioContextV5applyyyF",
+            "mangledName": "$s19audioplayers_darwin12AudioContextV5applyyyF",
+            "moduleName": "audioplayers_darwin",
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "parse",
+            "printedName": "parse(args:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "audioplayers_darwin.AudioContext?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "AudioContext",
+                    "printedName": "audioplayers_darwin.AudioContext",
+                    "usr": "s:19audioplayers_darwin12AudioContextV"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Dictionary",
+                "printedName": "[Swift.String : Any]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ProtocolComposition",
+                    "printedName": "Any"
+                  }
+                ],
+                "usr": "s:SD"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin12AudioContextV5parse4argsACSgSDySSypG_tFZ",
+            "mangledName": "$s19audioplayers_darwin12AudioContextV5parse4argsACSgSDySSypG_tFZ",
+            "moduleName": "audioplayers_darwin",
+            "static": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:19audioplayers_darwin12AudioContextV",
+        "mangledName": "$s19audioplayers_darwin12AudioContextV",
+        "moduleName": "audioplayers_darwin",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "LogLevel",
+        "printedName": "LogLevel",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "info",
+            "printedName": "info",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(audioplayers_darwin.LogLevel.Type) -> audioplayers_darwin.LogLevel",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LogLevel",
+                    "printedName": "audioplayers_darwin.LogLevel",
+                    "usr": "s:19audioplayers_darwin8LogLevelO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "audioplayers_darwin.LogLevel.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "LogLevel",
+                        "printedName": "audioplayers_darwin.LogLevel",
+                        "usr": "s:19audioplayers_darwin8LogLevelO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:19audioplayers_darwin8LogLevelO4infoyA2CmF",
+            "mangledName": "$s19audioplayers_darwin8LogLevelO4infoyA2CmF",
+            "moduleName": "audioplayers_darwin",
+            "fixedbinaryorder": 0
+          },
+          {
+            "kind": "Var",
+            "name": "error",
+            "printedName": "error",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(audioplayers_darwin.LogLevel.Type) -> audioplayers_darwin.LogLevel",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LogLevel",
+                    "printedName": "audioplayers_darwin.LogLevel",
+                    "usr": "s:19audioplayers_darwin8LogLevelO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "audioplayers_darwin.LogLevel.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "LogLevel",
+                        "printedName": "audioplayers_darwin.LogLevel",
+                        "usr": "s:19audioplayers_darwin8LogLevelO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:19audioplayers_darwin8LogLevelO5erroryA2CmF",
+            "mangledName": "$s19audioplayers_darwin8LogLevelO5erroryA2CmF",
+            "moduleName": "audioplayers_darwin",
+            "fixedbinaryorder": 1
+          },
+          {
+            "kind": "Var",
+            "name": "none",
+            "printedName": "none",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(audioplayers_darwin.LogLevel.Type) -> audioplayers_darwin.LogLevel",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LogLevel",
+                    "printedName": "audioplayers_darwin.LogLevel",
+                    "usr": "s:19audioplayers_darwin8LogLevelO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "audioplayers_darwin.LogLevel.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "LogLevel",
+                        "printedName": "audioplayers_darwin.LogLevel",
+                        "usr": "s:19audioplayers_darwin8LogLevelO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:19audioplayers_darwin8LogLevelO4noneyA2CmF",
+            "mangledName": "$s19audioplayers_darwin8LogLevelO4noneyA2CmF",
+            "moduleName": "audioplayers_darwin",
+            "fixedbinaryorder": 2
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(rawValue:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "audioplayers_darwin.LogLevel?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LogLevel",
+                    "printedName": "audioplayers_darwin.LogLevel",
+                    "usr": "s:19audioplayers_darwin8LogLevelO"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:19audioplayers_darwin8LogLevelO8rawValueACSgSi_tcfc",
+            "mangledName": "$s19audioplayers_darwin8LogLevelO8rawValueACSgSi_tcfc",
+            "moduleName": "audioplayers_darwin",
+            "implicit": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Var",
+            "name": "rawValue",
+            "printedName": "rawValue",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin8LogLevelO8rawValueSivp",
+            "mangledName": "$s19audioplayers_darwin8LogLevelO8rawValueSivp",
+            "moduleName": "audioplayers_darwin",
+            "implicit": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin8LogLevelO8rawValueSivg",
+                "mangledName": "$s19audioplayers_darwin8LogLevelO8rawValueSivg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Function",
+            "name": "parse",
+            "printedName": "parse(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "audioplayers_darwin.LogLevel?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LogLevel",
+                    "printedName": "audioplayers_darwin.LogLevel",
+                    "usr": "s:19audioplayers_darwin8LogLevelO"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin8LogLevelO5parseyACSgSSFZ",
+            "mangledName": "$s19audioplayers_darwin8LogLevelO5parseyACSgSSFZ",
+            "moduleName": "audioplayers_darwin",
+            "static": true,
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Enum",
+        "usr": "s:19audioplayers_darwin8LogLevelO",
+        "mangledName": "$s19audioplayers_darwin8LogLevelO",
+        "moduleName": "audioplayers_darwin",
+        "enumRawTypeName": "Int",
+        "isEnumExhaustive": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
+            "name": "RawRepresentable",
+            "printedName": "RawRepresentable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "RawValue",
+                "printedName": "RawValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:SY",
+            "mangledName": "$sSY"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "BitwiseCopyable",
+            "printedName": "BitwiseCopyable",
+            "usr": "s:s15BitwiseCopyableP",
+            "mangledName": "$ss15BitwiseCopyableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "Logger",
+        "printedName": "Logger",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "logLevel",
+            "printedName": "logLevel",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "LogLevel",
+                "printedName": "audioplayers_darwin.LogLevel",
+                "usr": "s:19audioplayers_darwin8LogLevelO"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin6LoggerC8logLevelAA03LogE0OvpZ",
+            "mangledName": "$s19audioplayers_darwin6LoggerC8logLevelAA03LogE0OvpZ",
+            "moduleName": "audioplayers_darwin",
+            "static": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "Final",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LogLevel",
+                    "printedName": "audioplayers_darwin.LogLevel",
+                    "usr": "s:19audioplayers_darwin8LogLevelO"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin6LoggerC8logLevelAA03LogE0OvgZ",
+                "mangledName": "$s19audioplayers_darwin6LoggerC8logLevelAA03LogE0OvgZ",
+                "moduleName": "audioplayers_darwin",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent",
+                  "Final"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LogLevel",
+                    "printedName": "audioplayers_darwin.LogLevel",
+                    "usr": "s:19audioplayers_darwin8LogLevelO"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin6LoggerC8logLevelAA03LogE0OvsZ",
+                "mangledName": "$s19audioplayers_darwin6LoggerC8logLevelAA03LogE0OvsZ",
+                "moduleName": "audioplayers_darwin",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent",
+                  "Final"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin6LoggerC8logLevelAA03LogE0OvMZ",
+                "mangledName": "$s19audioplayers_darwin6LoggerC8logLevelAA03LogE0OvMZ",
+                "moduleName": "audioplayers_darwin",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent",
+                  "Final"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Function",
+            "name": "info",
+            "printedName": "info(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Any]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ProtocolComposition",
+                    "printedName": "Any"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin6LoggerC4infoyyypd_tFZ",
+            "mangledName": "$s19audioplayers_darwin6LoggerC4infoyyypd_tFZ",
+            "moduleName": "audioplayers_darwin",
+            "static": true,
+            "declAttributes": [
+              "Final"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "error",
+            "printedName": "error(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Any]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ProtocolComposition",
+                    "printedName": "Any"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin6LoggerC5erroryyypd_tFZ",
+            "mangledName": "$s19audioplayers_darwin6LoggerC5erroryyypd_tFZ",
+            "moduleName": "audioplayers_darwin",
+            "static": true,
+            "declAttributes": [
+              "Final"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "log",
+            "printedName": "log(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "LogLevel",
+                "printedName": "audioplayers_darwin.LogLevel",
+                "usr": "s:19audioplayers_darwin8LogLevelO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Any]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ProtocolComposition",
+                    "printedName": "Any"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin6LoggerC3logyyAA8LogLevelO_ypdtFZ",
+            "mangledName": "$s19audioplayers_darwin6LoggerC3logyyAA8LogLevelO_ypdtFZ",
+            "moduleName": "audioplayers_darwin",
+            "static": true,
+            "declAttributes": [
+              "Final"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "_log",
+            "printedName": "_log(_:items:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "LogLevel",
+                "printedName": "audioplayers_darwin.LogLevel",
+                "usr": "s:19audioplayers_darwin8LogLevelO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Any]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ProtocolComposition",
+                    "printedName": "Any"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin6LoggerC4_log_5itemsyAA8LogLevelO_SayypGtFZ",
+            "mangledName": "$s19audioplayers_darwin6LoggerC4_log_5itemsyAA8LogLevelO_SayypGtFZ",
+            "moduleName": "audioplayers_darwin",
+            "static": true,
+            "declAttributes": [
+              "Final"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Logger",
+                "printedName": "audioplayers_darwin.Logger",
+                "usr": "s:19audioplayers_darwin6LoggerC"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:19audioplayers_darwin6LoggerCACycfc",
+            "mangledName": "$s19audioplayers_darwin6LoggerCACycfc",
+            "moduleName": "audioplayers_darwin",
+            "implicit": true,
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "s:19audioplayers_darwin6LoggerC",
+        "mangledName": "$s19audioplayers_darwin6LoggerC",
+        "moduleName": "audioplayers_darwin",
+        "isOpen": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "AVKit",
+        "printedName": "AVKit",
+        "declKind": "Import",
+        "moduleName": "audioplayers_darwin"
+      },
+      {
+        "kind": "Import",
+        "name": "AVFoundation",
+        "printedName": "AVFoundation",
+        "declKind": "Import",
+        "moduleName": "audioplayers_darwin"
+      },
+      {
+        "kind": "Import",
+        "name": "Flutter",
+        "printedName": "Flutter",
+        "declKind": "Import",
+        "moduleName": "audioplayers_darwin"
+      },
+      {
+        "kind": "Import",
+        "name": "UIKit",
+        "printedName": "UIKit",
+        "declKind": "Import",
+        "moduleName": "audioplayers_darwin"
+      },
+      {
+        "kind": "Import",
+        "name": "MediaPlayer",
+        "printedName": "MediaPlayer",
+        "declKind": "Import",
+        "moduleName": "audioplayers_darwin"
+      },
+      {
+        "kind": "Var",
+        "name": "CHANNEL_NAME",
+        "printedName": "CHANNEL_NAME",
+        "children": [
+          {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+          }
+        ],
+        "declKind": "Var",
+        "usr": "s:19audioplayers_darwin12CHANNEL_NAMESSvp",
+        "mangledName": "$s19audioplayers_darwin12CHANNEL_NAMESSvp",
+        "moduleName": "audioplayers_darwin",
+        "declAttributes": [
+          "HasInitialValue",
+          "HasStorage"
+        ],
+        "isLet": true,
+        "hasStorage": true
+      },
+      {
+        "kind": "Var",
+        "name": "GLOBAL_CHANNEL_NAME",
+        "printedName": "GLOBAL_CHANNEL_NAME",
+        "children": [
+          {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+          }
+        ],
+        "declKind": "Var",
+        "usr": "s:19audioplayers_darwin19GLOBAL_CHANNEL_NAMESSvp",
+        "mangledName": "$s19audioplayers_darwin19GLOBAL_CHANNEL_NAMESSvp",
+        "moduleName": "audioplayers_darwin",
+        "declAttributes": [
+          "HasInitialValue",
+          "HasStorage"
+        ],
+        "isLet": true,
+        "hasStorage": true
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "SwiftAudioplayersDarwinPlugin",
+        "printedName": "SwiftAudioplayersDarwinPlugin",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "registrar",
+            "printedName": "registrar",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterPluginRegistrar",
+                "printedName": "any Flutter.FlutterPluginRegistrar",
+                "usr": "c:objc(pl)FlutterPluginRegistrar"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrarSo07FlutterF9Registrar_pvp",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrarSo07FlutterF9Registrar_pvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FlutterPluginRegistrar",
+                    "printedName": "any Flutter.FlutterPluginRegistrar",
+                    "usr": "c:objc(pl)FlutterPluginRegistrar"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrarSo07FlutterF9Registrar_pvg",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrarSo07FlutterF9Registrar_pvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FlutterPluginRegistrar",
+                    "printedName": "any Flutter.FlutterPluginRegistrar",
+                    "usr": "c:objc(pl)FlutterPluginRegistrar"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrarSo07FlutterF9Registrar_pvs",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrarSo07FlutterF9Registrar_pvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrarSo07FlutterF9Registrar_pvM",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrarSo07FlutterF9Registrar_pvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "channel",
+            "printedName": "channel",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterMethodChannel",
+                "printedName": "Flutter.FlutterMethodChannel",
+                "usr": "c:objc(cs)FlutterMethodChannel"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7channelSo20FlutterMethodChannelCvp",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7channelSo20FlutterMethodChannelCvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FlutterMethodChannel",
+                    "printedName": "Flutter.FlutterMethodChannel",
+                    "usr": "c:objc(cs)FlutterMethodChannel"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7channelSo20FlutterMethodChannelCvg",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7channelSo20FlutterMethodChannelCvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FlutterMethodChannel",
+                    "printedName": "Flutter.FlutterMethodChannel",
+                    "usr": "c:objc(cs)FlutterMethodChannel"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7channelSo20FlutterMethodChannelCvs",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7channelSo20FlutterMethodChannelCvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7channelSo20FlutterMethodChannelCvM",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7channelSo20FlutterMethodChannelCvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "globalChannel",
+            "printedName": "globalChannel",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterMethodChannel",
+                "printedName": "Flutter.FlutterMethodChannel",
+                "usr": "c:objc(cs)FlutterMethodChannel"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalChannelSo013FlutterMethodH0Cvp",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalChannelSo013FlutterMethodH0Cvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FlutterMethodChannel",
+                    "printedName": "Flutter.FlutterMethodChannel",
+                    "usr": "c:objc(cs)FlutterMethodChannel"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalChannelSo013FlutterMethodH0Cvg",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalChannelSo013FlutterMethodH0Cvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FlutterMethodChannel",
+                    "printedName": "Flutter.FlutterMethodChannel",
+                    "usr": "c:objc(cs)FlutterMethodChannel"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalChannelSo013FlutterMethodH0Cvs",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalChannelSo013FlutterMethodH0Cvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalChannelSo013FlutterMethodH0CvM",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalChannelSo013FlutterMethodH0CvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "globalContext",
+            "printedName": "globalContext",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AudioContext",
+                "printedName": "audioplayers_darwin.AudioContext",
+                "usr": "s:19audioplayers_darwin12AudioContextV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalContextAA05AudioH0Vvp",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalContextAA05AudioH0Vvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "AudioContext",
+                    "printedName": "audioplayers_darwin.AudioContext",
+                    "usr": "s:19audioplayers_darwin12AudioContextV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalContextAA05AudioH0Vvg",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalContextAA05AudioH0Vvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "AudioContext",
+                    "printedName": "audioplayers_darwin.AudioContext",
+                    "usr": "s:19audioplayers_darwin12AudioContextV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalContextAA05AudioH0Vvs",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalContextAA05AudioH0Vvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalContextAA05AudioH0VvM",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC13globalContextAA05AudioH0VvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "players",
+            "printedName": "players",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Dictionary",
+                "printedName": "[Swift.String : audioplayers_darwin.WrappedMediaPlayer]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "WrappedMediaPlayer",
+                    "printedName": "audioplayers_darwin.WrappedMediaPlayer",
+                    "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC"
+                  }
+                ],
+                "usr": "s:SD"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7playersSDySSAA18WrappedMediaPlayerCGvp",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7playersSDySSAA18WrappedMediaPlayerCGvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : audioplayers_darwin.WrappedMediaPlayer]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "WrappedMediaPlayer",
+                        "printedName": "audioplayers_darwin.WrappedMediaPlayer",
+                        "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7playersSDySSAA18WrappedMediaPlayerCGvg",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7playersSDySSAA18WrappedMediaPlayerCGvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : audioplayers_darwin.WrappedMediaPlayer]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "WrappedMediaPlayer",
+                        "printedName": "audioplayers_darwin.WrappedMediaPlayer",
+                        "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7playersSDySSAA18WrappedMediaPlayerCGvs",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7playersSDySSAA18WrappedMediaPlayerCGvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7playersSDySSAA18WrappedMediaPlayerCGvM",
+                "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7playersSDySSAA18WrappedMediaPlayerCGvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(registrar:channel:globalChannel:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "SwiftAudioplayersDarwinPlugin",
+                "printedName": "audioplayers_darwin.SwiftAudioplayersDarwinPlugin",
+                "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterPluginRegistrar",
+                "printedName": "any Flutter.FlutterPluginRegistrar",
+                "usr": "c:objc(pl)FlutterPluginRegistrar"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterMethodChannel",
+                "printedName": "Flutter.FlutterMethodChannel",
+                "usr": "c:objc(cs)FlutterMethodChannel"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterMethodChannel",
+                "printedName": "Flutter.FlutterMethodChannel",
+                "usr": "c:objc(cs)FlutterMethodChannel"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrar7channel13globalChannelACSo07FlutterF9Registrar_p_So0k6MethodJ0CAItcfc",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC9registrar7channel13globalChannelACSo07FlutterF9Registrar_p_So0k6MethodJ0CAItcfc",
+            "moduleName": "audioplayers_darwin",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "register",
+            "printedName": "register(with:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterPluginRegistrar",
+                "printedName": "any Flutter.FlutterPluginRegistrar",
+                "usr": "c:objc(pl)FlutterPluginRegistrar"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin(cm)registerWithRegistrar:",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC8register4withySo07FlutterF9Registrar_p_tFZ",
+            "moduleName": "audioplayers_darwin",
+            "static": true,
+            "objc_name": "registerWithRegistrar:",
+            "declAttributes": [
+              "Final",
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "detachFromEngine",
+            "printedName": "detachFromEngine(for:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterPluginRegistrar",
+                "printedName": "any Flutter.FlutterPluginRegistrar",
+                "usr": "c:objc(pl)FlutterPluginRegistrar"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin(im)detachFromEngineForRegistrar:",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC16detachFromEngine3forySo07FlutterF9Registrar_p_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "objc_name": "detachFromEngineForRegistrar:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "dispose",
+            "printedName": "dispose()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7disposeyyF",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7disposeyyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "handle",
+            "printedName": "handle(_:result:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FlutterMethodCall",
+                "printedName": "Flutter.FlutterMethodCall",
+                "usr": "c:objc(cs)FlutterMethodCall"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Any?) -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Any?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "ProtocolComposition",
+                        "printedName": "Any"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin(im)handleMethodCall:result:",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC6handle_6resultySo17FlutterMethodCallC_yypSgctF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "objc_name": "handleMethodCall:result:",
+            "declAttributes": [
+              "ObjC",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "getOrCreatePlayer",
+            "printedName": "getOrCreatePlayer(playerId:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WrappedMediaPlayer",
+                "printedName": "audioplayers_darwin.WrappedMediaPlayer",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC17getOrCreatePlayer8playerIdAA012WrappedMediaJ0CSS_tF",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC17getOrCreatePlayer8playerIdAA012WrappedMediaJ0CSS_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onSeekComplete",
+            "printedName": "onSeekComplete(playerId:finished:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC14onSeekComplete8playerId8finishedySS_SbtF",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC14onSeekComplete8playerId8finishedySS_SbtF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onComplete",
+            "printedName": "onComplete(playerId:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC10onComplete8playerIdySS_tF",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC10onComplete8playerIdySS_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onCurrentPosition",
+            "printedName": "onCurrentPosition(playerId:millis:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC17onCurrentPosition8playerId6millisySS_SitF",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC17onCurrentPosition8playerId6millisySS_SitF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onError",
+            "printedName": "onError(playerId:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7onError8playerIdySS_tF",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC7onError8playerIdySS_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onDuration",
+            "printedName": "onDuration(playerId:millis:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC10onDuration8playerId6millisySS_SitF",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC10onDuration8playerId6millisySS_SitF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "controlAudioSession",
+            "printedName": "controlAudioSession()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin29SwiftAudioplayersDarwinPluginC19controlAudioSessionyyF",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC19controlAudioSessionyyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "SwiftAudioplayersDarwinPlugin",
+                "printedName": "audioplayers_darwin.SwiftAudioplayersDarwinPlugin",
+                "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin(im)init",
+            "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginCACycfc",
+            "moduleName": "audioplayers_darwin",
+            "overriding": true,
+            "implicit": true,
+            "objc_name": "init",
+            "declAttributes": [
+              "Dynamic",
+              "ObjC",
+              "Override"
+            ],
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin",
+        "mangledName": "$s19audioplayers_darwin29SwiftAudioplayersDarwinPluginC",
+        "moduleName": "audioplayers_darwin",
+        "isOpen": true,
+        "declAttributes": [
+          "AccessControl",
+          "ObjC"
+        ],
+        "superclassUsr": "c:objc(cs)NSObject",
+        "hasMissingDesignatedInitializers": true,
+        "superclassNames": [
+          "ObjectiveC.NSObject"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CVarArg",
+            "printedName": "CVarArg",
+            "usr": "s:s7CVarArgP",
+            "mangledName": "$ss7CVarArgP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObservingPublishing",
+            "printedName": "_KeyValueCodingAndObservingPublishing",
+            "usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+            "mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObserving",
+            "printedName": "_KeyValueCodingAndObserving",
+            "usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+            "mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomDebugStringConvertible",
+            "printedName": "CustomDebugStringConvertible",
+            "usr": "s:s28CustomDebugStringConvertibleP",
+            "mangledName": "$ss28CustomDebugStringConvertibleP"
+          }
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "AVKit",
+        "printedName": "AVKit",
+        "declKind": "Import",
+        "moduleName": "audioplayers_darwin"
+      },
+      {
+        "kind": "Function",
+        "name": "toCMTime",
+        "printedName": "toCMTime(millis:)",
+        "children": [
+          {
+            "kind": "TypeNominal",
+            "name": "CMTime",
+            "printedName": "CoreMedia.CMTime",
+            "usr": "c:@SA@CMTime"
+          },
+          {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+          }
+        ],
+        "declKind": "Func",
+        "usr": "s:19audioplayers_darwin8toCMTime6millisSo0D0aSi_tF",
+        "mangledName": "$s19audioplayers_darwin8toCMTime6millisSo0D0aSi_tF",
+        "moduleName": "audioplayers_darwin",
+        "funcSelfKind": "NonMutating"
+      },
+      {
+        "kind": "Function",
+        "name": "toCMTime",
+        "printedName": "toCMTime(millis:)",
+        "children": [
+          {
+            "kind": "TypeNominal",
+            "name": "CMTime",
+            "printedName": "CoreMedia.CMTime",
+            "usr": "c:@SA@CMTime"
+          },
+          {
+            "kind": "TypeNominal",
+            "name": "Double",
+            "printedName": "Swift.Double",
+            "usr": "s:Sd"
+          }
+        ],
+        "declKind": "Func",
+        "usr": "s:19audioplayers_darwin8toCMTime6millisSo0D0aSd_tF",
+        "mangledName": "$s19audioplayers_darwin8toCMTime6millisSo0D0aSd_tF",
+        "moduleName": "audioplayers_darwin",
+        "funcSelfKind": "NonMutating"
+      },
+      {
+        "kind": "Function",
+        "name": "toCMTime",
+        "printedName": "toCMTime(millis:)",
+        "children": [
+          {
+            "kind": "TypeNominal",
+            "name": "CMTime",
+            "printedName": "CoreMedia.CMTime",
+            "usr": "c:@SA@CMTime"
+          },
+          {
+            "kind": "TypeNominal",
+            "name": "Float",
+            "printedName": "Swift.Float",
+            "usr": "s:Sf"
+          }
+        ],
+        "declKind": "Func",
+        "usr": "s:19audioplayers_darwin8toCMTime6millisSo0D0aSf_tF",
+        "mangledName": "$s19audioplayers_darwin8toCMTime6millisSo0D0aSf_tF",
+        "moduleName": "audioplayers_darwin",
+        "funcSelfKind": "NonMutating"
+      },
+      {
+        "kind": "Function",
+        "name": "fromCMTime",
+        "printedName": "fromCMTime(time:)",
+        "children": [
+          {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+          },
+          {
+            "kind": "TypeNominal",
+            "name": "CMTime",
+            "printedName": "CoreMedia.CMTime",
+            "usr": "c:@SA@CMTime"
+          }
+        ],
+        "declKind": "Func",
+        "usr": "s:19audioplayers_darwin10fromCMTime4timeSiSo0D0a_tF",
+        "mangledName": "$s19audioplayers_darwin10fromCMTime4timeSiSo0D0a_tF",
+        "moduleName": "audioplayers_darwin",
+        "funcSelfKind": "NonMutating"
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "TimeObserver",
+        "printedName": "TimeObserver",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "player",
+            "printedName": "player",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AVPlayer",
+                "printedName": "AVFoundation.AVPlayer",
+                "usr": "c:objc(cs)AVPlayer"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin12TimeObserverC6playerSo8AVPlayerCvp",
+            "mangledName": "$s19audioplayers_darwin12TimeObserverC6playerSo8AVPlayerCvp",
+            "moduleName": "audioplayers_darwin",
+            "declAttributes": [
+              "Final",
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 0,
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "AVPlayer",
+                    "printedName": "AVFoundation.AVPlayer",
+                    "usr": "c:objc(cs)AVPlayer"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin12TimeObserverC6playerSo8AVPlayerCvg",
+                "mangledName": "$s19audioplayers_darwin12TimeObserverC6playerSo8AVPlayerCvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent",
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "observer",
+            "printedName": "observer",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ProtocolComposition",
+                "printedName": "Any"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin12TimeObserverC8observerypvp",
+            "mangledName": "$s19audioplayers_darwin12TimeObserverC8observerypvp",
+            "moduleName": "audioplayers_darwin",
+            "declAttributes": [
+              "Final",
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 1,
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ProtocolComposition",
+                    "printedName": "Any"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin12TimeObserverC8observerypvg",
+                "mangledName": "$s19audioplayers_darwin12TimeObserverC8observerypvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent",
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(player:observer:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "TimeObserver",
+                "printedName": "audioplayers_darwin.TimeObserver",
+                "usr": "s:19audioplayers_darwin12TimeObserverC"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVPlayer",
+                "printedName": "AVFoundation.AVPlayer",
+                "usr": "c:objc(cs)AVPlayer"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "ProtocolComposition",
+                "printedName": "Any"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:19audioplayers_darwin12TimeObserverC6player8observerACSo8AVPlayerC_yptcfc",
+            "mangledName": "$s19audioplayers_darwin12TimeObserverC6player8observerACSo8AVPlayerC_yptcfc",
+            "moduleName": "audioplayers_darwin",
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "s:19audioplayers_darwin12TimeObserverC",
+        "mangledName": "$s19audioplayers_darwin12TimeObserverC",
+        "moduleName": "audioplayers_darwin",
+        "isOpen": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "AVKit",
+        "printedName": "AVKit",
+        "declKind": "Import",
+        "moduleName": "audioplayers_darwin"
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "WrappedMediaPlayer",
+        "printedName": "WrappedMediaPlayer",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "reference",
+            "printedName": "reference",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "SwiftAudioplayersDarwinPlugin",
+                "printedName": "audioplayers_darwin.SwiftAudioplayersDarwinPlugin",
+                "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9referenceAA29SwiftAudioplayersDarwinPluginCvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9referenceAA29SwiftAudioplayersDarwinPluginCvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 0,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "SwiftAudioplayersDarwinPlugin",
+                    "printedName": "audioplayers_darwin.SwiftAudioplayersDarwinPlugin",
+                    "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9referenceAA29SwiftAudioplayersDarwinPluginCvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9referenceAA29SwiftAudioplayersDarwinPluginCvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "SwiftAudioplayersDarwinPlugin",
+                    "printedName": "audioplayers_darwin.SwiftAudioplayersDarwinPlugin",
+                    "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9referenceAA29SwiftAudioplayersDarwinPluginCvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9referenceAA29SwiftAudioplayersDarwinPluginCvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9referenceAA29SwiftAudioplayersDarwinPluginCvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9referenceAA29SwiftAudioplayersDarwinPluginCvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "playerId",
+            "printedName": "playerId",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC8playerIdSSvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC8playerIdSSvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 1,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC8playerIdSSvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC8playerIdSSvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC8playerIdSSvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC8playerIdSSvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC8playerIdSSvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC8playerIdSSvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "player",
+            "printedName": "player",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "AVFoundation.AVPlayer?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "AVPlayer",
+                    "printedName": "AVFoundation.AVPlayer",
+                    "usr": "c:objc(cs)AVPlayer"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC6playerSo8AVPlayerCSgvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC6playerSo8AVPlayerCSgvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 2,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "AVFoundation.AVPlayer?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "AVPlayer",
+                        "printedName": "AVFoundation.AVPlayer",
+                        "usr": "c:objc(cs)AVPlayer"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC6playerSo8AVPlayerCSgvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC6playerSo8AVPlayerCSgvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "AVFoundation.AVPlayer?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "AVPlayer",
+                        "printedName": "AVFoundation.AVPlayer",
+                        "usr": "c:objc(cs)AVPlayer"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC6playerSo8AVPlayerCSgvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC6playerSo8AVPlayerCSgvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC6playerSo8AVPlayerCSgvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC6playerSo8AVPlayerCSgvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "observers",
+            "printedName": "observers",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[audioplayers_darwin.TimeObserver]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "TimeObserver",
+                    "printedName": "audioplayers_darwin.TimeObserver",
+                    "usr": "s:19audioplayers_darwin12TimeObserverC"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9observersSayAA12TimeObserverCGvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9observersSayAA12TimeObserverCGvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 3,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[audioplayers_darwin.TimeObserver]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "TimeObserver",
+                        "printedName": "audioplayers_darwin.TimeObserver",
+                        "usr": "s:19audioplayers_darwin12TimeObserverC"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9observersSayAA12TimeObserverCGvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9observersSayAA12TimeObserverCGvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[audioplayers_darwin.TimeObserver]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "TimeObserver",
+                        "printedName": "audioplayers_darwin.TimeObserver",
+                        "usr": "s:19audioplayers_darwin12TimeObserverC"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9observersSayAA12TimeObserverCGvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9observersSayAA12TimeObserverCGvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9observersSayAA12TimeObserverCGvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9observersSayAA12TimeObserverCGvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "keyValueObservation",
+            "printedName": "keyValueObservation",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Foundation.NSKeyValueObservation?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "NSKeyValueObservation",
+                    "printedName": "Foundation.NSKeyValueObservation",
+                    "usr": "c:@M@Foundation@objc(cs)_NSKeyValueObservation"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC19keyValueObservation10Foundation05NSKeygH0CSgvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC19keyValueObservation10Foundation05NSKeygH0CSgvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 4,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Foundation.NSKeyValueObservation?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NSKeyValueObservation",
+                        "printedName": "Foundation.NSKeyValueObservation",
+                        "usr": "c:@M@Foundation@objc(cs)_NSKeyValueObservation"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC19keyValueObservation10Foundation05NSKeygH0CSgvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC19keyValueObservation10Foundation05NSKeygH0CSgvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Foundation.NSKeyValueObservation?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NSKeyValueObservation",
+                        "printedName": "Foundation.NSKeyValueObservation",
+                        "usr": "c:@M@Foundation@objc(cs)_NSKeyValueObservation"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC19keyValueObservation10Foundation05NSKeygH0CSgvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC19keyValueObservation10Foundation05NSKeygH0CSgvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC19keyValueObservation10Foundation05NSKeygH0CSgvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC19keyValueObservation10Foundation05NSKeygH0CSgvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "isPlaying",
+            "printedName": "isPlaying",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9isPlayingSbvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9isPlayingSbvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 5,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9isPlayingSbvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9isPlayingSbvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9isPlayingSbvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9isPlayingSbvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9isPlayingSbvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9isPlayingSbvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "playbackRate",
+            "printedName": "playbackRate",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Double",
+                "printedName": "Swift.Double",
+                "usr": "s:Sd"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC12playbackRateSdvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC12playbackRateSdvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 6,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Double",
+                    "printedName": "Swift.Double",
+                    "usr": "s:Sd"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC12playbackRateSdvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC12playbackRateSdvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Double",
+                    "printedName": "Swift.Double",
+                    "usr": "s:Sd"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC12playbackRateSdvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC12playbackRateSdvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC12playbackRateSdvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC12playbackRateSdvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "volume",
+            "printedName": "volume",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Double",
+                "printedName": "Swift.Double",
+                "usr": "s:Sd"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC6volumeSdvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC6volumeSdvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 7,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Double",
+                    "printedName": "Swift.Double",
+                    "usr": "s:Sd"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC6volumeSdvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC6volumeSdvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Double",
+                    "printedName": "Swift.Double",
+                    "usr": "s:Sd"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC6volumeSdvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC6volumeSdvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC6volumeSdvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC6volumeSdvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "looping",
+            "printedName": "looping",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC7loopingSbvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC7loopingSbvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 8,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC7loopingSbvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC7loopingSbvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC7loopingSbvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC7loopingSbvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC7loopingSbvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC7loopingSbvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "url",
+            "printedName": "url",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC3urlSSSgvp",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC3urlSSSgvp",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "fixedbinaryorder": 9,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC3urlSSSgvg",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC3urlSSSgvg",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC3urlSSSgvs",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC3urlSSSgvs",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC3urlSSSgvM",
+                "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC3urlSSSgvM",
+                "moduleName": "audioplayers_darwin",
+                "implicit": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(reference:playerId:player:playbackRate:volume:looping:url:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WrappedMediaPlayer",
+                "printedName": "audioplayers_darwin.WrappedMediaPlayer",
+                "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "SwiftAudioplayersDarwinPlugin",
+                "printedName": "audioplayers_darwin.SwiftAudioplayersDarwinPlugin",
+                "usr": "c:@M@audioplayers_darwin@objc(cs)SwiftAudioplayersDarwinPlugin"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "AVFoundation.AVPlayer?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "AVPlayer",
+                    "printedName": "AVFoundation.AVPlayer",
+                    "usr": "c:objc(cs)AVPlayer"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Double",
+                "printedName": "Swift.Double",
+                "hasDefaultArg": true,
+                "usr": "s:Sd"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Double",
+                "printedName": "Swift.Double",
+                "hasDefaultArg": true,
+                "usr": "s:Sd"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "hasDefaultArg": true,
+                "usr": "s:Sb"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9reference8playerId0G012playbackRate6volume7looping3urlAcA29SwiftAudioplayersDarwinPluginC_SSSo8AVPlayerCSgS2dSbSSSgtcfc",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9reference8playerId0G012playbackRate6volume7looping3urlAcA29SwiftAudioplayersDarwinPluginC_SSSo8AVPlayerCSgS2dSbSSSgtcfc",
+            "moduleName": "audioplayers_darwin",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "dispose",
+            "printedName": "dispose()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC7disposeyyF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC7disposeyyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "getDurationCMTime",
+            "printedName": "getDurationCMTime()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "CoreMedia.CMTime?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CMTime",
+                    "printedName": "CoreMedia.CMTime",
+                    "usr": "c:@SA@CMTime"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC17getDurationCMTimeSo0H0aSgyF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC17getDurationCMTimeSo0H0aSgyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "getDuration",
+            "printedName": "getDuration()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.Int?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC11getDurationSiSgyF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC11getDurationSiSgyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "getCurrentPosition",
+            "printedName": "getCurrentPosition()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.Int?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC18getCurrentPositionSiSgyF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC18getCurrentPositionSiSgyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "pause",
+            "printedName": "pause()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC5pauseyyF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC5pauseyyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "resume",
+            "printedName": "resume()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC6resumeyyF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC6resumeyyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "setVolume",
+            "printedName": "setVolume(volume:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Double",
+                "printedName": "Swift.Double",
+                "usr": "s:Sd"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC9setVolume6volumeySd_tF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC9setVolume6volumeySd_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "setPlaybackRate",
+            "printedName": "setPlaybackRate(playbackRate:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Double",
+                "printedName": "Swift.Double",
+                "usr": "s:Sd"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC15setPlaybackRate08playbackH0ySd_tF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC15setPlaybackRate08playbackH0ySd_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "seek",
+            "printedName": "seek(time:completer:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CMTime",
+                "printedName": "CoreMedia.CMTime",
+                "usr": "c:@SA@CMTime"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "(() -> ())?",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "() -> ()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC4seek4time9completerySo6CMTimea_yycSgtF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC4seek4time9completerySo6CMTimea_yycSgtF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "stop",
+            "printedName": "stop(completer:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "(() -> ())?",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "() -> ()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC4stop9completeryyycSg_tF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC4stop9completeryyycSg_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "release",
+            "printedName": "release(completer:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "(() -> ())?",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "() -> ()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC7release9completeryyycSg_tF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC7release9completeryyycSg_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onSoundComplete",
+            "printedName": "onSoundComplete()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC15onSoundCompleteyyF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC15onSoundCompleteyyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onTimeInterval",
+            "printedName": "onTimeInterval(time:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CMTime",
+                "printedName": "CoreMedia.CMTime",
+                "usr": "c:@SA@CMTime"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC14onTimeInterval4timeySo6CMTimea_tF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC14onTimeInterval4timeySo6CMTimea_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "updateDuration",
+            "printedName": "updateDuration()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC14updateDurationyyF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC14updateDurationyyF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "setSourceUrl",
+            "printedName": "setSourceUrl(url:isLocal:completer:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "(() -> ())?",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "() -> ()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC12setSourceUrl3url7isLocal9completerySS_SbyycSgtF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC12setSourceUrl3url7isLocal9completerySS_SbyycSgtF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "configParameters",
+            "printedName": "configParameters(player:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "AVPlayer",
+                "printedName": "AVFoundation.AVPlayer",
+                "usr": "c:objc(cs)AVPlayer"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC16configParameters6playerySo8AVPlayerC_tF",
+            "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC16configParameters6playerySo8AVPlayerC_tF",
+            "moduleName": "audioplayers_darwin",
+            "isOpen": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "s:19audioplayers_darwin18WrappedMediaPlayerC",
+        "mangledName": "$s19audioplayers_darwin18WrappedMediaPlayerC",
+        "moduleName": "audioplayers_darwin",
+        "isOpen": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "String",
+        "printedName": "String",
+        "children": [
+          {
+            "kind": "Function",
+            "name": "deletingPrefix",
+            "printedName": "deletingPrefix(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:SS19audioplayers_darwinE14deletingPrefixyS2SF",
+            "mangledName": "$sSS19audioplayers_darwinE14deletingPrefixyS2SF",
+            "moduleName": "audioplayers_darwin",
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:SS",
+        "mangledName": "$sSS",
+        "moduleName": "Swift",
+        "declAttributes": [
+          "EagerMove",
+          "Frozen"
+        ],
+        "isExternal": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se",
+            "mangledName": "$sSe"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Encodable",
+            "printedName": "Encodable",
+            "usr": "s:SE",
+            "mangledName": "$sSE"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CodingKeyRepresentable",
+            "printedName": "CodingKeyRepresentable",
+            "usr": "s:s22CodingKeyRepresentableP",
+            "mangledName": "$ss22CodingKeyRepresentableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_HasContiguousBytes",
+            "printedName": "_HasContiguousBytes",
+            "usr": "s:s19_HasContiguousBytesP",
+            "mangledName": "$ss19_HasContiguousBytesP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomReflectable",
+            "printedName": "CustomReflectable",
+            "usr": "s:s17CustomReflectableP",
+            "mangledName": "$ss17CustomReflectableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_CustomPlaygroundQuickLookable",
+            "printedName": "_CustomPlaygroundQuickLookable",
+            "usr": "s:s30_CustomPlaygroundQuickLookableP",
+            "mangledName": "$ss30_CustomPlaygroundQuickLookableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "TextOutputStream",
+            "printedName": "TextOutputStream",
+            "usr": "s:s16TextOutputStreamP",
+            "mangledName": "$ss16TextOutputStreamP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "TextOutputStreamable",
+            "printedName": "TextOutputStreamable",
+            "usr": "s:s20TextOutputStreamableP",
+            "mangledName": "$ss20TextOutputStreamableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_ExpressibleByBuiltinUnicodeScalarLiteral",
+            "printedName": "_ExpressibleByBuiltinUnicodeScalarLiteral",
+            "usr": "s:s41_ExpressibleByBuiltinUnicodeScalarLiteralP",
+            "mangledName": "$ss41_ExpressibleByBuiltinUnicodeScalarLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_ExpressibleByBuiltinExtendedGraphemeClusterLiteral",
+            "printedName": "_ExpressibleByBuiltinExtendedGraphemeClusterLiteral",
+            "usr": "s:s51_ExpressibleByBuiltinExtendedGraphemeClusterLiteralP",
+            "mangledName": "$ss51_ExpressibleByBuiltinExtendedGraphemeClusterLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_ExpressibleByBuiltinStringLiteral",
+            "printedName": "_ExpressibleByBuiltinStringLiteral",
+            "usr": "s:s34_ExpressibleByBuiltinStringLiteralP",
+            "mangledName": "$ss34_ExpressibleByBuiltinStringLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "ExpressibleByStringLiteral",
+            "printedName": "ExpressibleByStringLiteral",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "StringLiteralType",
+                "printedName": "StringLiteralType",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s26ExpressibleByStringLiteralP",
+            "mangledName": "$ss26ExpressibleByStringLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "ExpressibleByExtendedGraphemeClusterLiteral",
+            "printedName": "ExpressibleByExtendedGraphemeClusterLiteral",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "ExtendedGraphemeClusterLiteralType",
+                "printedName": "ExtendedGraphemeClusterLiteralType",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s43ExpressibleByExtendedGraphemeClusterLiteralP",
+            "mangledName": "$ss43ExpressibleByExtendedGraphemeClusterLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "ExpressibleByUnicodeScalarLiteral",
+            "printedName": "ExpressibleByUnicodeScalarLiteral",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "UnicodeScalarLiteralType",
+                "printedName": "UnicodeScalarLiteralType",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s33ExpressibleByUnicodeScalarLiteralP",
+            "mangledName": "$ss33ExpressibleByUnicodeScalarLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomDebugStringConvertible",
+            "printedName": "CustomDebugStringConvertible",
+            "usr": "s:s28CustomDebugStringConvertibleP",
+            "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "BidirectionalCollection",
+            "printedName": "BidirectionalCollection",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "Element",
+                "printedName": "Element",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Character",
+                    "printedName": "Swift.Character",
+                    "usr": "s:SJ"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "Index",
+                "printedName": "Index",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Index",
+                    "printedName": "Swift.String.Index",
+                    "usr": "s:SS5IndexV"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "SubSequence",
+                "printedName": "SubSequence",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Substring",
+                    "printedName": "Swift.Substring",
+                    "usr": "s:Ss"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "Indices",
+                "printedName": "Indices",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "DefaultIndices",
+                    "printedName": "Swift.DefaultIndices<Swift.String>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:SI"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:SK",
+            "mangledName": "$sSK"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Collection",
+            "printedName": "Collection",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "Element",
+                "printedName": "Element",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Character",
+                    "printedName": "Swift.Character",
+                    "usr": "s:SJ"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "Index",
+                "printedName": "Index",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Index",
+                    "printedName": "Swift.String.Index",
+                    "usr": "s:SS5IndexV"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "Iterator",
+                "printedName": "Iterator",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Iterator",
+                    "printedName": "Swift.String.Iterator",
+                    "usr": "s:SS8IteratorV"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "SubSequence",
+                "printedName": "SubSequence",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Substring",
+                    "printedName": "Swift.Substring",
+                    "usr": "s:Ss"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "Indices",
+                "printedName": "Indices",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "DefaultIndices",
+                    "printedName": "Swift.DefaultIndices<Swift.String>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:SI"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:Sl",
+            "mangledName": "$sSl"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sequence",
+            "printedName": "Sequence",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "Element",
+                "printedName": "Element",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Character",
+                    "printedName": "Swift.Character",
+                    "usr": "s:SJ"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "Iterator",
+                "printedName": "Iterator",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Iterator",
+                    "printedName": "Swift.String.Iterator",
+                    "usr": "s:SS8IteratorV"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:ST",
+            "mangledName": "$sST"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Comparable",
+            "printedName": "Comparable",
+            "usr": "s:SL",
+            "mangledName": "$sSL"
+          },
+          {
+            "kind": "Conformance",
+            "name": "StringProtocol",
+            "printedName": "StringProtocol",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "UTF8View",
+                "printedName": "UTF8View",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "UTF8View",
+                    "printedName": "Swift.String.UTF8View",
+                    "usr": "s:SS8UTF8ViewV"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "UTF16View",
+                "printedName": "UTF16View",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "UTF16View",
+                    "printedName": "Swift.String.UTF16View",
+                    "usr": "s:SS9UTF16ViewV"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "UnicodeScalarView",
+                "printedName": "UnicodeScalarView",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "UnicodeScalarView",
+                    "printedName": "Swift.String.UnicodeScalarView",
+                    "usr": "s:SS17UnicodeScalarViewV"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeWitness",
+                "name": "SubSequence",
+                "printedName": "SubSequence",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Substring",
+                    "printedName": "Swift.Substring",
+                    "usr": "s:Ss"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:Sy",
+            "mangledName": "$sSy"
+          },
+          {
+            "kind": "Conformance",
+            "name": "ExpressibleByStringInterpolation",
+            "printedName": "ExpressibleByStringInterpolation",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "StringInterpolation",
+                "printedName": "StringInterpolation",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "DefaultStringInterpolation",
+                    "printedName": "Swift.DefaultStringInterpolation",
+                    "usr": "s:s26DefaultStringInterpolationV"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s32ExpressibleByStringInterpolationP",
+            "mangledName": "$ss32ExpressibleByStringInterpolationP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "LosslessStringConvertible",
+            "printedName": "LosslessStringConvertible",
+            "usr": "s:s25LosslessStringConvertibleP",
+            "mangledName": "$ss25LosslessStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "RangeReplaceableCollection",
+            "printedName": "RangeReplaceableCollection",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "SubSequence",
+                "printedName": "SubSequence",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Substring",
+                    "printedName": "Swift.Substring",
+                    "usr": "s:Ss"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:Sm",
+            "mangledName": "$sSm"
+          },
+          {
+            "kind": "Conformance",
+            "name": "MirrorPath",
+            "printedName": "MirrorPath",
+            "usr": "s:s10MirrorPathP",
+            "mangledName": "$ss10MirrorPathP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_ObjectiveCBridgeable",
+            "printedName": "_ObjectiveCBridgeable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "_ObjectiveCType",
+                "printedName": "_ObjectiveCType",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "NSString",
+                    "printedName": "Foundation.NSString",
+                    "usr": "c:objc(cs)NSString"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s21_ObjectiveCBridgeableP",
+            "mangledName": "$ss21_ObjectiveCBridgeableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CVarArg",
+            "printedName": "CVarArg",
+            "usr": "s:s7CVarArgP",
+            "mangledName": "$ss7CVarArgP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Transferable",
+            "printedName": "Transferable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "Representation",
+                "printedName": "Representation",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "OpaqueTypeArchetype",
+                    "printedName": "some CoreTransferable.TransferRepresentation",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "TransferRepresentation",
+                        "printedName": "CoreTransferable.TransferRepresentation",
+                        "usr": "s:16CoreTransferable22TransferRepresentationP"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "usr": "s:16CoreTransferable0B0P",
+            "mangledName": "$s16CoreTransferable0B0P"
+          }
+        ]
+      }
+    ],
+    "json_format_version": 8
+  },
+  "ConstValues": [
+    {
+      "filePath": "\/Users\/ruhltodd\/.pub-cache\/hosted\/pub.dev\/audioplayers_darwin-3.0.1\/ios\/Classes\/Logger.swift",
+      "kind": "IntegerLiteral",
+      "offset": 37,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/ruhltodd\/.pub-cache\/hosted\/pub.dev\/audioplayers_darwin-3.0.1\/ios\/Classes\/Logger.swift",
+      "kind": "IntegerLiteral",
+      "offset": 56,
+      "length": 1,
+      "value": "1"
+    },
+    {
+      "filePath": "\/Users\/ruhltodd\/.pub-cache\/hosted\/pub.dev\/audioplayers_darwin-3.0.1\/ios\/Classes\/Logger.swift",
+      "kind": "IntegerLiteral",
+      "offset": 74,
+      "length": 1,
+      "value": "2"
+    },
+    {
+      "filePath": "\/Users\/ruhltodd\/.pub-cache\/hosted\/pub.dev\/audioplayers_darwin-3.0.1\/ios\/Classes\/SwiftAudioplayersDarwinPlugin.swift",
+      "kind": "StringLiteral",
+      "offset": 162,
+      "length": 23,
+      "value": "\"xyz.luan\/audioplayers\""
+    },
+    {
+      "filePath": "\/Users\/ruhltodd\/.pub-cache\/hosted\/pub.dev\/audioplayers_darwin-3.0.1\/ios\/Classes\/SwiftAudioplayersDarwinPlugin.swift",
+      "kind": "StringLiteral",
+      "offset": 212,
+      "length": 30,
+      "value": "\"xyz.luan\/audioplayers.global\""
+    },
+    {
+      "filePath": "\/Users\/ruhltodd\/.pub-cache\/hosted\/pub.dev\/audioplayers_darwin-3.0.1\/ios\/Classes\/WrappedMediaPlayer.swift",
+      "kind": "FloatLiteral",
+      "offset": 56,
+      "length": 3,
+      "value": "1.0"
+    },
+    {
+      "filePath": "\/Users\/ruhltodd\/.pub-cache\/hosted\/pub.dev\/audioplayers_darwin-3.0.1\/ios\/Classes\/WrappedMediaPlayer.swift",
+      "kind": "FloatLiteral",
+      "offset": 96,
+      "length": 3,
+      "value": "1.0"
+    },
+    {
+      "filePath": "\/Users\/ruhltodd\/.pub-cache\/hosted\/pub.dev\/audioplayers_darwin-3.0.1\/ios\/Classes\/WrappedMediaPlayer.swift",
+      "kind": "BooleanLiteral",
+      "offset": 135,
+      "length": 5,
+      "value": "false"
+    }
+  ]
+}

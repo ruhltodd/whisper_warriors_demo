@@ -11,23 +11,13 @@ import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/projectiles/projectile.dart';
-import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'staggerable.dart';
 
 class Boss1 extends BaseEnemy with Staggerable {
-  @override
-  void applyStaggerVisuals() {
-    // Implement the method as required
-    add(ColorEffect(
-      const Color(0xFFFF0000),
-      EffectController(duration: 0.5, reverseDuration: 0.5),
-    ));
-  }
-
   bool enraged = false;
-  bool isFading = false; // ✅ Boss enters fading phase at 50% health
+  bool isFading = false;
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
   final double damageNumberInterval = 0.5;
@@ -43,6 +33,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   final ValueNotifier<double> bossStaggerNotifier;
   int attackCount = 0;
   bool alternatePattern = false;
+  bool _hasLanded = false;
 
   Boss1({
     required Player player,
@@ -60,7 +51,7 @@ class Boss1 extends BaseEnemy with Staggerable {
           size: size,
         ) {
     maxHealth = health.toDouble();
-    staggerBar = StaggerBar(maxStagger: staggerThreshold, currentStagger: 0);
+    staggerBar = StaggerBar(maxStagger: 100.0, currentStagger: 0);
   }
 
   @override
@@ -85,18 +76,15 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     animation = idleAnimation;
     add(RectangleHitbox());
-
-    staggerBar = StaggerBar(maxStagger: staggerThreshold, currentStagger: 0);
-    gameRef.add(
-        staggerBar); // Ensure this is added to the game (or a UI component)
+    gameRef.add(staggerBar);
   }
 
   void updateStaggerBar() {
     staggerBar.currentStagger = staggerProgress;
-    bossStaggerNotifier.value =
-        staggerProgress; // Update the notifier to reflect changes
+    bossStaggerNotifier.value = staggerProgress;
   }
 
+// Stagger updates!
   @override
   void update(double dt) {
     super.update(dt);
@@ -112,14 +100,13 @@ class Boss1 extends BaseEnemy with Staggerable {
     _handleAttacks(dt);
   }
 
-  bool _hasLanded = false; // ✅ Private variable
-// ✅ Public setter
+// end of stagger updates
   void setLanded(bool value) {
     _hasLanded = value;
   }
 
   void _updateMovement(double dt) {
-    if (!_hasLanded) return; // ✅ Do nothing until the boss has "landed"
+    if (!_hasLanded) return;
 
     final Vector2 direction = (player.position - position).normalized();
 
@@ -158,7 +145,6 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     attackCount++;
 
-    // ✅ **If the boss is fading, randomly remove 2 projectiles**
     if (isFading) {
       angles.shuffle();
       angles = angles.sublist(0, 2);
@@ -188,44 +174,23 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
-
     int finalDamage =
         isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
-
     health -= finalDamage;
-    onHealthChanged(health.toDouble()); // Update the UI
-
-    // Apply damage to stagger
-    applyStaggerDamage(finalDamage,
-        isCritical: isCritical); // Apply damage to the stagger bar
+    onHealthChanged(health.toDouble());
+    applyStaggerDamage(finalDamage, isCritical: isCritical); //stagger update
 
     if (health <= maxHealth * 0.5 && !isFading) {
       _enterFadingPhase();
     }
-
     if (health <= (maxHealth * 0.3) && !enraged) {
       enraged = true;
       _enterEnrageMode();
     }
-
     if (health <= 0) {
       die();
     }
   }
-
-  /* isStaggered = true;
-    speed *= 0.5;
-    attackCooldown *= 1.5;
-
-    add(ColorEffect(
-      const Color(0xFFFF0000),
-      EffectController(duration: 3.0, reverseDuration: 0.5),
-    ));
-
-    add(OpacityEffect.to(1.0, EffectController(duration: 0.5)));*/
-
-  //  if (isFading) {
-  //    add(OpacityEffect.to(0.0, EffectController(duration: 1.0)));
 
   void _enterFadingPhase() {
     isFading = true;
@@ -233,7 +198,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _enterEnrageMode() {
-    speed *= 1.5;
+    speed *= 0.5;
     attackCooldown *= 0.7;
 
     add(ScaleEffect.to(Vector2.all(1.2), EffectController(duration: 0.5))
@@ -255,7 +220,6 @@ class Boss1 extends BaseEnemy with Staggerable {
       hasDroppedItem = true;
       final dropItems = _getDropItems();
 
-      // ✅ Create and spawn the loot box with items
       final lootBox =
           LootBox(items: dropItems.map((dropItem) => dropItem.item).toList());
       lootBox.position = position.clone();
@@ -266,9 +230,8 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     onDeath();
     gameRef.add(Explosion(position));
-    removeFromParent(); // ✅ Ensure Boss1 is removed
+    removeFromParent();
 
-    // ✅ Delegate boss transition to SpawnController
     if (gameRef.spawnController != null) {
       gameRef.spawnController!.onBoss1Death();
     } else {
@@ -276,19 +239,25 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
   }
 
-  /// ✅ Loot Drop Logic (Remains Unchanged)
   List<DropItem> _getDropItems() {
     final List<DropItem> dropItems = [];
 
-    // ✅ Add the gold coin
     dropItems.add(DropItem(item: GoldCoin()));
 
-    // ✅ Add a random loot item
     final item = LootTable.getRandomLoot();
     if (item != null) {
       dropItems.add(DropItem(item: item));
     }
 
     return dropItems;
+  }
+
+  //stagger update
+  @override
+  void applyStaggerVisuals() {
+    add(ColorEffect(
+      const Color(0xFFFF0000),
+      EffectController(duration: 0.5, reverseDuration: 0.5),
+    ));
   }
 }

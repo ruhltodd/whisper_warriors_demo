@@ -29,7 +29,6 @@ class SpawnController extends Component {
   void _startEnemyWaves() {
     Future.delayed(Duration(seconds: 2), () {
       if (_bossActive) {
-        print("⚠️ Initial enemy spawn blocked - A boss is active.");
         return; // ✅ Prevents any spawn if Boss1 or Boss2 is active
       }
       spawnEnemyWave(10);
@@ -40,7 +39,6 @@ class SpawnController extends Component {
       repeat: true,
       onTick: () {
         if (_bossActive) {
-          print("⚠️ Enemy spawning blocked! A boss is active.");
           return; // ✅ Fully stops any spawning if Boss1 or Boss2 is active
         }
         spawnEnemyWave(15);
@@ -59,7 +57,6 @@ class SpawnController extends Component {
 
   void decreaseEnemyCount() {
     enemyCount = (enemyCount - 1).clamp(0, 50); // ✅ Prevents negative values
-    print("📉 Enemy removed! New count: $enemyCount");
   }
 
   /// ✅ **Clear all remaining enemies**
@@ -68,7 +65,6 @@ class SpawnController extends Component {
       enemy.removeFromParent();
     }
     enemyCount = 0; // ✅ **Ensure count resets when clearing**
-    print("💨 All enemies cleared! Count reset to $enemyCount");
   }
 
   void stopSpawning() {
@@ -76,27 +72,21 @@ class SpawnController extends Component {
   }
 
   void spawnEnemyWave(int count, {bool postBoss = false}) {
-    print("🔥 Attempting to spawn $count enemies. postBoss = $postBoss");
-
     int availableSlots = 50 - enemyCount;
     if (availableSlots <= 0) {
-      print("⚠️ Max enemies reached! Skipping spawn.");
       return;
     }
 
     int spawnAmount = count > availableSlots ? availableSlots : count;
-    print("🛠️ Adjusted spawn amount: $spawnAmount (Max: 50 at once)");
 
     for (int i = 0; i < spawnAmount; i++) {
       final spawnPosition = _getRandomSpawnPosition();
-      print("🚀 Enemy spawn position: $spawnPosition");
 
       BaseEnemy enemy;
 
       if (game.elapsedTime >= 60) {
         // ✅ 50% chance to spawn Wave2Enemy instead of alternating
         if (Random().nextBool()) {
-          print("🔥 Spawning Wave2Enemy...");
           enemy = Wave2Enemy(
             player: game.player,
             speed: 90,
@@ -104,7 +94,6 @@ class SpawnController extends Component {
             size: Vector2(128, 128),
           );
         } else {
-          print("👾 Spawning Wave1Enemy...");
           enemy = Wave1Enemy(
             player: game.player,
             speed: 70,
@@ -113,7 +102,6 @@ class SpawnController extends Component {
           );
         }
       } else {
-        print("👾 Pre-Boss: Spawning Wave1Enemy...");
         enemy = Wave1Enemy(
           player: game.player,
           speed: 70,
@@ -124,7 +112,6 @@ class SpawnController extends Component {
 
       // ✅ **Enhance Enemies After Boss Fight**
       if (postBoss) {
-        print("⚡ Post-Boss Scaling: Boosting enemy stats!");
         enemy.health *= 2;
         enemy.speed *= 0.5;
       }
@@ -138,11 +125,7 @@ class SpawnController extends Component {
       if (enemyCount < 50) {
         enemyCount++;
         game.add(enemy);
-        print(
-            "✅ Enemy added: ${enemy.runtimeType} at $spawnPosition. Total: $enemyCount");
-      } else {
-        print("⚠️ Max enemies reached! Skipping spawn.");
-      }
+      } else {}
     }
   }
   //      enemy.position = spawnPosition;
@@ -181,15 +164,12 @@ class SpawnController extends Component {
   }
 
   void _postBossEnemySpawn() {
-    print("🔥 Post-boss enemies now spawning!");
-
     enemySpawnerTimer = TimerComponent(
       period: 4.0, // ✅ Faster spawn rate after boss
       repeat: true,
       onTick: () {
         if (_bossActive) {
           // ✅ Stop spawns if any boss is active
-          print("⚠️ Enemy spawning stopped! A boss is active.");
           return;
         }
         spawnEnemyWave(12, postBoss: true); // ✅ More enemies
@@ -208,7 +188,6 @@ class SpawnController extends Component {
     print("🕒 Time: $elapsedTime - Boss Active: $_bossActive");
 
     if (elapsedTime == 60 && !_bossActive) {
-      print("🔥 Spawning Boss1...");
       spawnBoss1();
     }
   }

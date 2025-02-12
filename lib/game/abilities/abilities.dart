@@ -102,7 +102,6 @@ class ShadowBlades extends Ability {
   }
 
   void _throwBlade(Player player) {
-    print("🗡️ Throwing Shadow Blade!");
     BaseEnemy? target = _findClosestTarget(player);
     if (target == null) return;
 

@@ -30,9 +30,6 @@ class Projectile extends SpriteAnimationComponent
   }) {
     shouldPierce = player?.hasItem("Umbral Fang") ??
         false; // ✅ Always check if Umbral Fang is equipped
-    print("🗡️ Projectile Created - shouldPierce: $shouldPierce");
-    print(
-        "🔹 Player has Umbral Fang: ${player?.hasItem("Umbral Fang")}"); // ✅ Check if piercing is enabled
   } // Adjust size as needed
 
   // 🔹 **Named Constructor for Player**
@@ -124,7 +121,6 @@ class Projectile extends SpriteAnimationComponent
 
     // ✅ Ensure player projectiles hit enemies
     if (!isBossProjectile && other is BaseEnemy) {
-      print("🗡️ Projectile hit enemy: ${other.runtimeType}");
       other.takeDamage(damage);
 
       if (!shouldPierce) {
@@ -135,13 +131,11 @@ class Projectile extends SpriteAnimationComponent
 
     // ✅ Ensure boss projectiles hit the player
     if (isBossProjectile && other is Player) {
-      print("💥 Boss projectile hit Player!");
       other.takeDamage(damage);
       removeFromParent();
       return;
     }
 
     // ✅ Ignore other unexpected collisions
-    print("⚠️ Ignoring unexpected collision with ${other.runtimeType}");
   }
 }

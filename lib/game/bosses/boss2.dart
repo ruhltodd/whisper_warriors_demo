@@ -160,16 +160,6 @@ class LaserBeam extends PositionComponent
 }
 
 class Boss2 extends BaseEnemy with Staggerable {
-  @override
-  void applyStaggerVisuals() {
-    // Implement the method to apply stagger visuals
-    add(ColorEffect(
-      const Color(0xFFFF0000),
-      EffectController(duration: 3.0, reverseDuration: 0.5),
-    ));
-    add(OpacityEffect.to(1.0, EffectController(duration: 0.5)));
-  }
-
   bool enraged = false;
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
@@ -203,7 +193,7 @@ class Boss2 extends BaseEnemy with Staggerable {
           size: size,
         ) {
     maxHealth = health.toDouble();
-    staggerBar = StaggerBar(maxStagger: staggerThreshold, currentStagger: 0);
+    staggerBar = StaggerBar(maxStagger: 100.0, currentStagger: 0);
   }
 
   @override
@@ -228,15 +218,24 @@ class Boss2 extends BaseEnemy with Staggerable {
     );
     animation = idleAnimation;
     add(RectangleHitbox());
+    gameRef.add(staggerBar);
   }
 
-  @override
+  void updateStaggerBar() {
+    staggerBar.currentStagger = staggerProgress;
+    bossStaggerNotifier.value = staggerProgress;
+  }
+
   void update(double dt) {
     super.update(dt);
     updateStagger(dt);
+    updateStaggerBar();
+
     if (isStaggered) return;
+
     timeSinceLastAttack += dt;
     timeSinceLastDamageNumber += dt;
+
     _updateMovement(dt);
     _handleAttacks(dt);
   }
@@ -277,58 +276,17 @@ class Boss2 extends BaseEnemy with Staggerable {
     }
     int finalDamage =
         isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
-    if (isStaggered) {
-      finalDamage *= 2;
-    }
     health -= finalDamage;
     onHealthChanged(health.toDouble());
-    staggerProgress += baseDamage * 0.04;
-    staggerProgress = staggerProgress.clamp(0, 100);
-    bossStaggerNotifier.value = staggerProgress;
-    if (staggerProgress >= 100) {
-      triggerStagger();
-    }
-    if (timeSinceLastDamageNumber >= damageNumberInterval ||
-        timeSinceLastDamageNumber == 0.0) {
-      final damageNumber = DamageNumber(
-        finalDamage,
-        position.clone() + Vector2(0, -20),
-        isCritical: isCritical,
-      );
-      gameRef.add(damageNumber);
-      timeSinceLastDamageNumber = 0.0;
-    }
+    applyStaggerDamage(finalDamage, isCritical: isCritical); //stagger update
 
     if (health <= (maxHealth * 0.3) && !enraged) {
       enraged = true;
       _enterEnrageMode();
     }
-
     if (health <= 0) {
       die();
     }
-  }
-
-  @override
-  void triggerStagger() {
-    if (isStaggered) return;
-
-    isStaggered = true;
-    speed *= 0.5;
-    attackCooldown *= 1.5;
-
-    add(ColorEffect(
-      const Color(0xFFFF0000),
-      EffectController(duration: 3.0, reverseDuration: 0.5),
-    ));
-    add(OpacityEffect.to(1.0, EffectController(duration: 0.5)));
-    Future.delayed(Duration(seconds: 3), () {
-      isStaggered = false;
-      speed /= 0.5;
-      attackCooldown /= 1.5;
-      staggerProgress = 0;
-      bossStaggerNotifier.value = 0;
-    });
   }
 
   void _enterEnrageMode() {
@@ -342,10 +300,6 @@ class Boss2 extends BaseEnemy with Staggerable {
           EffectController(duration: 0.5),
         ));
       });
-  }
-
-  void _knockback(Vector2 force) {
-    add(MoveEffect.by(force, EffectController(duration: 0.2)));
   }
 
   @override
@@ -384,5 +338,13 @@ class Boss2 extends BaseEnemy with Staggerable {
     }
 
     return dropItems;
+  }
+
+  @override
+  void applyStaggerVisuals() {
+    add(ColorEffect(
+      const Color(0xFFFF0000),
+      EffectController(duration: 0.5, reverseDuration: 0.5),
+    ));
   }
 }

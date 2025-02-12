@@ -6,7 +6,7 @@ import 'package:whisper_warriors/game/ui/spiritlevelbar.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/abilities/abilitybar.dart';
 import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
-import 'package:whisper_warriors/game/bosses/staggerbar.dart'; // Add this line
+import 'package:whisper_warriors/game/bosses/staggerable.dart'; // Add this line
 
 class HUD extends StatelessWidget {
   final void Function(Vector2 delta) onJoystickMove;
@@ -516,6 +516,9 @@ class StaggerBarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    print(
+        "Current Stagger: $currentStagger / Max Stagger: $maxStagger"); // Debugging
+
     // Background Bar with rounded edges
     Paint backgroundPaint = Paint()..color = const Color(0xFF444444);
     RRect backgroundRRect = RRect.fromRectAndRadius(
