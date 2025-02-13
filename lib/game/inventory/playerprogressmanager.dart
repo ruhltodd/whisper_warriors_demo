@@ -2,7 +2,22 @@ import 'package:hive/hive.dart';
 import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
 
 class PlayerProgressManager {
-  static final Box _progressBox = Hive.box('playerProgressBox');
+  static const String progressBoxName =
+      'playerprogressbox'; // Match the name in main.dart
+  static late Box _progressBox;
+  static bool _isInitialized = false;
+
+  static Future<void> initialize() async {
+    if (!_isInitialized) {
+      if (!Hive.isBoxOpen(progressBoxName)) {
+        _progressBox = await Hive.openBox(progressBoxName);
+      } else {
+        _progressBox = Hive.box(progressBoxName);
+      }
+      _isInitialized = true;
+      print('✅ PlayerProgressManager initialized');
+    }
+  }
 
   // ✅ Temporary XP/Level Reset (Does NOT modify Hive)
   static void resetProgressForTestingTemporary() {
@@ -14,19 +29,39 @@ class PlayerProgressManager {
   }
 
   // Load XP (default to 0)
-  static int getXp() => _progressBox.get('xp', defaultValue: 0);
+  static int getXp() {
+    if (!_isInitialized) {
+      print('⚠️ Warning: Accessing progress before initialization');
+      return 0;
+    }
+    return _progressBox.get('xp', defaultValue: 0);
+  }
 
   // Save XP
   static void setXp(int xp) {
+    if (!_isInitialized) {
+      print('⚠️ Warning: Setting XP before initialization');
+      return;
+    }
     _progressBox.put('xp', xp);
     print("💾 XP Updated: $xp");
   }
 
   // Load Level (default to 1)
-  static int getLevel() => _progressBox.get('level', defaultValue: 1);
+  static int getLevel() {
+    if (!_isInitialized) {
+      print('⚠️ Warning: Accessing level before initialization');
+      return 1;
+    }
+    return _progressBox.get('level', defaultValue: 1);
+  }
 
   // Save Level
   static void setLevel(int level) {
+    if (!_isInitialized) {
+      print('⚠️ Warning: Setting level before initialization');
+      return;
+    }
     _progressBox.put('level', level);
     print("📈 Level Updated: $level");
   }

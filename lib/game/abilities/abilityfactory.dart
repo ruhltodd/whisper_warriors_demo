@@ -22,7 +22,7 @@ class AbilityFactory {
       case 'Soul Fracture':
         return SoulFracture();
       case 'Shadow Blades':
-        return ShadowBladesAbility();
+        return ShadowBlades();
       case 'Cursed Echo':
         return CursedEcho();
       default:

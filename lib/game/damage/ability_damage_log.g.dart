@@ -8,7 +8,7 @@ part of 'ability_damage_log.dart';
 
 class AbilityDamageLogAdapter extends TypeAdapter<AbilityDamageLog> {
   @override
-  final int typeId = 2;
+  final int typeId = 7;
 
   @override
   AbilityDamageLog read(BinaryReader reader) {
@@ -18,10 +18,10 @@ class AbilityDamageLogAdapter extends TypeAdapter<AbilityDamageLog> {
     };
     return AbilityDamageLog(
       fields[0] as String,
-      totalDamage: fields[1] as int,
-      hits: fields[2] as int,
-      criticalHits: fields[3] as int,
-    );
+    )
+      ..totalDamage = fields[1] as int
+      ..hits = fields[2] as int
+      ..criticalHits = fields[3] as int;
   }
 
   @override
@@ -45,6 +45,32 @@ class AbilityDamageLogAdapter extends TypeAdapter<AbilityDamageLog> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is AbilityDamageLogAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class AbilityDamageLogAdapterAdapter
+    extends TypeAdapter<AbilityDamageLogAdapter> {
+  @override
+  final int typeId = 7;
+
+  @override
+  AbilityDamageLogAdapter read(BinaryReader reader) {
+    return AbilityDamageLogAdapter();
+  }
+
+  @override
+  void write(BinaryWriter writer, AbilityDamageLogAdapter obj) {
+    writer.writeByte(0);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AbilityDamageLogAdapterAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

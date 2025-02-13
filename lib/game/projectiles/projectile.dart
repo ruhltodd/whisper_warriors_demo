@@ -18,6 +18,9 @@ class Projectile extends SpriteAnimationComponent
   bool shouldPierce = false; // ✅ Declare before checking conditions
   final List<BaseEnemy> enemiesHit =
       []; // ✅ Track enemies hit by the projectile
+  final bool isCritical; // Add this field
+  bool hasCollided = false;
+  double _distanceTraveled = 0;
 
   // 🔹 **General Constructor**
   Projectile({
@@ -27,6 +30,7 @@ class Projectile extends SpriteAnimationComponent
     this.maxRange = 800,
     this.onHit, // ✅ Now optional (for abilities like Cursed Echo)
     this.player, // ✅ Include player reference if available
+    this.isCritical = false, // Add this parameter with default value
   }) {
     shouldPierce = player?.hasItem("Umbral Fang") ??
         false; // ✅ Always check if Umbral Fang is equipped
@@ -45,6 +49,7 @@ class Projectile extends SpriteAnimationComponent
           isBossProjectile: false,
           onHit: onHit, // ✅ Ensure `onHit` is passed
           player: player, // ✅ Assign player
+          isCritical: false, // Add this parameter with default value
         );
 
   // 🔹 **Named Constructor for Boss**
@@ -54,6 +59,7 @@ class Projectile extends SpriteAnimationComponent
           velocity: velocity,
           maxRange: double.infinity, // ✅ Boss projectiles should go forever
           isBossProjectile: true,
+          isCritical: false, // Add this parameter with default value
         );
 
   @override

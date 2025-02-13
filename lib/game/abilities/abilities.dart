@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
+import 'package:whisper_warriors/game/damage/damage_tracker.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
@@ -118,73 +119,120 @@ class WhisperingFlames extends Component
 }
 
 /// 🗡️ **Shadow Blades Ability Controller**
-class ShadowBladesAbility extends Ability {
-  double cooldown = 0.5; // Time between blade throws
-  double elapsedTime = 0.0;
+class ShadowBlades extends PositionComponent implements Ability {
+  final DamageTracker damageTracker = DamageTracker();
+  double _timeSinceLastTick = 0;
+  final double tickInterval = 0.5;
+  final double range = 150;
+  final int damage = 75;
 
-  ShadowBladesAbility()
-      : super(
-          name: "Shadow Blades",
-          description: "Throws a spectral blade at the closest enemy.",
-          type: AbilityType.projectile,
-        );
+  @override
+  final String name = 'Shadow Blades';
 
-  void _spawnBlade(Player player) {
-    BaseEnemy? target = _findClosestTarget(player);
-    if (target == null) return;
+  @override
+  final String description =
+      'Summons ethereal blades that damage nearby enemies';
 
-    Vector2 direction = (target.position - player.position).normalized();
-    double rotationAngle = direction.angleTo(Vector2(1, 0));
+  @override
+  final AbilityType type = AbilityType.passive;
 
-    final blade = ShadowBladeProjectile(
-      player: player,
-      damage: (12 * player.spiritMultiplier).toInt(),
-      velocity: direction * 750,
-      rotationAngle: rotationAngle,
-      ability: this,
-    )..position = player.position.clone();
-
-    player.gameRef.add(blade);
-
-    // Roll Cursed Echo ONCE per blade thrown
-    if (player.hasAbility<CursedEcho>() &&
-        player.gameRef.random.nextDouble() < 0.20) {
-      print("🔄 Cursed Echo triggered for Shadow Blade!");
-      Future.delayed(Duration(milliseconds: 100), () {
-        player.gameRef.add(ShadowBladeProjectile(
-          player: player,
-          damage: (12 * player.spiritMultiplier).toInt(),
-          velocity: direction * 750,
-          rotationAngle: rotationAngle,
-          ability: this,
-        )..position = player.position.clone());
-      });
-    }
+  ShadowBlades() {
+    damageTracker.initialize();
   }
 
-  BaseEnemy? _findClosestTarget(Player player) {
-    final enemies = player.gameRef.children.whereType<BaseEnemy>().toList();
-    if (enemies.isEmpty) return null;
-
-    BaseEnemy? closest;
-    double closestDistance = double.infinity;
-    for (final enemy in enemies) {
-      double distance = (enemy.position - player.position).length;
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closest = enemy;
-      }
-    }
-    return closest;
+  @override
+  void onMount() {
+    super.onMount();
+    print('🗡️ Shadow Blades mounted');
   }
 
   @override
   void onUpdate(Player player, double dt) {
-    elapsedTime += dt;
-    if (elapsedTime >= cooldown) {
-      elapsedTime = 0.0;
-      _spawnBlade(player);
+    print('🗡️ Shadow Blades update: ${player.position}');
+
+    _timeSinceLastTick += dt;
+    if (_timeSinceLastTick >= tickInterval) {
+      _timeSinceLastTick = 0;
+
+      // Find closest enemy
+      BaseEnemy? target = findClosestEnemy(player);
+      if (target != null) {
+        print('🎯 Found target at: ${target.position}');
+
+        // Calculate direction to enemy
+        final direction = (target.position - player.position).normalized();
+        final rotationAngle = direction.angleToSigned(Vector2(1, 0));
+
+        // Create and shoot projectile
+        final projectile = ShadowBladeProjectile(
+          player: player,
+          ability: this,
+          velocity: direction * 500,
+          rotationAngle: rotationAngle,
+          damage: damage,
+        )..position = player.position.clone();
+
+        player.gameRef.add(projectile);
+        print('🗡️ Shot blade at target');
+
+        // Roll Cursed Echo ONCE per blade thrown
+        if (player.hasAbility<CursedEcho>()) {
+          double procChance = 0.20; // 20% chance
+          if (player.gameRef.random.nextDouble() < procChance) {
+            print("🔄 Cursed Echo triggered for Shadow Blade!");
+            Future.delayed(Duration(milliseconds: 100), () {
+              player.gameRef.add(ShadowBladeProjectile(
+                player: player,
+                ability: this,
+                damage: (damage * player.spiritMultiplier).toInt(),
+                velocity: direction * 500,
+                rotationAngle: rotationAngle,
+              )..position = player.position.clone());
+            });
+          } else {
+            print("❌ Cursed Echo failed to proc for Shadow Blade");
+          }
+        }
+      } else {
+        print('⚠️ No target found');
+      }
     }
+  }
+
+  BaseEnemy? findClosestEnemy(Player player) {
+    double closestDistance = double.infinity;
+    BaseEnemy? closestEnemy;
+
+    for (final enemy in player.gameRef.children.whereType<BaseEnemy>()) {
+      final distance = enemy.position.distanceTo(player.position);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestEnemy = enemy;
+      }
+    }
+
+    return closestEnemy;
+  }
+
+  @override
+  void applyEffect(Player player) {
+    // No permanent effects to apply
+  }
+
+  @override
+  void onHit(Player player, PositionComponent target, int damage,
+      {bool isCritical = false}) {
+    damageTracker.logDamage(name, damage, isCritical);
+  }
+
+  @override
+  void onKill(Player player, Vector2 position) {
+    // No special kill effects
+  }
+
+  @override
+  DamageReport get damageReport {
+    return DamageReport(name);
   }
 }
 
@@ -192,73 +240,94 @@ class ShadowBladesAbility extends Ability {
 class ShadowBladeProjectile extends SpriteAnimationComponent
     with CollisionCallbacks, HasGameRef<RogueShooterGame> {
   final Player player;
-  final ShadowBladesAbility ability;
+  final ShadowBlades ability;
   final double bladeSpeed = 750;
   double maxDistance = 1200;
   Vector2 startPosition = Vector2.zero();
   final Vector2 velocity;
   final double rotationAngle;
   final int damage;
-  final DamageReport damageReport;
+  late final RectangleHitbox hitbox;
+
+  // Track which enemies we've hit to prevent multiple hits
+  final Set<BaseEnemy> hitEnemies = {};
 
   ShadowBladeProjectile({
     required this.player,
+    required this.ability,
     required this.velocity,
     required this.rotationAngle,
     required this.damage,
-    required this.ability,
-  })  : damageReport = DamageReport("Shadow Blades"),
-        super(size: Vector2(48, 16), anchor: Anchor.center) {
-    angle = rotationAngle;
-    add(RectangleHitbox());
-  }
+  }) : super(size: Vector2(32, 32));
 
   @override
   Future<void> onLoad() async {
-    animation = SpriteAnimation.fromFrameData(
-      await gameRef.images.load('shadowblades.png'),
+    animation = await gameRef.loadSpriteAnimation(
+      'shadowblades.png',
       SpriteAnimationData.sequenced(
         amount: 4,
         stepTime: 0.1,
-        textureSize: Vector2(48, 16),
-        loop: true,
+        textureSize: Vector2.all(32),
       ),
     );
+
+    hitbox = RectangleHitbox(
+      size: Vector2(24, 24),
+      position: Vector2(4, 4),
+    );
+    add(hitbox);
+
     startPosition = position.clone();
+    angle = rotationAngle;
   }
 
   @override
   void update(double dt) {
     super.update(dt);
+
     position += velocity * dt;
 
-    if ((position - startPosition).length >= maxDistance) {
+    if (position.distanceTo(startPosition) > maxDistance) {
       removeFromParent();
     }
   }
 
   @override
-  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
-    if (other is BaseEnemy) {
-      bool isCritical = gameRef.random.nextDouble() < (player.critChance / 100);
-      int finalDamage =
-          isCritical ? (damage * player.critMultiplier).toInt() : damage;
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
+    super.onCollisionStart(intersectionPoints, other);
 
-      other.takeDamage(finalDamage, isCritical: isCritical);
-      ability.damageReport.recordHit(finalDamage, isCritical);
-    } else if (other is Projectile && other is! ShadowBladeProjectile) {
-      return;
+    if (other is BaseEnemy && !hitEnemies.contains(other)) {
+      print('🗡️ Shadow Blade pierced enemy!'); // Debug print
+
+      // Add enemy to hit list
+      hitEnemies.add(other);
+
+      // Calculate critical hit
+      bool isCritical =
+          player.gameRef.random.nextDouble() < (player.critChance / 100);
+      int finalDamage = isCritical
+          ? (damage * (1 + player.critMultiplier / 100)).toInt()
+          : damage;
+
+      // Apply damage
+      other.takeDamage(finalDamage);
+
+      // Notify ability of hit
+      ability.onHit(player, other, finalDamage, isCritical: isCritical);
+
+      // Don't remove the projectile - let it continue flying
     }
-
-    super.onCollision(intersectionPoints, other);
   }
 }
 
 /// 🔁 **Cursed Echo Ability** - Chance to repeat attacks
 class CursedEcho extends Ability {
-  double baseProcChance = 0.2; // 20% base chance
-  double delayBetweenRepeats = 0.2; // Delay before repeating attack
-  double procCooldown = 1.0; // Cooldown to prevent excessive procs
+  static const double BASE_PROC_CHANCE = 0.35; // Increased to 35%
+  static const double DELAY_BETWEEN_REPEATS = 0.1; // 100ms delay
+  static const double PROC_COOLDOWN = 0.5; // Reduced to 0.5s cooldown
   double _lastProcTime = 0.0;
 
   CursedEcho()
@@ -270,36 +339,63 @@ class CursedEcho extends Ability {
         );
 
   double getProcChance(Player player) {
-    return (baseProcChance + (player.spiritLevel * 0.01)).clamp(0, 1);
+    double chance =
+        (BASE_PROC_CHANCE + (player.spiritLevel * 0.01)).clamp(0, 1);
+    print(
+        '🎲 Cursed Echo base chance: ${(BASE_PROC_CHANCE * 100).toStringAsFixed(1)}%');
+    print(
+        '🌟 Spirit Level bonus: +${(player.spiritLevel).toStringAsFixed(1)}%');
+    print('✨ Final proc chance: ${(chance * 100).toStringAsFixed(1)}%');
+    return chance;
   }
 
   @override
   void onHit(Player player, PositionComponent target, int damage,
       {bool isCritical = false}) {
     double currentTime = player.gameRef.currentTime();
-    if (currentTime - _lastProcTime < procCooldown) return;
+    double timeSinceLastProc = currentTime - _lastProcTime;
 
-    if (player.gameRef.random.nextDouble() < getProcChance(player)) {
-      _lastProcTime = currentTime;
+    print('⚡ Cursed Echo checking hit...');
+    print('⏱️ Time since last proc: ${timeSinceLastProc.toStringAsFixed(2)}s');
+    print(
+        '⌛ Cooldown remaining: ${(PROC_COOLDOWN - timeSinceLastProc).toStringAsFixed(2)}s');
 
-      // Debug print for proc
+    if (timeSinceLastProc < PROC_COOLDOWN) {
       print(
-          "🔁 Cursed Echo triggered with ${(getProcChance(player) * 100).toStringAsFixed(1)}% chance");
+          '❌ Cursed Echo on cooldown (${(PROC_COOLDOWN - timeSinceLastProc).toStringAsFixed(2)}s remaining)');
+      return;
+    }
+
+    double procChance = getProcChance(player);
+    double roll = player.gameRef.random.nextDouble();
+    print('🎲 Rolling: $roll vs ${procChance.toStringAsFixed(2)}');
+
+    if (roll < procChance) {
+      _lastProcTime = currentTime;
+      print(
+          '✨ Cursed Echo triggered! (Roll: $roll < ${procChance.toStringAsFixed(2)})');
 
       Future.delayed(
-          Duration(milliseconds: (delayBetweenRepeats * 1000).toInt()), () {
+          Duration(milliseconds: (DELAY_BETWEEN_REPEATS * 1000).toInt()), () {
         if (target.isMounted) {
-          // Record the echoed hit
-          damageReport.recordHit(damage, isCritical);
+          // Calculate echo damage (same as original)
+          int echoDamage = (damage * player.spiritMultiplier).toInt();
 
-          print("🔁 Cursed Echo dealt $damage damage (Crit: $isCritical)");
+          // Record the echoed hit
+          damageReport.recordHit(echoDamage, isCritical);
+          print('💥 Cursed Echo dealt $echoDamage damage (Crit: $isCritical)');
 
           // Apply the damage
           if (target is BaseEnemy) {
-            target.takeDamage(damage, isCritical: isCritical);
+            target.takeDamage(echoDamage, isCritical: isCritical);
           }
+        } else {
+          print('⚠️ Target no longer exists for Cursed Echo');
         }
       });
+    } else {
+      print(
+          '❌ Cursed Echo failed to proc (Roll: $roll >= ${procChance.toStringAsFixed(2)})');
     }
   }
 }

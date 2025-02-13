@@ -2,26 +2,21 @@ import 'package:hive/hive.dart';
 
 part 'ability_damage_log.g.dart';
 
-@HiveType(typeId: 50)
+@HiveType(typeId: 7)
 class AbilityDamageLog extends HiveObject {
   @HiveField(0)
   final String abilityName;
 
   @HiveField(1)
-  int totalDamage;
+  int totalDamage = 0;
 
   @HiveField(2)
-  int hits;
+  int hits = 0;
 
   @HiveField(3)
-  int criticalHits;
+  int criticalHits = 0;
 
-  AbilityDamageLog(
-    this.abilityName, {
-    this.totalDamage = 0,
-    this.hits = 0,
-    this.criticalHits = 0,
-  });
+  AbilityDamageLog(this.abilityName);
 
   @override
   String toString() {

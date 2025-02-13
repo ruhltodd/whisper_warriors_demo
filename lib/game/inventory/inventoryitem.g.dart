@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'package:whisper_warriors/game/inventory/inventoryitem.dart';
+part of 'inventoryitem.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
@@ -18,7 +18,7 @@ class InventoryItemAdapter extends TypeAdapter<InventoryItem> {
     };
     return InventoryItem(
       item: fields[0] as Item,
-      isEquipped: (fields[1] as bool?) ?? false, // ✅ Handle null safely
+      isEquipped: fields[1] as bool,
     );
   }
 

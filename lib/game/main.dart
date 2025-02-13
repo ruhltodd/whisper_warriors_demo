@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/scheduler.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/ai/spawncontroller.dart';
+import 'package:whisper_warriors/game/damage/ability_damage_log.dart';
 import 'package:whisper_warriors/game/inventory/inventory.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/itemselectionscreen.dart';
@@ -24,6 +25,7 @@ import 'package:whisper_warriors/game/abilities/abilityselectionscreen.dart';
 import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/ui/optionsmenu.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 
 Future<List<InventoryItem>> loadInventoryItems() async {
   // Renamed for clarity
@@ -53,52 +55,102 @@ Future<List<InventoryItem>> loadInventoryItems() async {
   }
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
 
-  await Hive.openBox('playerProgressBox');
-  /*// Uncomment to reset progress on every launch
-  PlayerProgressManager.resetProgressForTestingTemporary();
-  // ✅ TEST: Set initial XP & Level if not already stored
+  try {
+    final appDocumentDir =
+        await path_provider.getApplicationDocumentsDirectory();
+    Hive.init(appDocumentDir.path);
 
-  if (PlayerProgressManager.getXp() == 0) {
-    PlayerProgressManager.setXp(50);
-  }
-  if (PlayerProgressManager.getLevel() == 1) {
-    PlayerProgressManager.setLevel(1);
-  } */
+    // First, try to delete any existing boxes
+    /* try {
+      await Hive.deleteBoxFromDisk('inventorybox');
+      await Hive.deleteBoxFromDisk('ability_damage_logs');
+      await Hive.deleteBoxFromDisk('playerprogressbox');
+      print('🗑️ Cleaned up existing boxes');
+    } catch (e) {
+      print('⚠️ Box cleanup error (can be ignored): $e');
+    }*/
 
-  print("🌟 Player XP: ${PlayerProgressManager.getXp()}");
-  print("🌟 Player Level: ${PlayerProgressManager.getLevel()}");
+    print('🏗️ Registering Hive adapters...');
 
-  // Register Hive adapters
-  Hive.registerAdapter(InventoryItemAdapter());
-  Hive.registerAdapter(UmbralFangAdapter());
-  Hive.registerAdapter(VeilOfTheForgottenAdapter());
-  Hive.registerAdapter(ShardOfUmbrathosAdapter());
-  Hive.registerAdapter(GoldCoinAdapter()); // ✅ Register GoldCoin
-  Hive.registerAdapter(BlueCoinAdapter()); // ✅ Register BlueCoin
-  //await Hive.deleteBoxFromDisk('inventoryBox'); remove database and start game is .clear() doesnt work.. for debugging only
-  //final inventoryBox = await Hive.openBox<InventoryItem>('inventoryBox'); if debugging and removing database uncomment this line and comment the next line
-  /* try {
-    await Hive.openBox<InventoryItem>('inventoryBox');
-    InventoryManager.initializeInventory(); // Add await here
+    // Register all adapters first
+    if (!Hive.isAdapterRegistered(0)) {
+      print('📝 Registering InventoryItemAdapter');
+      Hive.registerAdapter(InventoryItemAdapter());
+    }
+    if (!Hive.isAdapterRegistered(7)) {
+      print('📝 Registering AbilityDamageLogAdapter');
+      Hive.registerAdapter(AbilityDamageLogAdapter());
+    }
+    if (!Hive.isAdapterRegistered(1)) {
+      print('📝 Registering UmbralFangAdapter');
+      Hive.registerAdapter(UmbralFangAdapter());
+    }
+    if (!Hive.isAdapterRegistered(3)) {
+      print('📝 Registering VeilOfTheForgottenAdapter');
+      Hive.registerAdapter(VeilOfTheForgottenAdapter());
+    }
+    if (!Hive.isAdapterRegistered(4)) {
+      print('📝 Registering ShardOfUmbrathosAdapter');
+      Hive.registerAdapter(ShardOfUmbrathosAdapter());
+    }
+    if (!Hive.isAdapterRegistered(5)) {
+      print('📝 Registering GoldCoinAdapter');
+      Hive.registerAdapter(GoldCoinAdapter());
+    }
+    if (!Hive.isAdapterRegistered(6)) {
+      print('📝 Registering BlueCoinAdapter');
+      Hive.registerAdapter(BlueCoinAdapter());
+    }
+
+    print('📦 Opening Hive boxes...');
+
+    // Define box names as constants to ensure consistency
+    const String inventoryBoxName = 'inventorybox';
+    const String damageLogsBoxName = 'ability_damage_logs';
+    const String progressBoxName = 'playerprogressbox';
+
+    // Open boxes with consistent names
+    if (!Hive.isBoxOpen(inventoryBoxName)) {
+      await Hive.openBox<InventoryItem>(inventoryBoxName);
+      print('📦 Opened inventory box');
+    }
+    if (!Hive.isBoxOpen(damageLogsBoxName)) {
+      await Hive.openBox<AbilityDamageLog>(damageLogsBoxName);
+      print('📦 Opened damage logs box');
+    }
+    if (!Hive.isBoxOpen(progressBoxName)) {
+      await Hive.openBox(progressBoxName); // Note: no type parameter here
+      print('📦 Opened progress box');
+    }
+
+    // Initialize managers
+    await PlayerProgressManager.initialize();
+
+    print('✅ Hive initialization complete');
+
+    // Uncomment to reset progress on every launch
+    PlayerProgressManager.resetProgressForTestingTemporary();
+    // ✅ TEST: Set initial XP & Level if not already stored
+
+    if (PlayerProgressManager.getXp() == 0) {
+      PlayerProgressManager.setXp(50);
+    }
+    if (PlayerProgressManager.getLevel() == 1) {
+      PlayerProgressManager.setLevel(1);
+    }
+
+    print("🌟 Player XP: ${PlayerProgressManager.getXp()}");
+    print("🌟 Player Level: ${PlayerProgressManager.getLevel()}");
+
+    // Load ALL inventory items
+    List<InventoryItem> inventoryItems = await loadInventoryItems();
+    runApp(MyApp(inventoryItems: inventoryItems)); // Rename parameter to match
   } catch (e) {
-    print("⚠️ Database corruption detected. Attempting recovery...");
-    await Hive.deleteBoxFromDisk('inventoryBox');
-    await Hive.openBox<InventoryItem>('inventoryBox');
-    InventoryManager.initializeInventory(); // Add await here
-    print("✅ Recovery complete - fresh inventory initialized");
-  } */
-
-  //await Hive.box('inventoryBox').clear(); ✅ Clear box before adding items - for debugging only
-  //await Hive.box('playerProgressBox').clear(); ✅ Clears progress
-  //print("debug inventory wiped on startup");
-
-  // Load ALL inventory items
-  List<InventoryItem> inventoryItems = await loadInventoryItems();
-  runApp(MyApp(inventoryItems: inventoryItems)); // Rename parameter to match
+    print("❌ Error initializing game: $e");
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -766,27 +818,30 @@ class RogueShooterGame extends FlameGame
     String report = "📊 Damage Report\n";
     report += "================\n\n";
 
-    // Collect all damage reports
-    final reports = <DamageReport>[];
+    try {
+      // Get the damage logs box
+      final damageLogsBox = Hive.box<AbilityDamageLog>('ability_damage_logs');
+      final reports = damageLogsBox.values.toList();
 
-    // Get reports from active abilities
-    print("🎯 Collecting ability damage reports...");
-    for (var ability in player.getAbilities()) {
-      reports.add(ability.damageReport);
+      // Sort by total damage
+      reports.sort((a, b) => b.totalDamage.compareTo(a.totalDamage));
+
+      // Build report string
+      for (var log in reports) {
+        report += "${log.abilityName}:\n";
+        report += "  Total Damage: ${log.totalDamage}\n";
+        report += "  Hits: ${log.hits}\n";
+        report += "  Critical Hits: ${log.criticalHits}\n\n";
+      }
+
+      // Calculate total damage across all abilities
+      int totalGameDamage =
+          reports.fold(0, (sum, log) => sum + log.totalDamage);
+      report += "\n🔥 Total Game Damage: $totalGameDamage\n";
+    } catch (e) {
+      print("❌ Error generating damage report: $e");
+      report += "Error generating damage report.\n";
     }
-
-    // Sort by total damage
-    reports.sort((a, b) => b.totalDamage.compareTo(a.totalDamage));
-
-    // Build report string
-    for (var damageReport in reports) {
-      report += "${damageReport.toString()}\n";
-    }
-
-    // Calculate total damage across all abilities
-    int totalGameDamage =
-        reports.fold(0, (sum, report) => sum + report.totalDamage);
-    report += "\n🔥 Total Game Damage: $totalGameDamage\n";
 
     print("📝 Damage report generated:");
     print(report);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flame/collisions.dart';
+import 'package:whisper_warriors/game/damage/ability_damage_log.dart';
 import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
@@ -17,9 +18,13 @@ import 'package:whisper_warriors/game/player/whisperwarrior.dart';
 import 'package:whisper_warriors/game/effects/healingnumber.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
+import 'package:hive/hive.dart';
+import 'package:whisper_warriors/game/damage/damage_tracker.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
+  final DamageTracker damageTracker = DamageTracker(); // Add damage tracker
+
   // Base Stats (before Spirit Level modifications)
   double baseHealth = 100.0;
   double baseSpeed = 140.0;
@@ -262,32 +267,34 @@ class Player extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    timeSinceLastShot += dt; // Ensure cooldown timer increases
+    timeSinceLastShot += dt;
 
     updateSpiritMultiplier();
-    updateClosestEnemy(); // Update the closest enemy
+    updateClosestEnemy();
 
     Vector2 totalMovement = movementDirection + joystickDelta;
     if (totalMovement.length > 0) {
-      Vector2 prevPosition = position.clone(); // Store previous position
-
-      // Apply linear interpolation for smoother movement
+      Vector2 prevPosition = position.clone();
       position = prevPosition +
           (totalMovement.normalized() * movementSpeed * dt) * 0.75;
-
       whisperWarrior.scale.x = totalMovement.x > 0 ? -1 : 1;
       whisperWarrior.playAnimation('attack');
     } else {
       whisperWarrior.playAnimation('idle');
     }
 
-    // Ensure sprite updates smoothly with movement
     whisperWarrior.position = position.clone();
+
+    // Debug prints to track shooting conditions
+    print('⏱️ Time since last shot: $timeSinceLastShot');
+    print('🎯 Attack speed cooldown: ${1 / attackSpeed}');
+    print('👾 Closest enemy: ${closestEnemy != null ? "found" : "none"}');
 
     // Shoot projectile if cooldown is over and an enemy is targeted
     if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
-      shootProjectile(damage.toInt(), closestEnemy!); // Pass required arguments
-      timeSinceLastShot = 0.0; // Reset cooldown
+      print('🔫 Shooting projectile!');
+      shootProjectile(damage.toInt(), closestEnemy!);
+      timeSinceLastShot = 0.0;
     }
 
     // Update health bar position
@@ -296,7 +303,7 @@ class Player extends PositionComponent
           Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
     }
 
-    // Update abilities
+    // Update abilities after basic attack
     for (var ability in abilities) {
       ability.onUpdate(this, dt);
     }
@@ -404,21 +411,23 @@ class Player extends PositionComponent
   // Shoot a projectile at the target
   void shootProjectile(int damage, PositionComponent target,
       {bool isCritical = false}) {
-    // ✅ Ensure there's a valid enemy target before firing
-    BaseEnemy? target = findClosestEnemy();
-    if (target == null) {
+    // Remove redundant target finding since we already have a target parameter
+    if (target is! BaseEnemy) {
+      print('⚠️ Invalid target for projectile');
       return;
     }
 
     final Vector2 direction = (target.position - position).normalized();
+    print('🎯 Shooting at enemy: ${target.position}');
 
     final projectile = Projectile(
       damage: damage,
-      velocity: direction * 500, // Adjust projectile speed
-      maxRange: 1600, // Player projectiles should have a range
+      velocity: direction * 500,
+      maxRange: 1600,
       player: this,
       onHit: (enemy) {
-        // ✅ Apply Cursed Echo only **once** per attack
+        // Handle hit effects here if needed
+        print('💥 Projectile hit enemy!');
       },
     )
       ..position = position.clone()
@@ -426,13 +435,38 @@ class Player extends PositionComponent
       ..anchor = Anchor.center;
 
     gameRef.add(projectile);
-    // ✅ **Trigger Cursed Echo per shot, not per enemy hit**
-    if (hasAbility<CursedEcho>() && gameRef.random.nextDouble() < 0.2) {
-      Future.delayed(Duration(milliseconds: 100), () {
-        if (closestEnemy != null) {
-          shootProjectile(damage, closestEnemy!, isCritical: isCritical);
-        } else {}
-      });
+    print('🔫 Projectile added to game');
+
+    // Handle Cursed Echo
+    if (hasAbility<CursedEcho>()) {
+      double procChance = 0.20; // 20% chance
+      if (gameRef.random.nextDouble() < procChance) {
+        print('🔄 Cursed Echo triggered for basic attack!');
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (target.isMounted) {
+            // Create echo projectile with same properties
+            final echoProjectile = Projectile(
+              damage: damage,
+              velocity: direction * 500,
+              maxRange: 1600,
+              player: this,
+              onHit: (enemy) {
+                print('💫 Echo projectile hit!');
+              },
+            )
+              ..position = position.clone()
+              ..size = Vector2(50, 50)
+              ..anchor = Anchor.center;
+
+            gameRef.add(echoProjectile);
+            print('✨ Echo projectile added to game');
+          } else {
+            print('⚠️ Target no longer exists for Cursed Echo');
+          }
+        });
+      } else {
+        print('❌ Cursed Echo failed to proc for basic attack');
+      }
     }
   }
 
