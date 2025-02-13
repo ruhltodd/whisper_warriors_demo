@@ -19,17 +19,23 @@ class InventoryItemAdapter extends TypeAdapter<InventoryItem> {
     return InventoryItem(
       item: fields[0] as Item,
       isEquipped: fields[1] as bool,
+      isNew: fields[2] as bool,
+      quantity: fields[3] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, InventoryItem obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.item)
       ..writeByte(1)
-      ..write(obj.isEquipped);
+      ..write(obj.isEquipped)
+      ..writeByte(2)
+      ..write(obj.isNew)
+      ..writeByte(3)
+      ..write(obj.quantity);
   }
 
   @override

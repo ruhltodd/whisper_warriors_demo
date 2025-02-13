@@ -6,16 +6,17 @@ import 'package:whisper_warriors/game/main.dart'; // Adjust the path as necessar
 mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
   double staggerProgress = 0.0;
   bool isStaggered = false;
-  double staggerWindow = 3.0;
-  double staggerDuration = 3.0;
+  double staggerWindow = 5.0;
+  double staggerDuration = 5.0; // 5 seconds of stagger
   double staggerCooldown = 5.0;
-  double staggerDamageMultiplier = 1.0;
+  double staggerDamageMultiplier = 5.0;
 
   double _damageReceived = 0;
   double _staggerTimer = 0;
   double _staggerCooldownTimer = 0;
   static const double _staggerFillRate = 0.5 / 20000;
   double _damageTickTime = 0.0;
+  double _originalSpeed = 0.0; // Store original speed
 
   ValueNotifier<double> bossStaggerNotifier = ValueNotifier(0);
 
@@ -28,7 +29,11 @@ mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
   set attackCooldown(double newAttackCooldown); // Setter for attack cooldown
 
   void updateStagger(double dt) {
-    if (isStaggered) return;
+    if (isStaggered) {
+      // Keep speed at 0 while staggered
+      speed = 0;
+      return;
+    }
 
     if (_staggerTimer > 0) {
       _staggerTimer -= dt;
@@ -57,17 +62,14 @@ mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
   }
 
   void applyStaggerDamage(int damage, {bool isCritical = false}) {
-    // Do not skip the damage application when staggered
     _damageReceived += damage;
     _staggerTimer = staggerWindow;
     _applyStaggerProgress();
 
-    // Trigger stagger when progress reaches 100%
     if (staggerProgress >= 100.0 && _staggerCooldownTimer <= 0) {
       triggerStagger();
     }
 
-    // Create and display damage number regardless of stagger state
     final damageNumber = DamageNumber(
       damage,
       position.clone() + Vector2(0, -20),
@@ -77,16 +79,24 @@ mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
   }
 
   void triggerStagger() {
+    print('🌟 Boss Staggered!');
     isStaggered = true;
     staggerProgress = 0.0;
     _staggerCooldownTimer = staggerCooldown;
     _damageReceived = 0;
 
+    // Store original speed before setting to 0
+    _originalSpeed = speed;
+    print('💾 Stored original speed: $_originalSpeed');
+    speed = 0; // Immediately stop movement
+
     applyStaggerVisuals();
 
     Future.delayed(Duration(seconds: staggerDuration.toInt()), () {
+      print('💫 Boss recovering from stagger');
       isStaggered = false;
-      speed /= 0.5;
+      speed = _originalSpeed; // Restore original speed
+      print('⚡ Restored speed to: $_originalSpeed');
       attackCooldown /= 1.5;
       staggerProgress = 0;
       bossStaggerNotifier.value = 0;

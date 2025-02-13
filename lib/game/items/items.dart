@@ -4,8 +4,8 @@ import 'package:whisper_warriors/game/projectiles/projectile.dart';
 
 part 'items.g.dart'; // ✅ Required for Hive TypeAdapter Generation
 
-@HiveType(typeId: 99) // ✅ Unique ID for the base class
-abstract class Item extends HiveObject {
+@HiveType(typeId: 99)
+class Item {
   @HiveField(0)
   final String name;
 
@@ -24,7 +24,7 @@ abstract class Item extends HiveObject {
   @HiveField(5)
   final String spriteName;
 
-  Item({
+  const Item({
     required this.name,
     required this.description,
     required this.rarity,
@@ -33,8 +33,27 @@ abstract class Item extends HiveObject {
     required this.spriteName,
   });
 
-  void applyEffect(Player player);
-  void removeEffect(Player player);
+  // Factory constructor for Hive
+  factory Item.fromJson(Map<String, dynamic> json) {
+    return Item(
+      name: json['name'] as String,
+      description: json['description'] as String,
+      rarity: json['rarity'] as String,
+      stats: (json['stats'] as Map<String, dynamic>).cast<String, double>(),
+      expValue: json['expValue'] as int,
+      spriteName: json['spriteName'] as String,
+    );
+  }
+
+  void applyEffect(Player player) {
+    // Default implementation - can be overridden by subclasses
+    // No effect by default
+  }
+
+  void removeEffect(Player player) {
+    // Default implementation - can be overridden by subclasses
+    // No effect by default
+  }
 }
 
 // 🗡️ **Umbral Fang - Increases attack speed & allows piercing**

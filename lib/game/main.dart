@@ -26,6 +26,7 @@ import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/ui/optionsmenu.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:whisper_warriors/game/damage/damage_tracker.dart';
 
 Future<List<InventoryItem>> loadInventoryItems() async {
   // Renamed for clarity
@@ -63,8 +64,8 @@ Future<void> main() async {
         await path_provider.getApplicationDocumentsDirectory();
     Hive.init(appDocumentDir.path);
 
-    // First, try to delete any existing boxes
-    /* try {
+    // Uncomment this section to clear the database
+/*    try {
       await Hive.deleteBoxFromDisk('inventorybox');
       await Hive.deleteBoxFromDisk('ability_damage_logs');
       await Hive.deleteBoxFromDisk('playerprogressbox');
@@ -425,7 +426,14 @@ class RogueShooterGame extends FlameGame
 
   @override
   Future<void> onLoad() async {
-    super.onLoad();
+    await super.onLoad();
+
+    // Initialize DamageTracker first
+    print('📊 Initializing DamageTracker...');
+    await DamageTracker().initialize();
+    print('🧹 Clearing previous damage data...');
+    DamageTracker().clearAllDamageData();
+
     // Start the ticker to control frame rate
     _ticker = Ticker(_onTick);
     _ticker.start();

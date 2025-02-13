@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
+import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
-import 'package:whisper_warriors/game/ai/wave2Enemy.dart';
+import 'package:whisper_warriors/game/damage/damage_tracker.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/main.dart';
 
@@ -21,6 +22,7 @@ class Projectile extends SpriteAnimationComponent
   final bool isCritical; // Add this field
   bool hasCollided = false;
   double _distanceTraveled = 0;
+  final String abilityName; // Add this field
 
   // 🔹 **General Constructor**
   Projectile({
@@ -31,6 +33,7 @@ class Projectile extends SpriteAnimationComponent
     this.onHit, // ✅ Now optional (for abilities like Cursed Echo)
     this.player, // ✅ Include player reference if available
     this.isCritical = false, // Add this parameter with default value
+    this.abilityName = 'Basic Attack', // Add default value
   }) {
     shouldPierce = player?.hasItem("Umbral Fang") ??
         false; // ✅ Always check if Umbral Fang is equipped
@@ -42,6 +45,8 @@ class Projectile extends SpriteAnimationComponent
     required Vector2 velocity,
     required Player player, // ✅ Ensure player is passed
     void Function(BaseEnemy)? onHit, // ✅ Pass `onHit` for abilities
+    String abilityName = 'Basic Attack', // Add parameter
+    bool isCritical = false, // Add parameter
   }) : this(
           damage: damage,
           velocity: velocity,
@@ -49,7 +54,8 @@ class Projectile extends SpriteAnimationComponent
           isBossProjectile: false,
           onHit: onHit, // ✅ Ensure `onHit` is passed
           player: player, // ✅ Assign player
-          isCritical: false, // Add this parameter with default value
+          abilityName: abilityName,
+          isCritical: isCritical,
         );
 
   // 🔹 **Named Constructor for Boss**
@@ -60,6 +66,7 @@ class Projectile extends SpriteAnimationComponent
           maxRange: double.infinity, // ✅ Boss projectiles should go forever
           isBossProjectile: true,
           isCritical: false, // Add this parameter with default value
+          abilityName: 'Basic Attack',
         );
 
   @override
@@ -120,28 +127,102 @@ class Projectile extends SpriteAnimationComponent
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
 
-    // ✅ Ensure player projectiles don't collide with the player
     if (!isBossProjectile && other is Player) {
       return;
     }
 
-    // ✅ Ensure player projectiles hit enemies
     if (!isBossProjectile && other is BaseEnemy) {
-      other.takeDamage(damage);
+      print('💥 Projectile hit enemy! Ability: $abilityName');
+
+      // Use DamageTracker directly instead of going through ability
+      if (player != null) {
+        print(
+            '📊 Recording damage for $abilityName: $damage (Critical: $isCritical)');
+        DamageTracker().recordDamage(abilityName, damage, isCritical);
+      } else {
+        print('⚠️ No player reference in projectile!');
+      }
+
+      other.takeDamage(damage, isCritical: isCritical);
 
       if (!shouldPierce) {
         removeFromParent();
       }
-      return; // ✅ Prevents further execution
+      return;
     }
 
-    // ✅ Ensure boss projectiles hit the player
     if (isBossProjectile && other is Player) {
       other.takeDamage(damage);
       removeFromParent();
       return;
     }
+  }
 
-    // ✅ Ignore other unexpected collisions
+  // Add this static factory method
+  static Projectile shootFromPlayer({
+    required Player player,
+    required Vector2 targetPosition,
+    required double projectileSpeed,
+    required int damage,
+    void Function(BaseEnemy)? onHit,
+    String abilityName = 'Basic Attack',
+    bool isCritical = false,
+  }) {
+    print(
+        '🚀 Creating projectile: $abilityName (Damage: $damage, Critical: $isCritical)');
+
+    final direction = (targetPosition - player.position).normalized();
+    final velocity = direction * projectileSpeed;
+
+    final projectile = Projectile.playerProjectile(
+      damage: damage,
+      velocity: velocity,
+      player: player,
+      onHit: onHit,
+      abilityName: abilityName,
+      isCritical: isCritical,
+    )
+      ..position = player.position.clone()
+      ..size = Vector2(50, 50)
+      ..anchor = Anchor.center;
+
+    // Handle Cursed Echo ability
+    if (player.hasAbility<CursedEcho>()) {
+      print('🔮 Player has Cursed Echo ability');
+      double procChance = 0.20; // 20% chance
+      if (player.gameRef.random.nextDouble() < procChance) {
+        print('✨ Cursed Echo triggered for $abilityName!');
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (player.isMounted) {
+            print('🌟 Creating echo projectile for $abilityName');
+            final echoProjectile = Projectile.playerProjectile(
+              damage: damage,
+              velocity: velocity,
+              player: player,
+              onHit: (enemy) {
+                print('💫 Echo projectile hit! ($abilityName)');
+              },
+              abilityName:
+                  '$abilityName (Echo)', // Mark echo projectiles distinctly
+              isCritical: isCritical,
+            )
+              ..position = player.position.clone()
+              ..size = Vector2(50, 50)
+              ..anchor = Anchor.center;
+
+            player.gameRef.add(echoProjectile);
+            print('✅ Echo projectile added to game');
+          } else {
+            print('⚠️ Player no longer exists for Cursed Echo');
+          }
+        });
+      } else {
+        print(
+            '❌ Cursed Echo failed to proc (${(procChance * 100).toInt()}% chance)');
+      }
+    }
+
+    print('✨ Original projectile created successfully');
+    return projectile;
   }
 }

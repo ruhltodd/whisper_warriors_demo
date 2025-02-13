@@ -10,6 +10,7 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
   final int damage;
   final bool isCritical;
   final bool isPlayer; // ✅ Flag to differentiate player damage
+  final Color? customColor; // Add color parameter
   double timer = 1.0;
   late List<SpriteComponent> digitSprites = [];
   final Random _random = Random();
@@ -17,8 +18,13 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
   static final Map<int, Sprite> numberSprites = {}; // ✅ Store loaded sprites
   static Sprite? minusSprite; // ✅ Cache minus sign sprite
 
-  DamageNumber(this.damage, this.initialPosition,
-      {this.isCritical = false, this.isPlayer = false}) {
+  DamageNumber(
+    this.damage,
+    this.initialPosition, {
+    this.isCritical = false,
+    this.isPlayer = false,
+    this.customColor, // Add to constructor
+  }) {
     position = initialPosition + _getRandomOffset();
   }
 
@@ -109,12 +115,23 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
       offsetX += isPlayer ? 8 : 14; // ✅ Smaller spacing for player damage
     }
 
-    // ✅ Tint player damage numbers red (enemy numbers remain unchanged)
-    if (isPlayer) {
+    // Modified color logic
+    if (customColor != null) {
+      // Use custom color if provided
       for (var sprite in digitSprites) {
         sprite.add(
           ColorEffect(
-            const Color(0xFFFF4444), // 🔴 Red for player damage
+            customColor!,
+            EffectController(duration: 0.2),
+          ),
+        );
+      }
+    } else if (isPlayer) {
+      // Default red for player damage if no custom color
+      for (var sprite in digitSprites) {
+        sprite.add(
+          ColorEffect(
+            const Color(0xFFFF4444),
             EffectController(duration: 0.2),
           ),
         );

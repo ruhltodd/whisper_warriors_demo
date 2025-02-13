@@ -48,29 +48,3 @@ class AbilityDamageLogAdapter extends TypeAdapter<AbilityDamageLog> {
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
-
-class AbilityDamageLogAdapterAdapter
-    extends TypeAdapter<AbilityDamageLogAdapter> {
-  @override
-  final int typeId = 7;
-
-  @override
-  AbilityDamageLogAdapter read(BinaryReader reader) {
-    return AbilityDamageLogAdapter();
-  }
-
-  @override
-  void write(BinaryWriter writer, AbilityDamageLogAdapter obj) {
-    writer.writeByte(0);
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AbilityDamageLogAdapterAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}

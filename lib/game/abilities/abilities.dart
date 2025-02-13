@@ -4,7 +4,6 @@ import 'package:whisper_warriors/game/damage/damage_tracker.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
-import 'package:whisper_warriors/game/projectiles/projectile.dart';
 import 'package:whisper_warriors/game/main.dart';
 
 /// Enum for ability types (optional, for categorization)
@@ -20,7 +19,7 @@ abstract class Ability {
   Ability({
     required this.name,
     required this.description,
-    required this.type,
+    required this.type, // Default to white if not specified
   }) : damageReport = DamageReport(name);
 
   // Override these methods for specific ability behavior
@@ -35,66 +34,83 @@ abstract class Ability {
 class WhisperingFlames extends Component
     with HasGameRef<RogueShooterGame>
     implements Ability {
+  final DamageTracker damageTracker = DamageTracker();
   double _elapsedTime = 0.0;
-  final double baseDamagePerSecond = 10;
-  final double range = 150;
-  final String name = "Whispering Flames";
-  final String description = "Deals continuous damage to nearby enemies.";
-  final AbilityType type = AbilityType.aura;
-  final DamageReport damageReport;
-  late final Player _player; // Add reference to player
+  final double baseDamagePerSecond = 45;
+  final double range = 200;
+  final double tickRate = 0.5;
 
-  WhisperingFlames() : damageReport = DamageReport("Whispering Flames");
+  @override
+  final String name = "Whispering Flames";
+
+  @override
+  final String description = "Deals continuous damage to nearby enemies.";
+
+  @override
+  final AbilityType type = AbilityType.aura;
+
+  @override
+  final DamageReport damageReport;
+
+  late final Player _player;
+
+  WhisperingFlames() : damageReport = DamageReport("Whispering Flames") {
+    damageTracker.initialize(); // Initialize the Hive tracker
+    print('🔥 WhisperingFlames initialized with Hive damage tracker');
+  }
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
     _player = gameRef.player;
+    print('🔥 WhisperingFlames loaded'); // Debug mount
+  }
+
+  @override
+  void onMount() {
+    super.onMount();
+    print('🔥 WhisperingFlames mounted'); // Debug mount
   }
 
   @override
   void update(double dt) {
-    // Safety check to prevent crashes during cleanup
-    if (!isMounted || parent == null) return;
-
+    if (!isMounted || parent == null) {
+      print('🔥 WhisperingFlames not mounted or no parent');
+      return;
+    }
     super.update(dt);
-    onUpdate(_player, dt);
-  }
-
-  @override
-  void onUpdate(Player player, double dt) {
-    // Safety check to prevent crashes during cleanup
-    if (!isMounted || parent == null) return;
 
     _elapsedTime += dt;
-    if (_elapsedTime >= 1.0) {
+    if (_elapsedTime >= tickRate) {
+      print('🔥 WhisperingFlames tick at ${_elapsedTime.toStringAsFixed(1)}s');
       _elapsedTime = 0.0;
-      double scaledDamage = baseDamagePerSecond * player.spiritMultiplier;
-
-      // Debug print to track updates
+      double scaledDamage = baseDamagePerSecond * _player.spiritMultiplier;
       print(
-          "🔥 WhisperingFlames updating... Range: $range, Base Damage: $baseDamagePerSecond");
+          '🔥 Base damage: $baseDamagePerSecond × ${_player.spiritMultiplier} = $scaledDamage');
 
       try {
+        int enemiesInRange = 0;
         for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
-          double distance = (enemy.position - player.position).length;
+          double distance = (enemy.position - _player.position).length;
           if (distance < range) {
+            enemiesInRange++;
             bool isCritical =
-                gameRef.random.nextDouble() < (player.critChance / 100);
+                gameRef.random.nextDouble() < (_player.critChance / 100);
             int finalDamage = isCritical
-                ? (scaledDamage * player.critMultiplier).toInt()
+                ? (scaledDamage * _player.critMultiplier).toInt()
                 : scaledDamage.toInt();
 
-            enemy.takeDamage(finalDamage, isCritical: isCritical);
-            damageReport.recordHit(finalDamage, isCritical);
-
             print(
-                "🔥 Whispering Flames hit enemy at distance $distance for $finalDamage damage (Crit: $isCritical)");
+                '🔥 WhisperingFlames hitting enemy at distance $distance with $finalDamage damage (Crit: $isCritical)');
+            enemy.takeDamage(finalDamage, isCritical: isCritical);
+
+            // Use onHit to record the damage instead of direct damageReport access
+            onHit(_player, enemy, finalDamage, isCritical: isCritical);
           }
         }
+        print('🔥 WhisperingFlames found $enemiesInRange enemies in range');
       } catch (e) {
-        // If we get an error during cleanup, just stop processing
-        print("WhisperingFlames caught error during cleanup: $e");
+        print("🔥 WhisperingFlames caught error during update: $e");
         return;
       }
     }
@@ -108,14 +124,35 @@ class WhisperingFlames extends Component
   }
 
   @override
-  void applyEffect(Player player) {}
+  void applyEffect(Player player) {
+    print('🔥 WhisperingFlames applyEffect called');
+    // Add this component to the game when the ability is applied
+    if (!player.gameRef.children
+        .whereType<WhisperingFlames>()
+        .any((element) => element == this)) {
+      print('🔥 Adding WhisperingFlames component to game');
+      player.gameRef.add(this);
+    } else {
+      print('🔥 WhisperingFlames component already exists');
+    }
+  }
 
   @override
   void onKill(Player player, Vector2 enemyPosition) {}
 
   @override
   void onHit(Player player, PositionComponent target, int damage,
-      {bool isCritical = false}) {}
+      {bool isCritical = false}) {
+    print(
+        '🔥 WhisperingFlames recording hit to Hive: $damage (Crit: $isCritical)');
+    damageTracker.logDamage(name, damage, isCritical);
+  }
+
+  @override
+  void onUpdate(Player player, double dt) {
+    // The actual update logic is handled in the Component's update() method
+    // This is just to satisfy the Ability interface
+  }
 }
 
 /// 🗡️ **Shadow Blades Ability Controller**
@@ -124,7 +161,7 @@ class ShadowBlades extends PositionComponent implements Ability {
   double _timeSinceLastTick = 0;
   final double tickInterval = 0.5;
   final double range = 150;
-  final int damage = 75;
+  final int baseDamage = 75; // Changed to baseDamage
 
   @override
   final String name = 'Shadow Blades';
@@ -148,53 +185,53 @@ class ShadowBlades extends PositionComponent implements Ability {
 
   @override
   void onUpdate(Player player, double dt) {
-    print('🗡️ Shadow Blades update: ${player.position}');
-
     _timeSinceLastTick += dt;
     if (_timeSinceLastTick >= tickInterval) {
       _timeSinceLastTick = 0;
 
-      // Find closest enemy
       BaseEnemy? target = findClosestEnemy(player);
       if (target != null) {
-        print('🎯 Found target at: ${target.position}');
-
-        // Calculate direction to enemy
         final direction = (target.position - player.position).normalized();
         final rotationAngle = direction.angleToSigned(Vector2(1, 0));
 
-        // Create and shoot projectile
+        // Calculate damage with spirit multiplier
+        int scaledDamage = (baseDamage * player.spiritMultiplier).toInt();
+        print(
+            '🗡️ Shadow Blade Damage: $baseDamage × ${player.spiritMultiplier.toStringAsFixed(2)} = $scaledDamage');
+
         final projectile = ShadowBladeProjectile(
           player: player,
           ability: this,
           velocity: direction * 500,
           rotationAngle: rotationAngle,
-          damage: damage,
+          damage: scaledDamage, // Use scaled damage
         )..position = player.position.clone();
 
         player.gameRef.add(projectile);
-        print('🗡️ Shot blade at target');
+        print('🗡️ Shot blade at target with $scaledDamage damage');
 
-        // Roll Cursed Echo ONCE per blade thrown
+        // Roll Cursed Echo
         if (player.hasAbility<CursedEcho>()) {
-          double procChance = 0.20; // 20% chance
-          if (player.gameRef.random.nextDouble() < procChance) {
+          double procChance = 0.35; // Match CursedEcho.BASE_PROC_CHANCE
+          double roll = player.gameRef.random.nextDouble();
+          print('🎲 Shadow Blade Cursed Echo Roll: $roll vs $procChance');
+
+          if (roll < procChance) {
             print("🔄 Cursed Echo triggered for Shadow Blade!");
             Future.delayed(Duration(milliseconds: 100), () {
               player.gameRef.add(ShadowBladeProjectile(
                 player: player,
                 ability: this,
-                damage: (damage * player.spiritMultiplier).toInt(),
+                damage: scaledDamage, // Use same scaled damage for echo
                 velocity: direction * 500,
                 rotationAngle: rotationAngle,
               )..position = player.position.clone());
             });
           } else {
-            print("❌ Cursed Echo failed to proc for Shadow Blade");
+            print(
+                "❌ Cursed Echo failed to proc for Shadow Blade (Roll: $roll)");
           }
         }
-      } else {
-        print('⚠️ No target found');
       }
     }
   }
@@ -473,5 +510,30 @@ class DamageReport {
    Critical Hits: $criticalHits (${critRate.toStringAsFixed(1)}%)
    Average Damage: ${averageDamage.toStringAsFixed(1)}
 ''';
+  }
+}
+
+class BasicAttack extends Ability {
+  final DamageTracker damageTracker = DamageTracker();
+
+  BasicAttack()
+      : super(
+          name: 'Basic Attack',
+          description: 'Your standard projectile attack',
+          type: AbilityType.projectile,
+        ) {
+    // Initialize the damage tracker
+    damageTracker.initialize();
+    print('🎯 BasicAttack initialized with damage tracker');
+  }
+
+  @override
+  void onUpdate(Player player, double dt) {
+    // Basic attack is handled directly in Player's update method
+  }
+
+  @override
+  void trigger(Player player) {
+    // Basic attack is automatic
   }
 }

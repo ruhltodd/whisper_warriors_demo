@@ -13,9 +13,17 @@ class InventoryItem extends HiveObject {
   @HiveField(1)
   bool isEquipped; // ✅ Tracks whether item is equipped
 
+  @HiveField(2)
+  bool isNew;
+
+  @HiveField(3)
+  int quantity;
+
   InventoryItem({
     required this.item,
     this.isEquipped = false,
+    this.isNew = false,
+    this.quantity = 1,
   }) {
     // Remove the automatic save from constructor
     // this.save(); // This line was causing the error
@@ -25,11 +33,15 @@ class InventoryItem extends HiveObject {
   static Future<InventoryItem> create({
     required Item item,
     bool isEquipped = false,
+    bool isNew = true,
+    int quantity = 1,
   }) async {
-    final box = Hive.box<InventoryItem>('inventoryBox');
+    final box = Hive.box<InventoryItem>('inventorybox');
     final inventoryItem = InventoryItem(
       item: item,
       isEquipped: isEquipped,
+      isNew: isNew,
+      quantity: quantity,
     );
 
     // Add to box with the item's name as key

@@ -257,7 +257,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   void applyStaggerVisuals() {
     add(ColorEffect(
       const Color(0xFFFF0000),
-      EffectController(duration: 0.5, reverseDuration: 0.5),
+      EffectController(duration: 5.0, reverseDuration: 5.0),
     ));
   }
 }

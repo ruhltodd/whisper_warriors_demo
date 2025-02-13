@@ -15,18 +15,15 @@ class DamageTracker {
   }
 
   Future<void> initialize() async {
-    try {
-      if (!Hive.isBoxOpen(damageLogsBoxName)) {
-        _damageBox = await Hive.openBox<AbilityDamageLog>(damageLogsBoxName);
-        _isInitialized = true;
-      } else {
-        _damageBox = Hive.box<AbilityDamageLog>(damageLogsBoxName);
-        _isInitialized = true;
-      }
-      print('✅ DamageTracker initialized');
-    } catch (e) {
-      print('❌ Error initializing DamageTracker: $e');
+    print('🔄 Initializing DamageTracker...');
+    if (!Hive.isBoxOpen(damageLogsBoxName)) {
+      print('📦 Opening damage logs box...');
+      _damageBox = await Hive.openBox<AbilityDamageLog>(damageLogsBoxName);
+    } else {
+      print('📦 Using existing damage logs box...');
+      _damageBox = Hive.box<AbilityDamageLog>(damageLogsBoxName);
     }
+    print('✅ DamageTracker initialized');
   }
 
   bool get isInitialized => _isInitialized;
@@ -131,5 +128,48 @@ class DamageTracker {
     } catch (e) {
       print('❌ Error logging damage: $e');
     }
+  }
+
+  String generateDamageReport() {
+    StringBuffer report = StringBuffer();
+    report.writeln('📊 Damage Report');
+    report.writeln('================\n');
+
+    int totalDamage = 0;
+
+    // Make sure to include BasicAttack first
+    final basicAttackReport = _damageBox.get('Basic Attack');
+    if (basicAttackReport != null) {
+      report.writeln('Basic Attack:');
+      report.writeln('  Total Damage: ${basicAttackReport.totalDamage}');
+      report.writeln('  Hits: ${basicAttackReport.hits}');
+      report.writeln('  Critical Hits: ${basicAttackReport.criticalHits}\n');
+      totalDamage += basicAttackReport.totalDamage;
+    }
+
+    // Then include all other abilities
+    _damageBox.toMap().forEach((key, value) {
+      if (key != 'Basic Attack') {
+        report.writeln('$key:');
+        report.writeln('  Total Damage: ${value.totalDamage}');
+        report.writeln('  Hits: ${value.hits}');
+        report.writeln('  Critical Hits: ${value.criticalHits}\n');
+        totalDamage += value.totalDamage;
+      }
+    });
+
+    report.writeln('\n🔥 Total Game Damage: $totalDamage');
+
+    return report.toString();
+  }
+
+  void clearAllDamageData() {
+    if (!Hive.isBoxOpen(damageLogsBoxName)) {
+      print('⚠️ Cannot clear damage data: Box not initialized');
+      return;
+    }
+    print('🧹 Clearing all damage data...');
+    _damageBox.clear();
+    print('✨ Damage data cleared');
   }
 }

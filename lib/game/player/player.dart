@@ -149,7 +149,7 @@ class Player extends PositionComponent
     }
     print("🔥 Player Loaded with Abilities: $unlockedAbilities");
 
-// ✅ Apply only explicitly equipped items
+    // ✅ Apply only explicitly equipped items
     for (var item in equippedItems) {
       item.applyEffect(this);
       print("🎭 Applied ${item.name} to Player.");
@@ -286,14 +286,19 @@ class Player extends PositionComponent
     whisperWarrior.position = position.clone();
 
     // Debug prints to track shooting conditions
-    print('⏱️ Time since last shot: $timeSinceLastShot');
-    print('🎯 Attack speed cooldown: ${1 / attackSpeed}');
-    print('👾 Closest enemy: ${closestEnemy != null ? "found" : "none"}');
 
     // Shoot projectile if cooldown is over and an enemy is targeted
     if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
-      print('🔫 Shooting projectile!');
-      shootProjectile(damage.toInt(), closestEnemy!);
+      final projectile = Projectile.shootFromPlayer(
+        player: this,
+        targetPosition: closestEnemy!.position,
+        projectileSpeed: 500, // You might want to make this configurable
+        damage: damage.toInt(),
+        onHit: (enemy) {
+          // Handle any specific on-hit effects if needed
+        },
+      );
+      gameRef.add(projectile);
       timeSinceLastShot = 0.0;
     }
 
@@ -408,67 +413,7 @@ class Player extends PositionComponent
     }
   }
 
-  // Shoot a projectile at the target
-  void shootProjectile(int damage, PositionComponent target,
-      {bool isCritical = false}) {
-    // Remove redundant target finding since we already have a target parameter
-    if (target is! BaseEnemy) {
-      print('⚠️ Invalid target for projectile');
-      return;
-    }
-
-    final Vector2 direction = (target.position - position).normalized();
-    print('🎯 Shooting at enemy: ${target.position}');
-
-    final projectile = Projectile(
-      damage: damage,
-      velocity: direction * 500,
-      maxRange: 1600,
-      player: this,
-      onHit: (enemy) {
-        // Handle hit effects here if needed
-        print('💥 Projectile hit enemy!');
-      },
-    )
-      ..position = position.clone()
-      ..size = Vector2(50, 50)
-      ..anchor = Anchor.center;
-
-    gameRef.add(projectile);
-    print('🔫 Projectile added to game');
-
-    // Handle Cursed Echo
-    if (hasAbility<CursedEcho>()) {
-      double procChance = 0.20; // 20% chance
-      if (gameRef.random.nextDouble() < procChance) {
-        print('🔄 Cursed Echo triggered for basic attack!');
-        Future.delayed(Duration(milliseconds: 100), () {
-          if (target.isMounted) {
-            // Create echo projectile with same properties
-            final echoProjectile = Projectile(
-              damage: damage,
-              velocity: direction * 500,
-              maxRange: 1600,
-              player: this,
-              onHit: (enemy) {
-                print('💫 Echo projectile hit!');
-              },
-            )
-              ..position = position.clone()
-              ..size = Vector2(50, 50)
-              ..anchor = Anchor.center;
-
-            gameRef.add(echoProjectile);
-            print('✨ Echo projectile added to game');
-          } else {
-            print('⚠️ Target no longer exists for Cursed Echo');
-          }
-        });
-      } else {
-        print('❌ Cursed Echo failed to proc for basic attack');
-      }
-    }
-  }
+  // Shoot a projectile at the t
 
   // Add an item to the inventory
   void addItem(Item item) {
@@ -632,5 +577,16 @@ class Player extends PositionComponent
 
   List<Ability> getAbilities() {
     return abilities;
+  }
+
+  Ability? getAbilityByName(String name) {
+    try {
+      return abilities.firstWhere(
+        (ability) => ability.name == name,
+      );
+    } catch (e) {
+      // Return BasicAttack for basic attacks, null otherwise
+      return name == 'Basic Attack' ? BasicAttack() : null;
+    }
   }
 }
