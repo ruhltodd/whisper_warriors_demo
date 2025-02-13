@@ -81,7 +81,7 @@ void main() async {
   Hive.registerAdapter(BlueCoinAdapter()); // ✅ Register BlueCoin
   //await Hive.deleteBoxFromDisk('inventoryBox'); remove database and start game is .clear() doesnt work.. for debugging only
   //final inventoryBox = await Hive.openBox<InventoryItem>('inventoryBox'); if debugging and removing database uncomment this line and comment the next line
-  try {
+  /* try {
     await Hive.openBox<InventoryItem>('inventoryBox');
     InventoryManager.initializeInventory(); // Add await here
   } catch (e) {
@@ -90,7 +90,7 @@ void main() async {
     await Hive.openBox<InventoryItem>('inventoryBox');
     InventoryManager.initializeInventory(); // Add await here
     print("✅ Recovery complete - fresh inventory initialized");
-  }
+  } */
 
   //await Hive.box('inventoryBox').clear(); ✅ Clear box before adding items - for debugging only
   //await Hive.box('playerProgressBox').clear(); ✅ Clears progress
