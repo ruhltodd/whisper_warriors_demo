@@ -1,8 +1,12 @@
-import 'package:flame/components.dart';
-import 'package:flame/text.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
+import 'package:flame/particles.dart';
+import 'package:flame/text.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/items/itemrarity.dart';
+import 'package:whisper_warriors/game/items/items.dart';
 
 class NotificationComponent extends TextComponent {
   final RogueShooterGame gameRef;
@@ -50,37 +54,69 @@ class NotificationComponent extends TextComponent {
 class LootNotificationBar extends PositionComponent {
   final RogueShooterGame gameRef;
   final List<LootEntry> lootEntries = [];
-  static const int maxEntries = 5; // Max number of items shown at once
+  static const int maxEntries = 5;
   final List<NotificationItem> notifications = [];
-  static const double notificationDuration = 3.0; // Duration in seconds
+  static const double notificationDuration = 3.0;
 
-  // Reduce box size
-  LootNotificationBar(this.gameRef)
-      : super(size: Vector2(250, 100)); // Reduced from 350x120
+  late Sprite itemSprite;
+  late final ParticleSystemComponent particles;
+  bool isAnimating = false;
+  Timer? revealTimer;
+  SpriteComponent? itemIcon;
+  SpriteComponent? _pendingRemovalIcon;
+  RectangleComponent? _pendingRemovalPanel;
+  RectangleComponent? _pendingRemovalBorder;
+  TextComponent? _pendingRemovalReceivedText;
+  TextComponent? _pendingRemovalItemText;
+  bool _needsCleanup = false;
+  bool _cleanupScheduled = false;
+  List<PositionComponent> _activeComponents = [];
+
+  // Add a queue for pending notifications
+  final List<_PendingNotification> _notificationQueue = [];
+  bool _processingNotification = false;
+
+  LootNotificationBar(this.gameRef) : super(size: Vector2(250, 100));
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
-    priority = 1000; // ✅ Higher priority to keep it above other elements
-    await Future.delayed(
-        Duration(milliseconds: 100)); // Ensure proper game size
+    priority = 1000; // Keep it above other elements
 
-    // ✅ Set an initial fixed position (top-left)
+    // Initialize particle system
+    particles = ParticleSystemComponent(
+      particle: Particle.generate(
+        count: 50,
+        lifespan: 2,
+        generator: (i) => AcceleratedParticle(
+          acceleration: Vector2(0, 30),
+          speed: Vector2(
+            Random().nextDouble() * 100 - 50,
+            Random().nextDouble() * -50 - 50,
+          ),
+          position: size / 2,
+          child: CircleParticle(
+            radius: 2,
+            paint: Paint()..color = const Color(0xFFA020F0),
+          ),
+        ),
+      ),
+    );
+
     position = gameRef.size / 2 - size / 2;
-    print("📌 LootNotificationBar Position Set: $position");
   }
 
-  void addLootNotification(String itemName, String rarity, int quantity) {
-    if (lootEntries.length >= maxEntries) {
-      lootEntries.removeAt(0);
+  void addLootNotification(String itemName, String rarity, int quantity) async {
+    // Skip all coin notifications
+    if (itemName.toLowerCase().contains("coin")) {
+      return;
     }
 
-    // Extract just the rarity name from ItemRarity.epic format
+    // Rest of the notification code for special items
     final rarityName = rarity.contains(".")
         ? rarity.split(".").last.toUpperCase()
         : rarity.toUpperCase();
 
-    // Updated color mapping
     Color textColor;
     switch (rarityName) {
       case "COMMON":
@@ -93,26 +129,147 @@ class LootNotificationBar extends PositionComponent {
         textColor = Colors.blue;
         break;
       case "EPIC":
-        textColor = Colors.purple;
+        textColor = const Color(0xFFA335EE);
         break;
       case "LEGENDARY":
-        textColor = Colors.orange;
+        textColor = const Color(0xFFFF8000);
         break;
       default:
         textColor = Colors.white;
     }
 
-    // Format the display text without the ItemRarity. prefix
     final cleanItemName = itemName.contains("ItemRarity.")
         ? itemName.replaceAll(RegExp(r'\s*\(ItemRarity\.[^)]+\)'), '')
         : itemName;
 
-    lootEntries.add(LootEntry(cleanItemName, rarityName, quantity, textColor));
+    // Add to queue only for non-coin items
+    _notificationQueue.add(_PendingNotification(
+      spriteName: Item.createByName(cleanItemName)?.spriteName ?? '',
+      itemName: cleanItemName,
+      color: textColor,
+    ));
+  }
 
-    Future.delayed(Duration(seconds: 3), () {
-      lootEntries.removeWhere((entry) =>
-          entry.itemName == cleanItemName && entry.rarity == rarityName);
-    });
+  Future<void> showItemAnimation(
+      String spriteName, String itemName, Color color) async {
+    if (isAnimating) return;
+    isAnimating = true;
+
+    try {
+      // Load sprite first
+      itemSprite = await gameRef.loadSprite(spriteName);
+      await Future.delayed(Duration.zero);
+
+      if (!isMounted) {
+        isAnimating = false;
+        return;
+      }
+
+      final startPos = size / 2 + Vector2(0, -20);
+      final endPos = size / 2;
+      final isHighValue = color == const Color(0xFFA335EE) || // Epic
+          color == const Color(0xFFFF8000); // Legendary
+
+      // Create all components first
+      final components = <PositionComponent>[];
+
+      // Panel with opacity
+      final panel = RectangleComponent(
+        size: Vector2(300, 40),
+        position: startPos,
+        anchor: Anchor.center,
+        paint: Paint()
+          ..color = Colors.black.withOpacity(0.85) // Set initial opacity here
+          ..maskFilter =
+              isHighValue ? const MaskFilter.blur(BlurStyle.outer, 2) : null
+          ..style = PaintingStyle.fill,
+      );
+      components.add(panel);
+
+      // Icon
+      itemIcon = SpriteComponent(
+        sprite: itemSprite,
+        position: startPos + Vector2(-120, 0),
+        size: Vector2(32, 32),
+        anchor: Anchor.center,
+        paint: Paint()
+          ..color = Colors.white.withOpacity(1), // Set initial opacity here
+      );
+      components.add(itemIcon!);
+
+      // Text components
+      final receivedText = TextComponent(
+        text: 'You received',
+        textRenderer: TextPaint(
+          style: const TextStyle(
+            color: Color(0xFFFFD100),
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            shadows: [
+              Shadow(color: Colors.black, offset: Offset(1, 1), blurRadius: 2)
+            ],
+          ),
+        ),
+        position: startPos + Vector2(-80, -8),
+        anchor: Anchor.centerLeft,
+      );
+      components.add(receivedText);
+
+      final itemNameText = TextComponent(
+        text: itemName,
+        textRenderer: TextPaint(
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                color: isHighValue ? color.withOpacity(0.5) : Colors.black,
+                offset: const Offset(1, 1),
+                blurRadius: isHighValue ? 4 : 2,
+              ),
+            ],
+          ),
+        ),
+        position: startPos + Vector2(-80, 8),
+        anchor: Anchor.centerLeft,
+      );
+      components.add(itemNameText);
+
+      // Add all components first
+      for (final component in components) {
+        add(component);
+      }
+
+      // Store active components
+      _activeComponents = components;
+
+      // Add only move effects after components are mounted
+      await Future.delayed(Duration.zero);
+
+      for (final component in components) {
+        component.add(MoveEffect.to(
+          endPos + (component.position - startPos),
+          EffectController(duration: 0.3, curve: Curves.easeOutBack),
+        ));
+      }
+
+      // Schedule cleanup
+      Future.delayed(const Duration(seconds: 2), () {
+        if (isMounted) {
+          for (final component in _activeComponents) {
+            if (component.isMounted) {
+              component.removeFromParent();
+            }
+          }
+          _activeComponents.clear();
+          isAnimating = false;
+        }
+      });
+    } catch (e) {
+      print('❌ Error in showItemAnimation: $e');
+      isAnimating = false;
+    }
   }
 
   void showNotification(String message, ItemRarity rarity) {
@@ -150,8 +307,22 @@ class LootNotificationBar extends PositionComponent {
   void update(double dt) {
     super.update(dt);
 
+    // Only update the timer
+    if (revealTimer != null) {
+      revealTimer!.update(dt);
+    }
+
+    // Process next notification if we're ready
+    if (!isAnimating && _notificationQueue.isNotEmpty) {
+      final nextNotification = _notificationQueue.removeAt(0);
+      showItemAnimation(
+        nextNotification.spriteName,
+        nextNotification.itemName,
+        nextNotification.color,
+      );
+    }
+
     if (gameRef.player != null) {
-      // ✅ Position loot box **below** the player
       position = gameRef.player.position.clone() + Vector2(-125, 70);
     }
 
@@ -281,4 +452,17 @@ String _ellipsizeText(String text, double maxWidth, TextStyle style) {
     truncated = truncated.substring(0, truncated.length - 1);
   }
   return "...";
+}
+
+// Helper class for queued notifications
+class _PendingNotification {
+  final String spriteName;
+  final String itemName;
+  final Color color;
+
+  _PendingNotification({
+    required this.spriteName,
+    required this.itemName,
+    required this.color,
+  });
 }

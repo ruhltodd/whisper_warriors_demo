@@ -29,6 +29,25 @@ abstract class Item {
     // Default implementation - can be overridden by subclasses
     // No effect by default
   }
+
+  static Item? createByName(String name) {
+    switch (name.toLowerCase()) {
+      case 'umbral fang':
+        return UmbralFang();
+      case 'veil of the forgotten':
+        return VeilOfTheForgotten();
+      case 'shard of umbrathos':
+        return ShardOfUmbrathos();
+      case 'gold coin':
+        return GoldCoin();
+      case 'blue coin':
+        return BlueCoin();
+      case 'green coin':
+        return GreenCoin();
+      default:
+        return null;
+    }
+  }
 }
 
 class UmbralFang extends Item {
