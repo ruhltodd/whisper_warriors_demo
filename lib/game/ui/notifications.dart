@@ -14,11 +14,43 @@ class NotificationComponent extends TextComponent {
   double timer = 0.0;
   double opacity = 1.0;
   late TextPaint _textPaint;
+  static const double cornerRadius = 8.0; // Add corner radius constant
 
   NotificationComponent(
       this.gameRef, String message, this.positionOffset, TextStyle textStyle)
       : super(text: message) {
     _textPaint = TextPaint(style: textStyle);
+  }
+
+  @override
+  void render(Canvas canvas) {
+    final rect = Rect.fromLTWH(0, 0, width, height);
+    final rrect = RRect.fromRectAndRadius(
+      rect,
+      const Radius.circular(cornerRadius),
+    );
+
+    // Draw background with rounded corners
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = Colors.black.withOpacity(opacity * 0.7)
+        ..style = PaintingStyle.fill,
+    );
+
+    // Create a new TextPaint with the current opacity
+    final fadingTextPaint = TextPaint(
+      style: _textPaint.style.copyWith(
+        color: _textPaint.style.color?.withOpacity(opacity),
+      ),
+    );
+
+    // Draw text with padding
+    fadingTextPaint.render(
+      canvas,
+      text,
+      Vector2(cornerRadius / 2, cornerRadius / 2),
+    );
   }
 
   @override

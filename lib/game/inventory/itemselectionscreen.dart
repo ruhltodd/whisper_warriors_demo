@@ -184,29 +184,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
         itemBuilder: (context, index) {
           InventoryItem item = widget.availableItems[index];
           bool isSelected = selectedItems.contains(item);
-          Color borderColor = _getRarityColor(
-              item.item.rarity); // Default border color based on rarity
+          Color borderColor = _getRarityColor(item.item.rarity);
 
           return MouseRegion(
             onEnter: (_) => setState(() => _hoveredItem = item),
             onExit: (_) => setState(() => _hoveredItem = null),
             child: GestureDetector(
-              onTap: () {
-                _toggleItemSelection(item);
-              },
+              onTap: () => _toggleItemSelection(item),
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color:
-                        borderColor, // Always show rarity color for the border
+                    color: borderColor,
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Opacity(
-                  opacity: isSelected
-                      ? 0.5
-                      : 1, // Make the selected item semi-transparent
+                  opacity: isSelected ? 0.5 : 1,
                   child: Image.asset(
                     'assets/images/${item.item.name.toLowerCase().replaceAll(" ", "_")}.png',
                     fit: BoxFit.cover,
@@ -222,6 +216,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   /// Floating Hover Stats
   Widget _buildHoverStats() {
+    if (_hoveredItem == null) return const SizedBox.shrink();
+
+    // Debug prints
+    print('🔍 Hovered item: ${_hoveredItem!.item.name}');
+    print('📊 Raw stats: ${_hoveredItem!.item.stats}');
+    print('🔢 Stats entries count: ${_hoveredItem!.item.stats.entries.length}');
+    print('📝 Stats display: ${_hoveredItem!.getStatsDisplay()}');
+
     return Positioned(
       left: MediaQuery.of(context).size.width / 2 - 120,
       top: MediaQuery.of(context).size.height / 2 - 160,
@@ -239,26 +241,42 @@ class _InventoryScreenState extends State<InventoryScreen> {
             Text(
               _hoveredItem!.item.name,
               style: TextStyle(
-                color: Colors.white,
+                color: _getRarityColor(_hoveredItem!.item.rarity),
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
-            ..._hoveredItem!.item.stats.entries.map((stat) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(
-                  "${stat.key}: ${(stat.value * 100).toStringAsFixed(0)}%", // Convert to percentage if needed
-                  style: TextStyle(
-                    color: Colors.lightBlueAccent,
-                    fontSize: 14,
+            Text(
+              _hoveredItem!.item.description,
+              style: TextStyle(
+                color: Colors.grey[300],
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            // Stats section with explicit check
+            if (_hoveredItem!.item.stats.isNotEmpty) ...[
+              ..._hoveredItem!.item.stats.entries.map((stat) {
+                String displayValue = (stat.value * 100).toStringAsFixed(0);
+                String prefix = stat.value >= 0 ? "+" : "";
+                print('🎯 Adding stat: ${stat.key} = $prefix$displayValue%');
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text(
+                    "$prefix$displayValue% ${stat.key}",
+                    style: TextStyle(
+                      color: Colors.lightBlueAccent,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ],
           ],
         ),
       ),

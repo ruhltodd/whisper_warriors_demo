@@ -82,49 +82,24 @@ class InventoryItem {
 
   void applyEffect(Player player) {
     print("🎮 Applying effects of $name");
-
-    stats.forEach((stat, value) {
-      switch (stat) {
-        case 'health':
-          player.setMaxHealth(player.getMaxHealth() + value);
-          player.setHealth(player.getMaxHealth());
-          break;
-        case 'speed':
-          player.setMoveSpeed(player.getMoveSpeed() + value);
-          break;
-        case 'damage':
-          player.setDamageMultiplier(player.getDamageMultiplier() + value);
-          break;
-      }
-    });
+    item.applyEffect(player);
   }
 
   void removeEffect(Player player) {
     print("🎮 Removing effects of $name");
-
-    stats.forEach((stat, value) {
-      switch (stat) {
-        case 'health':
-          player.setMaxHealth(player.getMaxHealth() - value);
-          player.setHealth(player.getMaxHealth());
-          break;
-        case 'speed':
-          player.setMoveSpeed(player.getMoveSpeed() - value);
-          break;
-        case 'damage':
-          player.setDamageMultiplier(player.getDamageMultiplier() - value);
-          break;
-      }
-    });
+    item.removeEffect(player);
   }
 
   String getStatsDisplay() {
-    final stats = item.stats;
-    if (stats.isEmpty) return 'No stats';
+    if (stats.isEmpty) {
+      print('⚠️ No stats found for $name');
+      return 'No stats';
+    }
 
     return stats.entries.map((entry) {
-      final value = entry.value.toStringAsFixed(1);
-      return '${entry.key}: $value';
+      final value = (entry.value * 100).toStringAsFixed(0);
+      final prefix = entry.value >= 0 ? '+' : '';
+      return '$prefix$value% ${entry.key}';
     }).join('\n');
   }
 }

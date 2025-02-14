@@ -31,26 +31,51 @@ abstract class Item {
   }
 
   static Item? createByName(String name) {
+    Item? item;
     switch (name.toLowerCase()) {
       case 'umbral fang':
-        return UmbralFang();
+        item = UmbralFang();
+        item.stats = {
+          "Attack Speed": 0.15,
+          "Pierce": 1.0,
+        };
+        break;
       case 'veil of the forgotten':
-        return VeilOfTheForgotten();
+        item = VeilOfTheForgotten();
+        item.stats = {
+          "Defense Bonus": 0.50,
+          "Spirit Bonus": 0.25,
+        };
+        break;
       case 'shard of umbrathos':
-        return ShardOfUmbrathos();
+        item = ShardOfUmbrathos();
+        item.stats = {
+          "Spirit Multiplier": 0.35,
+          "Dark Power": 0.25,
+        };
+        break;
       case 'gold coin':
-        return GoldCoin();
+        item = GoldCoin();
+        break;
       case 'blue coin':
-        return BlueCoin();
+        item = BlueCoin();
+        break;
       case 'green coin':
-        return GreenCoin();
-      default:
-        return null;
+        item = GreenCoin();
+        break;
     }
+    return item;
   }
 }
 
 class UmbralFang extends Item {
+  UmbralFang() {
+    stats = {
+      "Attack Speed": 0.15, // 15% attack speed increase
+      "Pierce": 1.0, // 100% chance to pierce (boolean represented as 1.0)
+    };
+  }
+
   @override
   String get name => 'Umbral Fang';
 
@@ -71,13 +96,13 @@ class UmbralFang extends Item {
 
   @override
   void applyEffect(Player player) {
-    player.baseAttackSpeed *= 1.15;
-    player.projectilesShouldPierce = true; // ✅ Enable piercing
+    player.baseAttackSpeed *= (1 + stats["Attack Speed"]!);
+    player.projectilesShouldPierce = true;
 
     print(
         "🗡️ Umbral Fang equipped! Attack speed increased & projectiles pierce!");
 
-    // ✅ Ensure already-fired projectiles update if needed
+    // Ensure already-fired projectiles update if needed
     for (var projectile in player.gameRef.children.whereType<Projectile>()) {
       projectile.shouldPierce = true;
     }
@@ -85,13 +110,20 @@ class UmbralFang extends Item {
 
   @override
   void removeEffect(Player player) {
-    player.baseAttackSpeed /= 1.15;
-    player.projectilesShouldPierce = false; // ✅ Disable piercing
+    player.baseAttackSpeed /= (1 + stats["Attack Speed"]!);
+    player.projectilesShouldPierce = false;
     print("🗡️ Umbral Fang unequipped. Projectiles no longer pierce.");
   }
 }
 
 class VeilOfTheForgotten extends Item {
+  VeilOfTheForgotten() {
+    stats = {
+      "Defense Bonus": 0.50, // 50% defense increase when below half health
+      "Spirit Bonus": 0.25, // 25% spirit bonus
+    };
+  }
+
   @override
   String get name => 'Veil of the Forgotten';
 
@@ -105,7 +137,7 @@ class VeilOfTheForgotten extends Item {
   ItemRarity get rarity => ItemRarity.epic;
 
   @override
-  int get expValue => 150; // Added expValue getter with appropriate value
+  int get expValue => 150;
 
   @override
   void applyEffect(Player player) {
@@ -113,20 +145,31 @@ class VeilOfTheForgotten extends Item {
     if (player.currentHealth < player.maxHealth * 0.5) {
       player.baseDefense *= (1 + stats["Defense Bonus"]!);
     }
+    // Apply other effects
+    player.spiritMultiplier *= (1 + stats["Spirit Bonus"]!);
+
     print("Applied Veil of the Forgotten effect to player.");
   }
 
   @override
   void removeEffect(Player player) {
-    // Reverse the effect (if applicable)
+    // Reverse all effects
     if (player.currentHealth < player.maxHealth * 0.5) {
       player.baseDefense /= (1 + stats["Defense Bonus"]!);
     }
+    player.spiritMultiplier /= (1 + stats["Spirit Bonus"]!);
+
     print("Removed Veil of the Forgotten effect from player.");
   }
 }
 
 class ShardOfUmbrathos extends Item {
+  ShardOfUmbrathos() {
+    stats = {
+      "Spirit Multiplier": 0.35, // 35% spirit multiplier increase
+    };
+  }
+
   @override
   String get name => 'Shard of Umbrathos';
 
@@ -144,14 +187,13 @@ class ShardOfUmbrathos extends Item {
 
   @override
   void applyEffect(Player player) {
-    // For example, increase the player's spirit multiplier.
     player.spiritMultiplier *= (1 + stats["Spirit Multiplier"]!);
+    // Note: Dark Power stat is shown but not implemented yet
     print("Applied ShardOfUmbrathos effect to player.");
   }
 
   @override
   void removeEffect(Player player) {
-    // Reverse the effect when the item is removed.
     player.spiritMultiplier /= (1 + stats["Spirit Multiplier"]!);
     print("Removed ShardOfUmbrathos effect from player.");
   }

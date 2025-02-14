@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
-import 'package:whisper_warriors/game/items/itemfactory.dart';
+import 'package:whisper_warriors/game/items/items.dart';
 
 class InventoryStorage {
   static const String fileName = 'inventory.json';
@@ -17,63 +17,78 @@ class InventoryStorage {
     return File('$path/$fileName');
   }
 
-  static Future<void> saveInventory(List<InventoryItem> items) async {
-    try {
-      final file = await _localFile;
-      final data = items
-          .map((item) => {
-                'name': item.item.name,
-                'quantity': item.quantity,
-                'isEquipped': item.isEquipped,
-                'isNew': item.isNew,
-                'stats': item.item.stats,
-                'rarity': item.item.rarity.toString(),
-                'expValue': item.item.expValue,
-              })
-          .toList();
-
-      print('💾 Saving inventory:');
-      print(const JsonEncoder.withIndent('  ').convert(data));
-
-      await file.writeAsString(jsonEncode(data));
-      print('✅ Inventory saved successfully');
-    } catch (e) {
-      print('❌ Error saving inventory: $e');
-    }
-  }
-
   static Future<List<InventoryItem>> loadInventory() async {
     try {
+      print('📂 Loading inventory...');
       final file = await _localFile;
+
       if (!await file.exists()) {
-        print('📝 No inventory file found, starting fresh');
+        print('⚠️ No inventory file found, returning empty list');
         return [];
       }
 
-      final contents = await file.readAsString();
-      print('📖 Loading inventory:');
-      print(const JsonEncoder.withIndent('  ').convert(jsonDecode(contents)));
+      final String contents = await file.readAsString();
+      print('📄 Raw inventory contents: $contents');
 
-      final List<dynamic> data = jsonDecode(contents);
-      return data.map((json) {
-        final item = ItemFactory.createItem(json['name']);
+      final List<dynamic> jsonList = json.decode(contents);
+      List<InventoryItem> items = [];
 
-        // Apply saved stats and properties
-        if (json['stats'] != null) {
-          item.stats = Map<String, double>.from(json['stats']);
+      for (var itemData in jsonList) {
+        final Item? item = Item.createByName(itemData['name'] as String);
+        if (item != null) {
+          print('✅ Loading item: ${item.name}');
+          // Initialize the item with its default stats
+          switch (item.name.toLowerCase()) {
+            case 'umbral fang':
+              item.stats = {
+                "Attack Speed": 0.15,
+                "Pierce": 1.0,
+              };
+              break;
+            case 'veil of the forgotten':
+              item.stats = {
+                "Defense Bonus": 0.50,
+                "Spirit Bonus": 0.25,
+              };
+              break;
+            case 'shard of umbrathos':
+              item.stats = {
+                "Spirit Multiplier": 0.35,
+                "Dark Power": 0.25,
+              };
+              break;
+          }
+
+          items.add(InventoryItem(
+            item: item,
+            isEquipped: itemData['isEquipped'] as bool? ?? false,
+            isNew: itemData['isNew'] as bool? ?? true,
+            quantity: itemData['quantity'] as int? ?? 1,
+          ));
         }
+      }
 
-        return InventoryItem(
-          item: item,
-          quantity: json['quantity'] ?? 1,
-          isEquipped: json['isEquipped'] ?? false,
-          isNew: json['isNew'] ?? true,
-        );
-      }).toList();
+      print('📦 Loaded ${items.length} items');
+      return items;
     } catch (e) {
-      print('⚠️ Error loading inventory: $e');
+      print('❌ Error loading inventory: $e');
       return [];
     }
+  }
+
+  static Future<void> saveInventory(List<InventoryItem> items) async {
+    final file = await _localFile;
+    final List<Map<String, dynamic>> jsonList = items
+        .map((item) => {
+              'name': item.name,
+              'isEquipped': item.isEquipped,
+              'isNew': item.isNew,
+              'quantity': item.quantity,
+            })
+        .toList();
+
+    await file.writeAsString(json.encode(jsonList));
+    print('💾 Saved ${items.length} items to inventory');
   }
 
   static Future<List<InventoryItem>> loadEquippedItems() async {
