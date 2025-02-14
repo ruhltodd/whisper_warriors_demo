@@ -18,6 +18,7 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   final int maxAbilities = 4;
   late AudioPlayer _audioPlayer;
   late List<String> unlockedAbilities; // ✅ Store unlocked abilities
+  String? _hoveredAbility; // Add this to track hovered ability
 
   final Map<String, String> abilities = {
     'Whispering Flames':
@@ -72,12 +73,8 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
           Column(
             children: [
               SizedBox(height: 20),
-
-              // ✅ XP Bar at the top
               XPBar(),
-
               SizedBox(height: 20),
-
               Expanded(
                 child: GridView.builder(
                   padding: EdgeInsets.all(16),
@@ -94,13 +91,11 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
                           "⚠️ Invalid index: $index, available: ${unlockedAbilities.length}");
                       return SizedBox();
                     }
-
                     String ability = unlockedAbilities[index];
                     return _buildAbilityTile(ability);
                   },
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
                 child: Text(
@@ -112,39 +107,11 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
                   ),
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
                   children: [
-                    AnimatedSwitcher(
-                      duration: Duration(milliseconds: 250),
-                      child: Container(
-                        key: ValueKey<String>(selectedAbilities.isNotEmpty
-                            ? selectedAbilities.last
-                            : "Select an ability"),
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: Text(
-                          selectedAbilities.isNotEmpty
-                              ? abilities[selectedAbilities.last] ??
-                                  "Select an ability"
-                              : "Select an ability",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'MyCustomFont'),
-                        ),
-                      ),
-                    ),
                     SizedBox(height: 12),
-
-                    // ✅ Confirm Selection Button (Always Enabled)
                     ElevatedButton(
                       onPressed: () => _confirmSelection(),
                       style: ElevatedButton.styleFrom(
@@ -160,13 +127,13 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
                       ),
                       child: Text("Confirm Selection"),
                     ),
-
                     SizedBox(height: 10),
                   ],
                 ),
               ),
             ],
           ),
+          if (_hoveredAbility != null) _buildHoverStats(),
         ],
       ),
     );
@@ -175,48 +142,92 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   Widget _buildAbilityTile(String ability) {
     bool isUnlocked = unlockedAbilities.contains(ability);
 
-    return GestureDetector(
-      onTap: isUnlocked
-          ? () => _toggleAbilitySelection(ability)
-          : null, // Prevent selecting locked abilities
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: selectedAbilities.contains(ability)
-                  ? Colors.green
-                  : isUnlocked
-                      ? Colors.blueGrey
-                      : Colors.grey.shade800, // Grayed out if locked
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hoveredAbility = ability),
+      onExit: (_) => setState(() => _hoveredAbility = null),
+      child: GestureDetector(
+        onTap: isUnlocked ? () => _toggleAbilitySelection(ability) : null,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
                 color: selectedAbilities.contains(ability)
-                    ? Colors.greenAccent
+                    ? Colors.green
                     : isUnlocked
-                        ? Colors.white
-                        : Colors.grey.shade600, // Dim border if locked
-                width: 2,
+                        ? Colors.blueGrey
+                        : Colors.grey.shade800,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: selectedAbilities.contains(ability)
+                      ? Colors.greenAccent
+                      : isUnlocked
+                          ? Colors.white
+                          : Colors.grey.shade600,
+                  width: 2,
+                ),
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(6.0),
-              child: Opacity(
-                opacity: isUnlocked ? 1.0 : 0.4, // Dim locked abilities
-                child: Image.asset(
-                  'assets/images/${ability.toLowerCase().replaceAll(" ", "_")}.png',
-                  width: 48,
-                  height: 48,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.help_outline,
-                        size: 32, color: Colors.white);
-                  },
+              child: Padding(
+                padding: const EdgeInsets.all(6.0),
+                child: Opacity(
+                  opacity: isUnlocked ? 1.0 : 0.4,
+                  child: Image.asset(
+                    'assets/images/${ability.toLowerCase().replaceAll(" ", "_")}.png',
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(Icons.help_outline,
+                          size: 32, color: Colors.white);
+                    },
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHoverStats() {
+    if (_hoveredAbility == null) return const SizedBox.shrink();
+
+    return Positioned(
+      left: MediaQuery.of(context).size.width / 2 - 120,
+      top: MediaQuery.of(context).size.height / 2 - 160,
+      child: Container(
+        width: 240,
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white, width: 1),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _hoveredAbility!,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              abilities[_hoveredAbility!] ?? '',
+              style: TextStyle(
+                color: Colors.grey[300],
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
