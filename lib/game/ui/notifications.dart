@@ -173,13 +173,13 @@ class LootNotificationBar extends PositionComponent {
       // Create all components first
       final components = <PositionComponent>[];
 
-      // Panel with opacity
-      final panel = RectangleComponent(
+      // Black background panel
+      final panel = FadingComponent(
         size: Vector2(300, 40),
         position: startPos,
         anchor: Anchor.center,
         paint: Paint()
-          ..color = Colors.black.withOpacity(0.85) // Set initial opacity here
+          ..color = Colors.black
           ..maskFilter =
               isHighValue ? const MaskFilter.blur(BlurStyle.outer, 2) : null
           ..style = PaintingStyle.fill,
@@ -192,21 +192,23 @@ class LootNotificationBar extends PositionComponent {
         position: startPos + Vector2(-120, 0),
         size: Vector2(32, 32),
         anchor: Anchor.center,
-        paint: Paint()
-          ..color = Colors.white.withOpacity(1), // Set initial opacity here
       );
       components.add(itemIcon!);
 
-      // Text components
+      // "You received" text in gold
       final receivedText = TextComponent(
         text: 'You received',
         textRenderer: TextPaint(
           style: const TextStyle(
-            color: Color(0xFFFFD100),
+            color: Color(0xFFFFD100), // WoW gold color
             fontSize: 16,
             fontWeight: FontWeight.w500,
             shadows: [
-              Shadow(color: Colors.black, offset: Offset(1, 1), blurRadius: 2)
+              Shadow(
+                color: Colors.black,
+                offset: Offset(1, 1),
+                blurRadius: 2,
+              ),
             ],
           ),
         ),
@@ -215,6 +217,7 @@ class LootNotificationBar extends PositionComponent {
       );
       components.add(receivedText);
 
+      // Item name with appropriate rarity color
       final itemNameText = TextComponent(
         text: itemName,
         textRenderer: TextPaint(
@@ -244,14 +247,25 @@ class LootNotificationBar extends PositionComponent {
       // Store active components
       _activeComponents = components;
 
-      // Add only move effects after components are mounted
-      await Future.delayed(Duration.zero);
+      // Add a small delay before starting the animation
+      await Future.delayed(const Duration(milliseconds: 100));
 
+      // Add fade and move effects
       for (final component in components) {
-        component.add(MoveEffect.to(
-          endPos + (component.position - startPos),
-          EffectController(duration: 0.3, curve: Curves.easeOutBack),
-        ));
+        if (component is OpacityProvider) {
+          component.add(
+            OpacityEffect.fadeIn(
+              EffectController(duration: 0.3),
+            ),
+          );
+        }
+
+        component.add(
+          MoveEffect.to(
+            endPos + (component.position - startPos),
+            EffectController(duration: 0.3, curve: Curves.easeOutBack),
+          ),
+        );
       }
 
       // Schedule cleanup
@@ -465,4 +479,34 @@ class _PendingNotification {
     required this.itemName,
     required this.color,
   });
+}
+
+class FadingComponent extends PositionComponent implements OpacityProvider {
+  final Paint _paint;
+  double _opacity = 0;
+
+  FadingComponent({
+    required Vector2 position,
+    required Vector2 size,
+    required Paint paint,
+    Anchor anchor = Anchor.center,
+  }) : _paint = paint {
+    this.position = position;
+    this.size = size;
+    this.anchor = anchor;
+  }
+
+  @override
+  double get opacity => _opacity;
+
+  @override
+  set opacity(double value) {
+    _opacity = value.clamp(0.0, 1.0);
+  }
+
+  @override
+  void render(Canvas canvas) {
+    canvas.drawRect(
+        size.toRect(), _paint..color = _paint.color.withOpacity(_opacity));
+  }
 }
