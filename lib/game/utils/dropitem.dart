@@ -81,24 +81,21 @@ class DropItem extends SpriteComponent
         gameRef.player.position, // Move towards the player
         EffectController(duration: 0.3, curve: Curves.easeOut),
         onComplete: () {
-          gameRef.player.gainSpiritExp(item.expValue.toDouble()); // ✅ Give EXP
+          gameRef.player.gainSpiritExp(item.expValue.toDouble()); // Give EXP
 
-          // ✅ Check if the item is NOT a GoldCoin before saving
+          // Check if the item is NOT a coin before saving
           if (item is! GoldCoin && item is! BlueCoin && item is! GreenCoin) {
-            // ✅ Check for duplicates before saving
-            final box = Hive.box<InventoryItem>('inventoryBox');
-            if (!box.values.any((i) => i.item.name == item.name)) {
-              InventoryManager.addItem(
-                  InventoryItem(item: item, isEquipped: false));
-              print("💾 Item Saved to Hive: ${item.name}");
-            } else {
-              print("⚠️ Item already exists in Hive: ${item.name}");
+            try {
+              gameRef.player.collectItem(item);
+              print("💾 Item collected: ${item.name}");
+            } catch (e) {
+              print("⚠️ Error collecting item: ${item.name} - $e");
             }
           } else {
-            print("⚠️ GoldCoin collected, but not saved to inventory.");
+            print("💰 Coin collected: ${item.name}");
           }
 
-          removeFromParent(); // ✅ Remove item after collection
+          removeFromParent(); // Remove item after collection
           print("💰 Player collected ${item.expValue} EXP from ${item.name}!");
         },
       ),

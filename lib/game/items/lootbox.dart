@@ -130,7 +130,7 @@ class LootBox extends SpriteComponent
 
       // ✅ Send loot info to the Loot Notification Bar (HUD)
       gameRef.lootNotificationBar
-          .addLootNotification(item.name, item.rarity, 1);
+          .addLootNotification(item.name, item.rarity.toString(), 1);
     }
 
     removeFromParent(); // ✅ Remove loot box after opening

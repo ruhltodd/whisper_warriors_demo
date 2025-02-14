@@ -184,11 +184,18 @@ class SpawnController extends Component {
     add(Explosion(position)); // ✅ Explosion at impact location
   }
 
-  void checkAndTriggerEvents(int elapsedTime) {
-    print("🕒 Time: $elapsedTime - Boss Active: $_bossActive");
+  void checkAndTriggerEvents(int currentTime) {
+    // Add debug logging
+    if (currentTime >= 100 && currentTime <= 115) {}
 
-    if (elapsedTime == 60 && !_bossActive) {
+    if (currentTime == 60 && !_bossActive) {
       spawnBoss1();
+    }
+
+    // Boss spawn check - adjust timing as needed
+    if (currentTime >= 108 && !_bossActive) {
+      spawnBoss2();
+      _bossActive = true;
     }
   }
 
@@ -272,7 +279,7 @@ class SpawnController extends Component {
     final boss1 = Boss1(
       player: game.player,
       speed: 20,
-      health: 50000,
+      health: 5000,
       size: Vector2(128, 128),
       onHealthChanged: (double health) {
         game.bossHealthNotifier.value = health; // ✅ Ensure UI updates
@@ -289,7 +296,7 @@ class SpawnController extends Component {
     game.add(boss1);
 
     // ✅ **Set active boss in HUD**
-    game.setActiveBoss("Umbrathos, The Fading King", 50000);
+    game.setActiveBoss("Umbrathos, The Fading King", 5000);
 
     // ✅ **Delayed movement into battlefield**
     Future.delayed(Duration(milliseconds: 1500), () {

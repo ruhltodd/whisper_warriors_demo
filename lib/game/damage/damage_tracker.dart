@@ -1,54 +1,55 @@
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'ability_damage_log.dart';
 
 class DamageTracker {
   // Use the same box names as defined in main.dart
   static const String damageLogsBoxName = 'ability_damage_logs';
-  late Box<AbilityDamageLog> _damageBox;
+  final String source;
+  static late Box<AbilityDamageLog> _damageBox;
   static bool _isInitialized = false;
-  static final DamageTracker _instance = DamageTracker._internal();
 
-  DamageTracker._internal();
+  DamageTracker(this.source);
 
-  factory DamageTracker() {
-    return _instance;
-  }
-
-  Future<void> initialize() async {
-    print('🔄 Initializing DamageTracker...');
-    if (!Hive.isBoxOpen(damageLogsBoxName)) {
-      print('📦 Opening damage logs box...');
-      _damageBox = await Hive.openBox<AbilityDamageLog>(damageLogsBoxName);
-    } else {
-      print('📦 Using existing damage logs box...');
-      _damageBox = Hive.box<AbilityDamageLog>(damageLogsBoxName);
+  static Future<void> initialize() async {
+    // Register the adapter if not already registered
+    if (!Hive.isAdapterRegistered(7)) {
+      Hive.registerAdapter(AbilityDamageLogAdapter());
     }
-    print('✅ DamageTracker initialized');
+
+    // Open the box
+    _damageBox = await Hive.openBox<AbilityDamageLog>('ability_damage_logs');
+    print('📊 Damage tracking initialized');
   }
 
   bool get isInitialized => _isInitialized;
 
-  Future<void> recordDamage(
-      String abilityName, int damage, bool isCritical) async {
-    if (!_isInitialized) {
-      await initialize();
-    }
-
+  void recordDamage(int damage, {bool isCritical = false}) {
     try {
-      var log = _damageBox.get(abilityName) ?? AbilityDamageLog(abilityName);
+      if (!_damageBox.isOpen) {
+        print('⚠️ Damage box is not open, attempting to reopen...');
+        initialize();
+        return;
+      }
+
+      final String key = '${source}_damage_log';
+      AbilityDamageLog log = _damageBox.get(key) ??
+          AbilityDamageLog(source); // Use the simple constructor
+
+      // Update the log values
       log.totalDamage += damage;
       log.hits++;
       if (isCritical) log.criticalHits++;
-      await _damageBox.put(abilityName, log);
+
+      _damageBox.put(key, log);
       print(
-          '📝 Recorded damage for $abilityName: $damage (Critical: $isCritical)');
+          '📊 Recorded damage for ${log.abilityName}: $damage (Critical: $isCritical)');
     } catch (e) {
       print('❌ Error recording damage: $e');
     }
   }
 
   List<AbilityDamageLog> getAllLogs() {
-    if (!_isInitialized) {
+    if (!_damageBox.isOpen) {
       print('⚠️ Warning: Trying to get logs before initialization');
       return [];
     }
@@ -163,13 +164,21 @@ class DamageTracker {
     return report.toString();
   }
 
-  void clearAllDamageData() {
-    if (!Hive.isBoxOpen(damageLogsBoxName)) {
-      print('⚠️ Cannot clear damage data: Box not initialized');
-      return;
+  static Future<void> clearAllDamageData() async {
+    try {
+      if (_damageBox.isOpen) {
+        await _damageBox.clear();
+        print('🧹 Damage data cleared');
+      }
+    } catch (e) {
+      print('❌ Error clearing damage data: $e');
     }
-    print('🧹 Clearing all damage data...');
-    _damageBox.clear();
-    print('✨ Damage data cleared');
+  }
+
+  @override
+  void dispose() async {
+    if (_damageBox.isOpen) {
+      await _damageBox.close();
+    }
   }
 }

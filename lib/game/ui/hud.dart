@@ -465,7 +465,7 @@ class RetryOverlay extends StatelessWidget {
               ),
               const SizedBox(width: 20),
               ElevatedButton(
-                onPressed: () => game.quitToMainMenu(context),
+                onPressed: () => game.navigateToMainMenu(context),
                 style: ElevatedButton.styleFrom(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 30, vertical: 15),

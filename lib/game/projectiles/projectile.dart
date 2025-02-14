@@ -10,7 +10,7 @@ import 'package:whisper_warriors/game/main.dart';
 class Projectile extends SpriteAnimationComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   late Vector2 velocity;
-  final int damage;
+  final double damage;
   final bool isBossProjectile;
   final double maxRange;
   late Vector2 spawnPosition;
@@ -41,7 +41,7 @@ class Projectile extends SpriteAnimationComponent
 
   // 🔹 **Named Constructor for Player**
   Projectile.playerProjectile({
-    required int damage,
+    required double damage,
     required Vector2 velocity,
     required Player player, // ✅ Ensure player is passed
     void Function(BaseEnemy)? onHit, // ✅ Pass `onHit` for abilities
@@ -59,8 +59,10 @@ class Projectile extends SpriteAnimationComponent
         );
 
   // 🔹 **Named Constructor for Boss**
-  Projectile.bossProjectile({required int damage, required Vector2 velocity})
-      : this(
+  Projectile.bossProjectile({
+    required double damage,
+    required Vector2 velocity,
+  }) : this(
           damage: damage,
           velocity: velocity,
           maxRange: double.infinity, // ✅ Boss projectiles should go forever
@@ -134,11 +136,12 @@ class Projectile extends SpriteAnimationComponent
     if (!isBossProjectile && other is BaseEnemy) {
       print('💥 Projectile hit enemy! Ability: $abilityName');
 
-      // Use DamageTracker directly instead of going through ability
+      // Use DamageTracker with proper initialization
       if (player != null) {
         print(
             '📊 Recording damage for $abilityName: $damage (Critical: $isCritical)');
-        DamageTracker().recordDamage(abilityName, damage, isCritical);
+        DamageTracker(abilityName)
+            .recordDamage(damage.toInt(), isCritical: isCritical);
       } else {
         print('⚠️ No player reference in projectile!');
       }
@@ -163,7 +166,7 @@ class Projectile extends SpriteAnimationComponent
     required Player player,
     required Vector2 targetPosition,
     required double projectileSpeed,
-    required int damage,
+    required double damage,
     void Function(BaseEnemy)? onHit,
     String abilityName = 'Basic Attack',
     bool isCritical = false,

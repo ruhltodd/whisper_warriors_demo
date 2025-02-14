@@ -1,48 +1,23 @@
-import 'package:hive/hive.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/projectiles/projectile.dart';
+import 'package:whisper_warriors/game/items/itemrarity.dart';
 
-part 'items.g.dart'; // ✅ Required for Hive TypeAdapter Generation
+abstract class Item {
+  String get name;
+  String get description;
+  String get spriteName;
+  ItemRarity get rarity;
+  String get spritePath => 'items/$name.png'; // Default sprite path pattern
+  Map<String, double> stats = {};
+  int get expValue;
 
-@HiveType(typeId: 99)
-class Item {
-  @HiveField(0)
-  final String name;
+  void updateStats(Map<String, double> newStats) {
+    stats = Map<String, double>.from(newStats);
+    print('📊 Updated stats for $name: $stats');
+  }
 
-  @HiveField(1)
-  final String description;
-
-  @HiveField(2)
-  final String rarity;
-
-  @HiveField(3)
-  final Map<String, double> stats;
-
-  @HiveField(4)
-  final int expValue;
-
-  @HiveField(5)
-  final String spriteName;
-
-  const Item({
-    required this.name,
-    required this.description,
-    required this.rarity,
-    required this.stats,
-    required this.expValue,
-    required this.spriteName,
-  });
-
-  // Factory constructor for Hive
-  factory Item.fromJson(Map<String, dynamic> json) {
-    return Item(
-      name: json['name'] as String,
-      description: json['description'] as String,
-      rarity: json['rarity'] as String,
-      stats: (json['stats'] as Map<String, dynamic>).cast<String, double>(),
-      expValue: json['expValue'] as int,
-      spriteName: json['spriteName'] as String,
-    );
+  double getStat(String statName) {
+    return stats[statName] ?? 0.0;
   }
 
   void applyEffect(Player player) {
@@ -56,19 +31,24 @@ class Item {
   }
 }
 
-// 🗡️ **Umbral Fang - Increases attack speed & allows piercing**
-@HiveType(typeId: 1) // ✅ Ensure it's unique in Hive
 class UmbralFang extends Item {
-  UmbralFang()
-      : super(
-          name: "Umbral Fang",
-          description:
-              "A dagger formed from pure shadow, phasing through enemies.",
-          rarity: "Rare",
-          stats: {"Attack Speed": 0.15, "Piercing": 1}, // ✅ Standardized Stats
-          expValue: 200,
-          spriteName: "umbral_fang.png", // ✅ Proper sprite filename
-        );
+  @override
+  String get name => 'Umbral Fang';
+
+  @override
+  String get description => 'A shadowy fang that pulses with dark energy.';
+
+  @override
+  String get spriteName => 'umbral_fang.png';
+
+  @override
+  ItemRarity get rarity => ItemRarity.rare;
+
+  @override
+  String get spritePath => 'umbral_fang.png';
+
+  @override
+  int get expValue => 100;
 
   @override
   void applyEffect(Player player) {
@@ -92,20 +72,21 @@ class UmbralFang extends Item {
   }
 }
 
-// 🏹 **Veil of the Forgotten - Reduces damage when below 50% HP**
-@HiveType(typeId: 2) // ✅ Unique typeId
 class VeilOfTheForgotten extends Item {
-  VeilOfTheForgotten()
-      : super(
-          name: "Veil of the Forgotten",
-          description:
-              "A mysterious veil that shrouds you in protective darkness.",
-          // Example stat: gives a 20% bonus to defense when health is below 50%
-          stats: {"Defense Bonus": 0.20},
-          expValue: 100, // Example value for experience points
-          spriteName: "veil_of_the_forgotten.png", // Example sprite name
-          rarity: "Epic",
-        );
+  @override
+  String get name => 'Veil of the Forgotten';
+
+  @override
+  String get description => 'A mysterious veil that whispers ancient secrets.';
+
+  @override
+  String get spriteName => 'veil_of_the_forgotten.png';
+
+  @override
+  ItemRarity get rarity => ItemRarity.epic;
+
+  @override
+  int get expValue => 150; // Added expValue getter with appropriate value
 
   @override
   void applyEffect(Player player) {
@@ -126,19 +107,21 @@ class VeilOfTheForgotten extends Item {
   }
 }
 
-// 💠 **Shard of Umbrathos - Boosts Spirit Multiplier by 15%**
-@HiveType(typeId: 3) // ✅ Unique typeId
 class ShardOfUmbrathos extends Item {
-  // Provide the required values to the super constructor.
-  ShardOfUmbrathos()
-      : super(
-          name: "Shard of Umbrathos",
-          description: "A mysterious shard that enhances your spirit.",
-          stats: {"Spirit Multiplier": 0.15}, // Example stat bonus
-          rarity: "Epic",
-          expValue: 100, // Example expValue
-          spriteName: "shard_of_umbrathos.png", // Example spriteName
-        );
+  @override
+  String get name => 'Shard of Umbrathos';
+
+  @override
+  String get description => 'A fragment of pure darkness.';
+
+  @override
+  String get spriteName => 'shard_of_umbrathos.png';
+
+  @override
+  ItemRarity get rarity => ItemRarity.epic;
+
+  @override
+  int get expValue => 200;
 
   @override
   void applyEffect(Player player) {
@@ -155,17 +138,24 @@ class ShardOfUmbrathos extends Item {
   }
 }
 
-@HiveType(typeId: 4) // ✅ Unique typeId
 class GoldCoin extends Item {
-  GoldCoin()
-      : super(
-          name: "Gold Coin",
-          description: "A shiny gold coin.",
-          rarity: "Common",
-          stats: {},
-          expValue: 10000,
-          spriteName: 'gold_coin.png',
-        );
+  @override
+  String get name => 'Gold Coin';
+
+  @override
+  String get description => 'A shiny gold coin.';
+
+  @override
+  String get spriteName => 'gold_coin.png';
+
+  @override
+  ItemRarity get rarity => ItemRarity.common;
+
+  @override
+  String get spritePath => 'gold_coin.png';
+
+  @override
+  int get expValue => 5000;
 
   @override
   void applyEffect(Player player) {
@@ -178,17 +168,24 @@ class GoldCoin extends Item {
   }
 }
 
-@HiveType(typeId: 5) // ✅ Unique typeId
 class BlueCoin extends Item {
-  BlueCoin()
-      : super(
-          name: "Blue Coin",
-          description: "A shiny blue coin.",
-          rarity: "Common",
-          stats: {},
-          expValue: 80,
-          spriteName: 'blue_coin.png',
-        );
+  @override
+  String get name => 'Blue Coin';
+
+  @override
+  String get description => 'A mysterious blue coin.';
+
+  @override
+  String get spriteName => 'blue_coin.png';
+
+  @override
+  ItemRarity get rarity => ItemRarity.rare;
+
+  @override
+  String get spritePath => 'blue_coin.png';
+
+  @override
+  int get expValue => 80;
 
   @override
   void applyEffect(Player player) {
@@ -201,17 +198,24 @@ class BlueCoin extends Item {
   }
 }
 
-@HiveType(typeId: 6) // ✅ Unique typeId
 class GreenCoin extends Item {
-  GreenCoin()
-      : super(
-          name: "Green Coin",
-          description: "A shiny green coin.",
-          rarity: "Common",
-          stats: {},
-          expValue: 160,
-          spriteName: 'green_coin.png',
-        );
+  @override
+  String get name => 'Green Coin';
+
+  @override
+  String get description => 'An ethereal green coin.';
+
+  @override
+  String get spriteName => 'green_coin.png';
+
+  @override
+  ItemRarity get rarity => ItemRarity.uncommon;
+
+  @override
+  String get spritePath => 'green_coin.png';
+
+  @override
+  int get expValue => 160;
 
   @override
   void applyEffect(Player player) {

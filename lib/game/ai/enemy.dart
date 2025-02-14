@@ -11,7 +11,7 @@ import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 
-class BaseEnemy extends SpriteAnimationComponent
+abstract class BaseEnemy extends SpriteAnimationComponent
     with CollisionCallbacks, HasGameRef<RogueShooterGame> {
   final Player player;
   double _baseSpeed; // ✅ Store base speed internally
@@ -48,35 +48,31 @@ class BaseEnemy extends SpriteAnimationComponent
     }
   }
 
-  // ✅ Updated to handle Critical Hits
-  void takeDamage(int baseDamage, {bool isCritical = false}) {
-    // ✅ If the attack doesn't specify a crit (like abilities), roll for a crit chance
-    if (!isCritical) {
-      isCritical = gameRef.random.nextDouble() < player.critChance / 100;
-    }
+  void takeDamage(double damage, {bool isCritical = false}) {
+    if (health <= 0) return;
+    // Apply damage
+    health -= damage.toInt();
 
-    // ✅ Apply critical multiplier if crit occurs
-    int finalDamage =
-        isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
-
-    health -= finalDamage;
-
-    // ✅ Ensure at least one damage number appears per hit
-    if (timeSinceLastDamageNumber >= damageNumberInterval ||
-        timeSinceLastDamageNumber == 0.0) {
+    // Show damage number
+    if (timeSinceLastDamageNumber >= damageNumberInterval) {
       final damageNumber = DamageNumber(
-        finalDamage,
-        position.clone() + Vector2(0, -10),
-        isCritical: isCritical, // ✅ Flag critical damage
+        damage.toInt(),
+        position.clone(),
+        isCritical: isCritical,
       );
       gameRef.add(damageNumber);
-      timeSinceLastDamageNumber = 0.0; // ✅ Reset the timer
+      timeSinceLastDamageNumber = 0;
     }
+    // Play hit animation
+    // TODO: Implement hit animation system
+    // playAnimation('hit'); // Removed since method doesn't exist yet
 
-    // ✅ Handle Death
+    // Check for death
     if (health <= 0) {
       die();
     }
+
+    print('💥 Enemy took $damage damage. Health: $health');
   }
 
   void die() {

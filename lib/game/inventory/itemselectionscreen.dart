@@ -1,43 +1,78 @@
 import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
+import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
+import 'package:whisper_warriors/game/items/itemrarity.dart';
+
+const String INVENTORY_BOX_NAME = 'inventory_items';
 
 class InventoryScreen extends StatefulWidget {
   final List<InventoryItem> availableItems;
   final Function(List<InventoryItem>) onConfirm;
 
-  InventoryScreen({required this.availableItems, required this.onConfirm});
+  InventoryScreen({
+    required this.availableItems,
+    required this.onConfirm,
+  });
 
   @override
-  _InventorySelectionScreenState createState() =>
-      _InventorySelectionScreenState();
+  _InventoryScreenState createState() => _InventoryScreenState();
 }
 
-class _InventorySelectionScreenState extends State<InventoryScreen> {
-  List<InventoryItem?> _selectedItems = List.filled(5, null);
+class _InventoryScreenState extends State<InventoryScreen> {
+  List<InventoryItem> selectedItems = [];
   InventoryItem? _hoveredItem; // Tracks hovered item for stats
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with already equipped items
+    selectedItems =
+        widget.availableItems.where((item) => item.isEquipped).toList();
+  }
+
+  Future<void> _confirmSelection() async {
+    try {
+      // Update equipped status for all items
+      final updatedItems = widget.availableItems.map((item) {
+        item.isEquipped = selectedItems
+            .any((selected) => selected.item.name == item.item.name);
+        return item;
+      }).toList();
+
+      // Save the updated inventory
+      await InventoryStorage.saveInventory(updatedItems);
+      print('✅ Saved equipped items state');
+
+      // Call the confirmation callback
+      widget.onConfirm(selectedItems);
+    } catch (e) {
+      print('❌ Error saving equipped items: $e');
+    }
+  }
 
   void _toggleItemSelection(InventoryItem item) {
     setState(() {
-      int firstEmptyIndex = _selectedItems.indexWhere((slot) => slot == null);
-
-      if (_selectedItems.contains(item)) {
-        _selectedItems[_selectedItems.indexOf(item)] = null;
-      } else if (firstEmptyIndex != -1) {
-        _selectedItems[firstEmptyIndex] = item;
+      if (selectedItems.contains(item)) {
+        selectedItems.remove(item);
+      } else {
+        selectedItems.add(item);
       }
     });
   }
 
-  Color _getRarityColor(String rarity) {
+  Color _getRarityColor(ItemRarity rarity) {
     switch (rarity) {
-      case "Rare":
+      case ItemRarity.rare:
         return Colors.blue;
-      case "Epic":
+      case ItemRarity.epic:
         return Colors.purple;
-      case "Legendary":
+      case ItemRarity.legendary:
         return Colors.orange;
+      case ItemRarity.uncommon:
+        return Colors.green;
+      case ItemRarity.common:
       default:
-        return Colors.white; // Default for other rarities
+        return Colors.white;
     }
   }
 
@@ -71,7 +106,7 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
                 child: Text(
-                  "${_selectedItems.where((item) => item != null).length}/5 Items Selected",
+                  "${selectedItems.length}/5 Items Selected",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -79,7 +114,7 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
                   ),
                 ),
               ),
-              _buildConfirmButton(),
+              _buildConfirmButton(context),
               const SizedBox(height: 20),
             ],
           ),
@@ -94,10 +129,15 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(5, (index) {
+        // Safely check if we have an item at this index
+        final hasItemAtIndex = index < widget.availableItems.length;
+
         return GestureDetector(
           onTap: () {
+            if (!hasItemAtIndex) return; // Don't do anything if no item exists
             setState(() {
-              _selectedItems[index] = null;
+              selectedItems.removeWhere((item) =>
+                  item.item.name == widget.availableItems[index].item.name);
             });
           },
           child: Container(
@@ -105,15 +145,21 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
             height: 64,
             margin: EdgeInsets.symmetric(horizontal: 6),
             decoration: BoxDecoration(
-              color: _selectedItems[index] != null
+              color: hasItemAtIndex &&
+                      selectedItems.any((item) =>
+                          item.item.name ==
+                          widget.availableItems[index].item.name)
                   ? Colors.grey[800]
                   : Colors.black45,
               border: Border.all(color: Colors.white, width: 2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: _selectedItems[index] != null
+            child: hasItemAtIndex &&
+                    selectedItems.any((item) =>
+                        item.item.name ==
+                        widget.availableItems[index].item.name)
                 ? Image.asset(
-                    'assets/images/${_selectedItems[index]!.item.name.toLowerCase().replaceAll(" ", "_")}.png',
+                    'assets/images/${widget.availableItems[index].item.name.toLowerCase().replaceAll(" ", "_")}.png',
                     fit: BoxFit.cover,
                   )
                 : Icon(Icons.lock, color: Colors.white54, size: 30),
@@ -123,7 +169,6 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
     );
   }
 
-  /// Inventory Grid with Hover Effect
   /// Inventory Grid with Hover Effect
   Widget _buildInventoryGrid() {
     return Padding(
@@ -138,7 +183,7 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
         itemCount: widget.availableItems.length,
         itemBuilder: (context, index) {
           InventoryItem item = widget.availableItems[index];
-          bool isSelected = _selectedItems.contains(item);
+          bool isSelected = selectedItems.contains(item);
           Color borderColor = _getRarityColor(
               item.item.rarity); // Default border color based on rarity
 
@@ -221,16 +266,9 @@ class _InventorySelectionScreenState extends State<InventoryScreen> {
   }
 
   /// Confirm Button
-  Widget _buildConfirmButton() {
+  Widget _buildConfirmButton(BuildContext context) {
     return ElevatedButton(
-      onPressed: () {
-        final filteredSelection =
-            _selectedItems.whereType<InventoryItem>().toList();
-        print(
-            "🎒 Final Selected Items: ${filteredSelection.map((item) => item.item.name).toList()}");
-
-        widget.onConfirm(filteredSelection);
-      },
+      onPressed: _confirmSelection,
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color.fromARGB(255, 123, 123, 123),
         padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),

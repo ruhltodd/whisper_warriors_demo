@@ -83,7 +83,7 @@ class OptionsMenu extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _buildButton(
-              'End Game',
+              'Damage Report',
               () {
                 game.showDamageReport();
                 game.overlays.remove('optionsMenu');
@@ -92,7 +92,11 @@ class OptionsMenu extends StatelessWidget {
             const SizedBox(height: 10),
             _buildButton(
               'Quit to Main Menu',
-              () => game.quitToMainMenu(context),
+              () {
+                game.overlays
+                    .remove('optionsMenu'); // Remove options menu first
+                game.quitToMainMenu(context); // Then quit to main menu
+              },
             ),
           ],
         ),

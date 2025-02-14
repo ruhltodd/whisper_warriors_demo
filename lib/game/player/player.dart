@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flame/collisions.dart';
-import 'package:whisper_warriors/game/damage/ability_damage_log.dart';
-import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/items/items.dart';
@@ -18,16 +16,17 @@ import 'package:whisper_warriors/game/player/whisperwarrior.dart';
 import 'package:whisper_warriors/game/effects/healingnumber.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
-import 'package:hive/hive.dart';
 import 'package:whisper_warriors/game/damage/damage_tracker.dart';
+import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
-  final DamageTracker damageTracker = DamageTracker(); // Add damage tracker
+  final DamageTracker damageTracker =
+      DamageTracker('player'); // Add ability name
 
   // Base Stats (before Spirit Level modifications)
   double baseHealth = 100.0;
-  double baseSpeed = 140.0;
+  double baseSpeed = 100.0;
   double baseAttackSpeed = 1.0; // Attacks per second
   double baseDefense = 0.0; // % Damage reduction
   double baseDamage = 10.0;
@@ -58,16 +57,18 @@ class Player extends PositionComponent
 
   // UI & Game Elements
   HealthBar? healthBar;
-  Vector2 joystickDelta = Vector2.zero();
+  Vector2 _joystickDelta = Vector2.zero();
+  double speed = 140; // Adjust this value to control player movement speed
   Vector2 movementDirection = Vector2.zero(); // Stores movement direction
   late WhisperWarrior whisperWarrior;
   BaseEnemy? closestEnemy;
   List<Ability> abilities = [];
   final ValueNotifier<List<Ability>> abilityNotifier =
       ValueNotifier([]); // Tracks ability updates
-  final List<String> selectedAbilities; // Store selected abilities
-  final ValueNotifier<List<InventoryItem>> equippedItemsNotifier =
-      ValueNotifier([]); // Live-updating notifier
+  final List<String> selectedAbilities;
+  late final ValueNotifier<List<InventoryItem>> equippedItemsNotifier;
+  List<InventoryItem> equippedItems = [];
+
   bool projectilesShouldPierce = false; // ✅ Track if projectiles should pierce
 
   bool isDead = false;
@@ -83,7 +84,6 @@ class Player extends PositionComponent
   // Inventory System
   List<Item> inventory =
       []; // Start with an empty inventory// Stores collected items
-  List<InventoryItem> equippedItems; // Store equipped items
   ValueNotifier<List<Item>> inventoryNotifier = ValueNotifier([]);
   List<String> unlockedAbilities = [];
 
@@ -97,8 +97,11 @@ class Player extends PositionComponent
   }
 
   // Constructor for Player
-  Player({required this.selectedAbilities, required this.equippedItems})
-      : super(size: Vector2(128, 128)) {
+  Player({
+    required List<String> selectedAbilities,
+    List<InventoryItem>? equippedItems,
+  })  : selectedAbilities = selectedAbilities,
+        super(size: Vector2(128, 128)) {
     print("🛡 Player Constructor - Selected Abilities: $selectedAbilities");
 
     add(RectangleHitbox(
@@ -115,44 +118,66 @@ class Player extends PositionComponent
     }
     abilityNotifier.value = List.from(abilities);
 
-    // ✅ Ensure inventory includes equipped items
-    inventory.addAll(equippedItems.map((invItem) => invItem.item));
+    // ✅ Fixed: Access the item property of InventoryItem
+    inventory.addAll(equippedItems?.map((invItem) => invItem.item) ?? []);
 
     // ✅ Apply equipped item effects
     Future.delayed(Duration(milliseconds: 100), () {
       applyEquippedItems();
     });
+
+    // Initialize equipped items notifier
+    this.equippedItems = equippedItems ?? [];
+    equippedItemsNotifier =
+        ValueNotifier<List<InventoryItem>>(this.equippedItems);
   }
   get attackModifiers => null;
 
   @override
   Future<void> onLoad() async {
-    super.onLoad();
-    loadInventory();
-    healthBar = HealthBar(this);
-    gameRef.add(healthBar!);
+    try {
+      print('🎮 Starting player initialization...');
 
-    whisperWarrior = WhisperWarrior()
-      ..size = size.clone()
-      ..anchor = Anchor.center
-      ..position = position.clone();
-    gameRef.add(whisperWarrior);
+      // Initialize base component
+      await super.onLoad();
+      loadInventory();
 
-    // Load unlocked abilities from PlayerProgressManager
-    unlockedAbilities = PlayerProgressManager.getUnlockedAbilities();
+      // Initialize health bar first
+      healthBar = HealthBar(this);
+      await gameRef.add(healthBar!);
+      print('❤️ Health bar initialized');
 
-    for (var abilityName in unlockedAbilities) {
-      Ability? ability = AbilityFactory.createAbility(abilityName);
-      if (ability != null) {
-        addAbility(ability);
+      // Initialize WhisperWarrior sprite - KEY DIFFERENCE HERE
+      whisperWarrior = WhisperWarrior()
+        ..size = size.clone()
+        ..anchor = Anchor.center
+        ..position = position.clone();
+      await gameRef.add(whisperWarrior); // Add to gameRef instead of player
+      print('👤 WhisperWarrior added to game');
+
+      // Load unlocked abilities
+      unlockedAbilities = PlayerProgressManager.getUnlockedAbilities();
+      for (var abilityName in unlockedAbilities) {
+        Ability? ability = AbilityFactory.createAbility(abilityName);
+        if (ability != null) {
+          addAbility(ability);
+        }
       }
-    }
-    print("🔥 Player Loaded with Abilities: $unlockedAbilities");
+      print("🔥 Player Loaded with Abilities: $unlockedAbilities");
 
-    // ✅ Apply only explicitly equipped items
-    for (var item in equippedItems) {
-      item.applyEffect(this);
-      print("🎭 Applied ${item.name} to Player.");
+      // Apply equipped items
+      for (var item in equippedItems) {
+        item.applyEffect(this);
+        print("🎭 Applied ${item.name} to Player");
+      }
+
+      print('✅ Player initialization complete');
+      print('   Position: $position');
+      print('   Size: $size');
+      print('   Health: $currentHealth/$maxHealth');
+    } catch (e, stackTrace) {
+      print('❌ Error in player initialization: $e');
+      print('Stack trace: $stackTrace');
     }
   }
 
@@ -163,27 +188,29 @@ class Player extends PositionComponent
     }
   }
 
-  void equipItem(String itemName) {
-    List<InventoryItem> matchedItems = InventoryManager.getInventory()
-        .where((inventoryItem) => inventoryItem.item.name == itemName)
-        .toList();
+  Future<void> equipItem(String itemName) async {
+    try {
+      List<InventoryItem> inventory = await InventoryManager.getInventory();
+      List<InventoryItem> matchedItems = inventory
+          .where((inventoryItem) => inventoryItem.item.name == itemName)
+          .toList();
 
-    if (matchedItems.isNotEmpty) {
-      matchedItems.first.applyEffect(this);
-      if (!equippedItems.contains(matchedItems.first)) {
-        equippedItems.add(matchedItems.first);
-        equippedItemsNotifier.value =
-            List.from(equippedItems); // ✅ Ensure UI updates
+      if (matchedItems.isNotEmpty) {
+        matchedItems.first.applyEffect(this);
+        if (!equippedItems.contains(matchedItems.first)) {
+          equippedItems.add(matchedItems.first);
+          equippedItemsNotifier.value = List.from(equippedItems);
+        }
+        print("🎭 Equipped: ${matchedItems.first.name}");
+      } else {
+        print("⚠️ No equipped item found for $itemName");
       }
-      print("🎭 Equipped: ${matchedItems.first.item.name}");
-    } else {
-      print("⚠️ No equipped item found for $itemName");
-    }
 
-    print("🔹 Player Stats After Equipping: ");
-    print(" - Attack Speed: $attackSpeed");
-    print(" - Defense: $defense");
-    print(" - Spirit Multiplier: $spiritMultiplier");
+      print("🔹 Player Stats After Equipping: ");
+      printStats();
+    } catch (e) {
+      print("❌ Error equipping item: $e");
+    }
   }
 
   // Remove an item and update UI
@@ -196,30 +223,68 @@ class Player extends PositionComponent
     }
   }
 
-  // Collect an item (adds to inventory but doesn't equip)
-  void collectItem(Item item) {
-    if (!inventory.contains(item)) {
+  // Collect an item (adds to inventory and saves to JSON storage)
+  Future<void> collectItem(Item item) async {
+    try {
+      // Check if player already has this item
+      if (inventory.any((existingItem) => existingItem.name == item.name)) {
+        // If duplicate, just give experience
+        gainSpiritExp(item.expValue.toDouble());
+        print(
+            "🌟 Converted duplicate ${item.name} to ${item.expValue} experience");
+        return;
+      }
+
+      // Add to inventory
       inventory.add(item);
       print("📦 Collected: ${item.name}");
+
+      // Create inventory item
+      final inventoryItem = InventoryItem(
+        item: item,
+        quantity: 1,
+        isEquipped: equippedItems.length < 5, // Auto-equip if less than 5 items
+        isNew: true,
+      );
+
+      // If we have space and it's a new item, equip it
+      if (equippedItems.length < 5) {
+        equippedItems.add(inventoryItem);
+        equippedItemsNotifier.value = List.from(equippedItems);
+        print("🎭 Auto-equipped: ${item.name}");
+      }
+
+      // Save to storage
+      final currentInventory = await InventoryStorage.loadInventory();
+      currentInventory.add(inventoryItem);
+      await InventoryStorage.saveInventory(currentInventory);
+      print("💾 Saved ${item.name} to inventory storage");
+    } catch (e) {
+      print("❌ Error collecting item: $e");
     }
   }
 
-  // Apply effects of equipped items
-  void applyEquippedItems() {
-    print(
-        "🛡 Applying Equipped Items: ${equippedItems.map((e) => e.item.name).toList()}");
+  // Equipment handling
+  Future<void> applyEquippedItems() async {
+    print('🎮 Applying equipped items to player');
 
-    Set<String> appliedItems = {};
+    try {
+      // Get equipped items from inventory manager
+      List<InventoryItem> equippedItems =
+          await InventoryManager.getEquippedItems();
 
-    for (var invItem in equippedItems) {
-      if (!appliedItems.contains(invItem.item.name)) {
-        invItem.item.applyEffect(this);
-        appliedItems.add(invItem.item.name);
+      // Apply effects for each equipped item
+      for (var item in equippedItems) {
+        try {
+          item.applyEffect(this);
+          print('✅ Applied ${item.name}');
+        } catch (e) {
+          print('⚠️ Error applying item ${item.name}: $e');
+        }
       }
+    } catch (e) {
+      print('❌ Error loading equipped items: $e');
     }
-
-    // ✅ Explicitly update the notifier so InventoryBar gets the change
-    equippedItemsNotifier.value = List.from(equippedItems);
   }
 
   // Apply inventory item effects to player stats
@@ -253,26 +318,25 @@ class Player extends PositionComponent
 
   // Update joystick input for movement
   void updateJoystick(Vector2 delta) {
-    joystickDelta = delta;
+    _joystickDelta = delta;
   }
 
   // Movement methods
-  void moveUp() => joystickDelta = Vector2(0, -1);
-  void moveDown() => joystickDelta = Vector2(0, 1);
-  void moveLeft() => joystickDelta = Vector2(-1, 0);
-  void moveRight() => joystickDelta = Vector2(1, 0);
+  void moveUp() => _joystickDelta = Vector2(0, -1);
+  void moveDown() => _joystickDelta = Vector2(0, 1);
+  void moveLeft() => _joystickDelta = Vector2(-1, 0);
+  void moveRight() => _joystickDelta = Vector2(1, 0);
   void stopMovement() =>
-      joystickDelta = Vector2.zero(); // Stops movement when key is released
+      _joystickDelta = Vector2.zero(); // Stops movement when key is released
 
   @override
   void update(double dt) {
     super.update(dt);
-    timeSinceLastShot += dt;
 
     updateSpiritMultiplier();
     updateClosestEnemy();
 
-    Vector2 totalMovement = movementDirection + joystickDelta;
+    Vector2 totalMovement = movementDirection + _joystickDelta;
     if (totalMovement.length > 0) {
       Vector2 prevPosition = position.clone();
       position = prevPosition +
@@ -285,32 +349,31 @@ class Player extends PositionComponent
 
     whisperWarrior.position = position.clone();
 
-    // Debug prints to track shooting conditions
-
-    // Shoot projectile if cooldown is over and an enemy is targeted
-    if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
-      final projectile = Projectile.shootFromPlayer(
-        player: this,
-        targetPosition: closestEnemy!.position,
-        projectileSpeed: 500, // You might want to make this configurable
-        damage: damage.toInt(),
-        onHit: (enemy) {
-          // Handle any specific on-hit effects if needed
-        },
-      );
-      gameRef.add(projectile);
-      timeSinceLastShot = 0.0;
-    }
-
     // Update health bar position
     if (healthBar != null) {
       healthBar!.position = position +
           Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
     }
 
-    // Update abilities after basic attack
+    // Update abilities
     for (var ability in abilities) {
       ability.onUpdate(this, dt);
+    }
+
+    // Handle shooting
+    timeSinceLastShot += dt;
+    if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
+      final projectile = Projectile.shootFromPlayer(
+        player: this,
+        targetPosition: closestEnemy!.position,
+        projectileSpeed: 500,
+        damage: damage.toDouble(),
+        onHit: (enemy) {
+          // Handle any specific on-hit effects if needed
+        },
+      );
+      gameRef.add(projectile);
+      timeSinceLastShot = 0.0;
     }
   }
 
@@ -343,44 +406,18 @@ class Player extends PositionComponent
   }
 
   // Take damage and handle death
-  void takeDamage(int damage) async {
-    if (isDead) return; // Prevent extra damage when player dies
-    double reducedDamage = damage * (1 - (defense / 100));
-// ✅ Show red floating damage number above the player
+  void takeDamage(double amount) {
+    if (currentHealth <= 0) return; // Prevent damage when dead
 
-    final playerDamageNumber = DamageNumber(
-      -reducedDamage.toInt(), // Show negative damage
-      position.clone() + Vector2(0, -20), // Position above player
-      isCritical: false, // Not a critical hit
-      isPlayer: true, // ✅ Marks it as player damage
-    );
-    gameRef.add(playerDamageNumber);
-    // Apply Veil of the Forgotten effect if HP < 50%
-    if (equippedItems.any((item) => item is VeilOfTheForgotten) &&
-        currentHealth < maxHealth * 0.5) {
-      reducedDamage *= 0.8; // Reduce damage by 20%
+    currentHealth -= amount;
+    print('💥 Player took $amount damage. Health: $currentHealth/$maxHealth');
+
+    // Trigger hit animation if available
+    if (whisperWarrior != null) {
+      whisperWarrior.playAnimation('hit');
     }
 
-    currentHealth -= reducedDamage.clamp(1, maxHealth).toInt(); // Explicit cast
-
-    // Lose Spirit EXP instead of instantly dropping a level
-    double expLoss =
-        spiritExpToNextLevel * 0.05; // Lose 5% of current level EXP
-    spiritExp -= expLoss;
-    if (spiritExp < 0) spiritExp = 0; // Prevent negative EXP
-
-    gameRef.experienceBar
-        .updateSpirit(spiritExp, spiritExpToNextLevel, spiritLevel);
-
-    whisperWarrior.playAnimation('hit');
-
-    Future.delayed(Duration(milliseconds: 300), () {
-      if (!isDead) {
-        whisperWarrior
-            .playAnimation('idle'); // ✅ Only return to idle after delay
-      }
-    });
-
+    // Check for death
     if (currentHealth <= 0 && !isDead) {
       isDead = true;
       whisperWarrior.playAnimation('death');
@@ -406,10 +443,34 @@ class Player extends PositionComponent
         fireAura.removeFromParent();
       }
 
-      await gameRef.stopBackgroundMusic();
-      await gameRef.playGameOverMusic();
+      onDeath();
     } else {
       healthBar?.updateHealth(currentHealth.toInt(), maxHealth.toInt());
+    }
+  }
+
+  Future<void> onDeath() async {
+    print('💀 Player died');
+    if (whisperWarrior != null) {
+      whisperWarrior.playAnimation('death');
+
+      // Get animation duration correctly
+      final double animationDuration = whisperWarrior.animation!.frames.length *
+          whisperWarrior.animation!.frames.first.stepTime;
+
+      Future.delayed(Duration(milliseconds: (animationDuration * 1000).toInt()),
+          () {
+        removeFromParent();
+      });
+
+      // Show retry overlay after a delay
+      Future.delayed(Duration(seconds: 2), () {
+        gameRef.overlays.add('retryOverlay');
+      });
+
+      // Handle music
+      await gameRef.stopBackgroundMusic();
+      await gameRef.playGameOverMusic();
     }
   }
 
@@ -464,20 +525,17 @@ class Player extends PositionComponent
 
   // Find the closest enemy
   BaseEnemy? findClosestEnemy() {
-    final enemies = gameRef.children.whereType<BaseEnemy>().toList();
-    if (enemies.isEmpty) {
-      return null;
-    }
-
-    BaseEnemy? closest;
     double closestDistance = double.infinity;
-    for (final enemy in enemies) {
+    BaseEnemy? closest;
+
+    for (final enemy in gameRef.children.whereType<BaseEnemy>()) {
       final distance = (enemy.position - position).length;
       if (distance < closestDistance) {
         closestDistance = distance;
         closest = enemy;
       }
     }
+
     return closest;
   }
 
@@ -542,7 +600,7 @@ class Player extends PositionComponent
 
       if (distance < 100.0) {
         // Explosion radius
-        int finalDamage = explosionDamage.toInt().clamp(1, 9999);
+        double finalDamage = explosionDamage.clamp(1, 9999);
         enemy.takeDamage(finalDamage);
       }
     }
@@ -589,4 +647,93 @@ class Player extends PositionComponent
       return name == 'Basic Attack' ? BasicAttack() : null;
     }
   }
+
+  // Getters
+  double getMaxHealth() => maxHealth;
+  double getHealth() => currentHealth;
+  double getMoveSpeed() => movementSpeed;
+  double getDamageMultiplier() => damage;
+
+  // Setters
+  void setMaxHealth(double value) {
+    baseHealth = value;
+    print('🛡️ Max Health updated to: $baseHealth');
+  }
+
+  void setHealth(double value) {
+    currentHealth = value.clamp(0, maxHealth);
+    print('❤️ Health updated to: $currentHealth');
+  }
+
+  void setMoveSpeed(double value) {
+    baseSpeed = value.clamp(100, 400); // Prevent too slow/fast movement
+    print('👟 Move Speed updated to: $baseSpeed');
+  }
+
+  void setDamageMultiplier(double value) {
+    baseDamage = value.clamp(0.5, 3.0); // Prevent extreme damage values
+    print('⚔️ Damage Multiplier updated to: $baseDamage');
+  }
+
+  // Debug info
+  void printStats() {
+    print('\n📊 Player Stats:');
+    print('Health: $currentHealth/$maxHealth');
+    print('Move Speed: $movementSpeed');
+    print('Damage Multiplier: $damage\n');
+  }
+
+  void heal(double amount) {
+    setHealth(currentHealth + amount);
+    print('💚 Player healed $amount. Health: $currentHealth/$maxHealth');
+  }
+
+  void updateMovement(double dt) {
+    if (!isMounted) return;
+
+    updateSpiritMultiplier();
+    updateClosestEnemy();
+
+    Vector2 totalMovement = movementDirection + _joystickDelta;
+    if (totalMovement.length > 0) {
+      Vector2 prevPosition = position.clone();
+      position = prevPosition +
+          (totalMovement.normalized() * movementSpeed * dt) * 0.75;
+      whisperWarrior.scale.x = totalMovement.x > 0 ? -1 : 1;
+      whisperWarrior.playAnimation('attack');
+    } else {
+      whisperWarrior.playAnimation('idle');
+    }
+
+    whisperWarrior.position = position.clone();
+
+    // Update health bar position
+    if (healthBar != null) {
+      healthBar!.position = position +
+          Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
+    }
+
+    // Update abilities
+    for (var ability in abilities) {
+      ability.onUpdate(this, dt);
+    }
+
+    // Handle shooting
+    timeSinceLastShot += dt;
+    if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
+      final projectile = Projectile.shootFromPlayer(
+        player: this,
+        targetPosition: closestEnemy!.position,
+        projectileSpeed: 500,
+        damage: damage.toDouble(),
+        onHit: (enemy) {
+          // Handle any specific on-hit effects if needed
+        },
+      );
+      gameRef.add(projectile);
+      timeSinceLastShot = 0.0;
+    }
+  }
 }
+
+// Update WhisperWarrior class to ensure sprite loading

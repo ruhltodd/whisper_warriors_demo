@@ -170,12 +170,13 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   @override
-  void takeDamage(int baseDamage, {bool isCritical = false}) {
+  void takeDamage(double baseDamage, {bool isCritical = false}) {
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
-    int finalDamage =
-        isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
+    int finalDamage = isCritical
+        ? (baseDamage * player.critMultiplier).toInt()
+        : baseDamage.toInt();
     health -= finalDamage;
     onHealthChanged(health.toDouble());
     applyStaggerDamage(finalDamage, isCritical: isCritical); //stagger update

@@ -1,42 +1,34 @@
-import 'package:hive/hive.dart';
-import 'package:whisper_warriors/game/items/items.dart'; // ✅ Import items.dart to access Item class
-import 'package:whisper_warriors/game/player/player.dart'; // ✅ Import Player to access stats modification
-import 'package:whisper_warriors/game/abilities/abilities.dart'; // Add this import
+import 'package:whisper_warriors/game/items/items.dart';
+import 'package:whisper_warriors/game/player/player.dart';
+import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
+import 'package:whisper_warriors/game/items/itemrarity.dart';
 
-part 'inventoryitem.g.dart'; // ✅ Ensure this is included
-
-@HiveType(typeId: 0) // ✅ Assign a unique type ID
-class InventoryItem extends HiveObject {
-  @HiveField(0)
-  final Item item; // ✅ Store an Item instance
-
-  @HiveField(1)
-  bool isEquipped; // ✅ Tracks whether item is equipped
-
-  @HiveField(2)
+class InventoryItem {
+  final Item item;
+  bool isEquipped;
   bool isNew;
-
-  @HiveField(3)
   int quantity;
+
+  // Add getters that forward to item properties
+  String get name => item.name;
+  String get description => item.description;
+  ItemRarity get rarity => item.rarity;
+  Map<String, double> get stats => item.stats;
 
   InventoryItem({
     required this.item,
     this.isEquipped = false,
-    this.isNew = false,
+    this.isNew = true,
     this.quantity = 1,
-  }) {
-    // Remove the automatic save from constructor
-    // this.save(); // This line was causing the error
-  }
+  });
 
-  // Add a method to safely add the item to inventory
+  // Factory method to create a new inventory item
   static Future<InventoryItem> create({
     required Item item,
     bool isEquipped = false,
     bool isNew = true,
     int quantity = 1,
   }) async {
-    final box = Hive.box<InventoryItem>('inventorybox');
     final inventoryItem = InventoryItem(
       item: item,
       isEquipped: isEquipped,
@@ -44,92 +36,38 @@ class InventoryItem extends HiveObject {
       quantity: quantity,
     );
 
-    // Add to box with the item's name as key
-    await box.put(item.name, inventoryItem);
+    // Load current inventory and add new item
+    final currentItems = await InventoryStorage.loadInventory();
+    currentItems.add(inventoryItem);
+    await InventoryStorage.saveInventory(currentItems);
+
     return inventoryItem;
   }
 
-  // Add this method to ensure state is properly loaded
-  void ensureStateIsSaved() {
-    if (!isInBox) {
-      save();
+  Future<void> updateItemStats(Map<String, double> newStats) async {
+    item.updateStats(newStats);
+    await _saveInventoryUpdate();
+    print('✨ Updated and saved stats for ${item.name}');
+  }
+
+  Future<void> _saveInventoryUpdate() async {
+    try {
+      final currentItems = await InventoryStorage.loadInventory();
+      final index = currentItems.indexWhere((i) => i.item.name == item.name);
+
+      if (index != -1) {
+        currentItems[index] = this;
+        await InventoryStorage.saveInventory(currentItems);
+        print('✅ Saved inventory update for ${item.name}');
+      } else {
+        print('⚠️ Item ${item.name} not found in inventory');
+      }
+    } catch (e) {
+      print('❌ Error saving inventory update: $e');
     }
   }
 
-  /// ✅ **Getter Methods to Access `Item` Properties**
-  String get name => item.name; // ✅ Retrieve from item
-  String get description => item.description; // ✅ Retrieve from item
-  String get rarity => item.rarity; // ✅ Retrieve from item
-  Map<String, double> get stats => item.stats; // ✅ Retrieve from item
-
-  @override
-  void applyEffect(Player player) {
-    // Apply the base effects (e.g., modifying attack speed, defense, etc.)
-    item.stats.forEach((key, value) {
-      switch (key) {
-        case "Attack Speed":
-          player.baseAttackSpeed *= (1 + value);
-          break;
-        case "Piercing":
-          player.hasUmbralFang = true;
-          break;
-        case "Defense Bonus":
-          if (player.currentHealth <= player.maxHealth * 0.5) {
-            player.baseDefense *= (1 + value);
-          }
-          break;
-        case "Spirit Multiplier":
-          player.spiritMultiplier *= (1 + value);
-          break;
-        default:
-          print("⚠️ Unknown stat: $key");
-      }
-    });
-
-    print("🎭 Applied ${item.name} to Player.");
-
-    // Ensure WhisperingFlames is added **AFTER** the Player is mounted
-    Future.delayed(Duration(milliseconds: 100), () {
-      if (player.isMounted && player.gameRef != null) {
-        if (!player.gameRef.children
-            .any((child) => child is WhisperingFlames)) {
-          player.gameRef.add(WhisperingFlames());
-          print("🔥 WhisperingFlames applied to Player!");
-        } else {
-          print("🔥 WhisperingFlames already active.");
-        }
-      } else {
-        print("⚠️ Cannot add WhisperingFlames: player is not mounted yet.");
-      }
-    });
-  }
-
-  // ✅ Remove effects when unequipped
-  void removeEffect(Player player) {
-    item.stats.forEach((key, value) {
-      // ✅ Explicit reference to `item.stats`
-      switch (key) {
-        case "Attack Speed":
-          player.baseAttackSpeed /= (1 + value);
-          break;
-        case "Piercing":
-          player.hasUmbralFang = false;
-          break;
-        case "Defense Bonus":
-          player.baseDefense /= (1 + value);
-          break;
-        case "Spirit Multiplier":
-          player.spiritMultiplier /= (1 + value);
-          break;
-        default:
-          print("⚠️ Unknown stat: $key");
-      }
-    });
-    print("⛔ Removed ${item.name} effects.");
-  }
-
-  // Modify toggleEquip to be more robust
-  void toggleEquip(Player player) {
+  Future<void> toggleEquip(Player player) async {
     isEquipped = !isEquipped;
 
     if (isEquipped) {
@@ -138,9 +76,55 @@ class InventoryItem extends HiveObject {
       removeEffect(player);
     }
 
-    // Ensure the state change is saved
-    ensureStateIsSaved();
-    save();
+    await _saveInventoryUpdate();
     print("🔄 ${item.name} equipped state changed to: $isEquipped");
+  }
+
+  void applyEffect(Player player) {
+    print("🎮 Applying effects of $name");
+
+    stats.forEach((stat, value) {
+      switch (stat) {
+        case 'health':
+          player.setMaxHealth(player.getMaxHealth() + value);
+          player.setHealth(player.getMaxHealth());
+          break;
+        case 'speed':
+          player.setMoveSpeed(player.getMoveSpeed() + value);
+          break;
+        case 'damage':
+          player.setDamageMultiplier(player.getDamageMultiplier() + value);
+          break;
+      }
+    });
+  }
+
+  void removeEffect(Player player) {
+    print("🎮 Removing effects of $name");
+
+    stats.forEach((stat, value) {
+      switch (stat) {
+        case 'health':
+          player.setMaxHealth(player.getMaxHealth() - value);
+          player.setHealth(player.getMaxHealth());
+          break;
+        case 'speed':
+          player.setMoveSpeed(player.getMoveSpeed() - value);
+          break;
+        case 'damage':
+          player.setDamageMultiplier(player.getDamageMultiplier() - value);
+          break;
+      }
+    });
+  }
+
+  String getStatsDisplay() {
+    final stats = item.stats;
+    if (stats.isEmpty) return 'No stats';
+
+    return stats.entries.map((entry) {
+      final value = entry.value.toStringAsFixed(1);
+      return '${entry.key}: $value';
+    }).join('\n');
   }
 }

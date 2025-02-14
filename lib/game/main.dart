@@ -1,18 +1,16 @@
 import 'dart:async';
 import 'package:flutter/scheduler.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:whisper_warriors/game/ai/spawncontroller.dart';
-import 'package:whisper_warriors/game/damage/ability_damage_log.dart';
-import 'package:whisper_warriors/game/inventory/inventory.dart';
-import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
-import 'package:whisper_warriors/game/inventory/itemselectionscreen.dart';
 import 'package:flame/game.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/components.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
+import 'package:whisper_warriors/game/ai/spawncontroller.dart';
+import 'package:whisper_warriors/game/damage/ability_damage_log.dart';
+import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
+import 'package:whisper_warriors/game/inventory/itemselectionscreen.dart';
+import 'package:whisper_warriors/game/items/itemrarity.dart';
 import 'dart:math';
 import 'package:whisper_warriors/game/ui/spiritlevelbar.dart';
 import 'package:whisper_warriors/game/ui/notifications.dart';
@@ -25,138 +23,49 @@ import 'package:whisper_warriors/game/abilities/abilityselectionscreen.dart';
 import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/ui/optionsmenu.dart';
-import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:whisper_warriors/game/damage/damage_tracker.dart';
-
-Future<List<InventoryItem>> loadInventoryItems() async {
-  // Renamed for clarity
-  try {
-    // Ensure the box is open before trying to access it
-    if (!Hive.isBoxOpen('inventoryBox')) {
-      await Hive.openBox<InventoryItem>('inventoryBox');
-      InventoryManager.initializeInventory();
-    }
-
-    final box = Hive.box<InventoryItem>('inventoryBox');
-    List<InventoryItem> allItems = box.values.cast<InventoryItem>().toList();
-
-    // Split into equipped and unequipped items
-    List<InventoryItem> equippedItems =
-        allItems.where((item) => item.isEquipped).toList();
-
-    print(
-        "🔍 Loaded ALL Items from Hive: ${allItems.map((item) => item.item.name).toList()}");
-    print(
-        "⚔️ Currently Equipped: ${equippedItems.map((item) => item.item.name).toList()}");
-
-    return allItems; // Return all items, not just equipped ones
-  } catch (e) {
-    print("⚠️ Error loading inventory items: $e");
-    return [];
-  }
-}
+import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
+import 'package:whisper_warriors/game/inventory/inventory.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    final appDocumentDir =
-        await path_provider.getApplicationDocumentsDirectory();
-    Hive.init(appDocumentDir.path);
+  // Initialize Hive
+  await Hive.initFlutter();
 
-    // Uncomment this section to clear the database
-/*    try {
-      await Hive.deleteBoxFromDisk('inventorybox');
-      await Hive.deleteBoxFromDisk('ability_damage_logs');
-      await Hive.deleteBoxFromDisk('playerprogressbox');
-      print('🗑️ Cleaned up existing boxes');
-    } catch (e) {
-      print('⚠️ Box cleanup error (can be ignored): $e');
-    }*/
-
-    print('🏗️ Registering Hive adapters...');
-
-    // Register all adapters first
-    if (!Hive.isAdapterRegistered(0)) {
-      print('📝 Registering InventoryItemAdapter');
-      Hive.registerAdapter(InventoryItemAdapter());
-    }
-    if (!Hive.isAdapterRegistered(7)) {
-      print('📝 Registering AbilityDamageLogAdapter');
-      Hive.registerAdapter(AbilityDamageLogAdapter());
-    }
-    if (!Hive.isAdapterRegistered(1)) {
-      print('📝 Registering UmbralFangAdapter');
-      Hive.registerAdapter(UmbralFangAdapter());
-    }
-    if (!Hive.isAdapterRegistered(3)) {
-      print('📝 Registering VeilOfTheForgottenAdapter');
-      Hive.registerAdapter(VeilOfTheForgottenAdapter());
-    }
-    if (!Hive.isAdapterRegistered(4)) {
-      print('📝 Registering ShardOfUmbrathosAdapter');
-      Hive.registerAdapter(ShardOfUmbrathosAdapter());
-    }
-    if (!Hive.isAdapterRegistered(5)) {
-      print('📝 Registering GoldCoinAdapter');
-      Hive.registerAdapter(GoldCoinAdapter());
-    }
-    if (!Hive.isAdapterRegistered(6)) {
-      print('📝 Registering BlueCoinAdapter');
-      Hive.registerAdapter(BlueCoinAdapter());
-    }
-
-    print('📦 Opening Hive boxes...');
-
-    // Define box names as constants to ensure consistency
-    const String inventoryBoxName = 'inventorybox';
-    const String damageLogsBoxName = 'ability_damage_logs';
-    const String progressBoxName = 'playerprogressbox';
-
-    // Open boxes with consistent names
-    if (!Hive.isBoxOpen(inventoryBoxName)) {
-      await Hive.openBox<InventoryItem>(inventoryBoxName);
-      print('📦 Opened inventory box');
-    }
-    if (!Hive.isBoxOpen(damageLogsBoxName)) {
-      await Hive.openBox<AbilityDamageLog>(damageLogsBoxName);
-      print('📦 Opened damage logs box');
-    }
-    if (!Hive.isBoxOpen(progressBoxName)) {
-      await Hive.openBox(progressBoxName); // Note: no type parameter here
-      print('📦 Opened progress box');
-    }
-
-    // Initialize managers
-    await PlayerProgressManager.initialize();
-
-    print('✅ Hive initialization complete');
-
-    // Uncomment to reset progress on every launch
-    PlayerProgressManager.resetProgressForTestingTemporary();
-    // ✅ TEST: Set initial XP & Level if not already stored
-
-    if (PlayerProgressManager.getXp() == 0) {
-      PlayerProgressManager.setXp(50);
-    }
-    if (PlayerProgressManager.getLevel() == 1) {
-      PlayerProgressManager.setLevel(1);
-    }
-
-    print("🌟 Player XP: ${PlayerProgressManager.getXp()}");
-    print("🌟 Player Level: ${PlayerProgressManager.getLevel()}");
-
-    // Load ALL inventory items
-    List<InventoryItem> inventoryItems = await loadInventoryItems();
-    runApp(MyApp(inventoryItems: inventoryItems)); // Rename parameter to match
-  } catch (e) {
-    print("❌ Error initializing game: $e");
+  const String progressBoxName = 'playerprogressbox';
+  if (!Hive.isBoxOpen(progressBoxName)) {
+    await Hive.openBox(progressBoxName);
+    print('📦 Opened progress box');
   }
+
+  // Initialize managers
+  await PlayerProgressManager.initialize();
+  print('✅ Hive initialization complete');
+
+  if (PlayerProgressManager.getXp() == 0) {
+    PlayerProgressManager.setXp(50);
+  }
+  if (PlayerProgressManager.getLevel() == 1) {
+    PlayerProgressManager.setLevel(1);
+  }
+
+  print("🌟 Player XP: ${PlayerProgressManager.getXp()}");
+  print("🌟 Player Level: ${PlayerProgressManager.getLevel()}");
+
+  // Initialize damage tracking
+  await DamageTracker.initialize();
+
+  print('📦 Loading inventory...');
+  final items = await InventoryStorage.loadInventory();
+  print('✅ Loaded ${items.length} items');
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  final List<InventoryItem> inventoryItems;
-  MyApp({required this.inventoryItems});
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -164,36 +73,17 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _gameStarted = false;
   bool _selectingAbilities = false;
-  bool _selectingItems = false; // New state for item selection
+  bool _selectingItems = false;
   List<String> selectedAbilities = [];
-  List<InventoryItem> equippedItems = []; // Declare the equipped items list
-  late RogueShooterGame gameInstance; // Define the gameInstance variable
+  List<InventoryItem> equippedItems = [];
+  late RogueShooterGame gameInstance;
 
   @override
   void initState() {
     super.initState();
-    equippedItems = widget.inventoryItems; // Store the equipped items
-  }
-
-  Future<List<InventoryItem>> getAvailableItems() async {
-    try {
-      // Ensure the box is open
-      if (!Hive.isBoxOpen('inventoryBox')) {
-        await Hive.openBox<InventoryItem>('inventoryBox');
-      }
-
-      final box = Hive.box<InventoryItem>('inventoryBox');
-      return box.values.toList();
-    } catch (e) {
-      print("⚠️ Error getting available items: $e");
-      return [];
-    }
   }
 
   void startGame() {
-    print(
-        "🛡 startGame() - Equipped Items Before Start: ${equippedItems.map((e) => e.item.name).toList()}");
-
     setState(() {
       _selectingAbilities = true;
     });
@@ -215,21 +105,20 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<InventoryItem>>(
-        future: getAvailableItems(),
+        future: InventoryStorage.loadInventory(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator(); // Or your loading widget
+            return const CircularProgressIndicator();
           }
 
           final items = snapshot.data ?? [];
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            initialRoute: '/', // Add this
+            initialRoute: '/',
             routes: {
               '/': (context) => Scaffold(
                     body: Stack(
                       children: [
-                        // Main Menu
                         if (!_gameStarted &&
                             !_selectingAbilities &&
                             !_selectingItems)
@@ -237,57 +126,40 @@ class _MyAppState extends State<MyApp> {
                             startGame: startGame,
                             openOptions: openOptions,
                           ),
-
-                        // Ability Selection (new condition)
                         if (_selectingAbilities)
                           AbilitySelectionScreen(
                             onAbilitiesSelected: onAbilitiesSelected,
                           ),
-
-                        // Inventory selection
                         if (_selectingItems)
                           InventoryScreen(
                             availableItems: items,
-                            onConfirm: (finalSelectedItems) async {
+                            onConfirm: (selectedItems) async {
                               print(
-                                  "🎒 Final Confirmed Items: ${finalSelectedItems.map((item) => item.item.name).toList()}");
+                                  "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
 
-                              final box =
-                                  Hive.box<InventoryItem>('inventoryBox');
-
-                              // Update equipped status for all items
+                              // Update equipped status
                               for (var item in items) {
-                                bool isSelected = finalSelectedItems.any(
-                                    (selectedItem) =>
-                                        selectedItem.item.name ==
-                                        item.item.name);
-                                item.isEquipped = isSelected;
-                                await box.put(item.item.name, item);
+                                item.isEquipped = selectedItems.any(
+                                    (selected) => selected.name == item.name);
                               }
+                              await InventoryStorage.saveInventory(items);
 
                               setState(() {
                                 _selectingItems = false;
                                 _gameStarted = true;
-                                equippedItems = List.from(finalSelectedItems);
+                                equippedItems = List.from(selectedItems);
                               });
-
-                              print(
-                                  "🛡 Equipped Items Updated in Hive: ${equippedItems.map((item) => item.item.name).toList()}");
 
                               gameInstance = RogueShooterGame(
                                 selectedAbilities: selectedAbilities,
-                                equippedItems: equippedItems,
+                                equippedItems: selectedItems,
                               );
 
-                              // ✅ Delay applying effects to prevent null issues
                               Future.delayed(Duration(milliseconds: 500), () {
                                 gameInstance.player.applyEquippedItems();
-                                debugPrint(
-                                    "🛡 Applied Equipped Items after Player Loaded.");
                               });
                             },
                           ),
-                        // Game UI & HUD
                         if (_gameStarted)
                           GameWidget(
                             game: gameInstance,
@@ -305,6 +177,10 @@ class _MyAppState extends State<MyApp> {
                                   ),
                               'retryOverlay': (_, game) =>
                                   RetryOverlay(game: game as RogueShooterGame),
+                              'optionsMenu': (_, game) =>
+                                  OptionsMenu(game: game as RogueShooterGame),
+                              'damageReport': (_, game) => DamageReportOverlay(
+                                  game: game as RogueShooterGame),
                             },
                           ),
                       ],
@@ -325,231 +201,122 @@ class RogueShooterGame extends FlameGame
   late TimerComponent enemySpawnerTimer;
   late TimerComponent gameTimer;
   late LootNotificationBar lootNotificationBar;
-  late final AudioPlayer bgmPlayer;
-  late ValueNotifier<dynamic> gameHudNotifier;
-  late ValueNotifier<double?> bossHealthNotifier;
-  late ValueNotifier<double> bossStaggerNotifier; // ✅ Correct (Non-nullable)
-  late ValueNotifier<String?> activeBossNameNotifier;
-  late Ticker _ticker;
-  double _elapsedTime = 0.0;
+  late final AudioPlayer bgmPlayer = AudioPlayer();
+  late final ValueNotifier<dynamic> gameHudNotifier =
+      ValueNotifier<dynamic>(null);
+  late final ValueNotifier<double?> bossHealthNotifier =
+      ValueNotifier<double?>(null);
+  late final ValueNotifier<double> bossStaggerNotifier =
+      ValueNotifier<double>(0.0);
+  late final ValueNotifier<String?> activeBossNameNotifier =
+      ValueNotifier<String?>(null);
+  Ticker? _ticker;
   final double targetFps = 60.0;
-  final double targetTimeStep = 1 / 60.0; // ✅ Add this line
+  final double targetTimeStep = 1.0 / 60.0;
+  double _accumulator = 0.0;
+  double _elapsedTime = 0.0;
   int enemyCount = 0;
   int maxEnemies = 30;
-  double maxBossHealth = 50000; // ✅ Default value
+  double maxBossHealth = 50000;
   final List<String> selectedAbilities;
   final List<InventoryItem> equippedItems;
-  final Random random = Random(); // ✅ Define Random instance
+  final Random random = Random();
 
   SpawnController? spawnController;
-
   bool isPaused = false;
   int elapsedTime = 0;
+  Set<LogicalKeyboardKey> activeKeys = {};
+  late final LootNotificationBar notificationBar;
+  bool hasInitialized = false;
 
-  Set<LogicalKeyboardKey> activeKeys =
-      {}; // Add this property to track active keys
-
-  RogueShooterGame(
-      {required this.selectedAbilities, required this.equippedItems}) {
-    bossHealthNotifier = ValueNotifier<double?>(null);
-    bossStaggerNotifier = ValueNotifier<double>(0); // ✅ Initialize at 0
-    activeBossNameNotifier = ValueNotifier<String?>(null);
-
-// ✅ Initialize as null
-  }
-  // ✅ Stops background music
-  Future<void> stopBackgroundMusic() async {
-    try {
-      await bgmPlayer.stop().timeout(
-        Duration(seconds: 2),
-        onTimeout: () {
-          print("⚠️ Background music stop timed out");
-          return;
-        },
-      );
-    } catch (e) {
-      print("❌ Error stopping background music: $e");
-    }
-  }
-
-  Future<void> playGameOverMusic() async {
-    await Future.delayed(Duration(milliseconds: 500)); // Small delay
-    await bgmPlayer.setReleaseMode(ReleaseMode.stop); // ✅ Ensure it plays once
-    await bgmPlayer.play(AssetSource('music/game_over.mp3'));
-  }
-
-  @override
-  KeyEventResult onKeyEvent(
-    KeyEvent event,
-    Set<LogicalKeyboardKey> keysPressed,
-  ) {
-    // Always handle key events to prevent system sounds
-    if (event is KeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.escape) {
-        if (overlays.isActive('optionsMenu')) {
-          overlays.remove('optionsMenu');
-          resumeEngine();
-        } else {
-          overlays.add('optionsMenu');
-          pauseEngine();
-        }
-      }
-      activeKeys.add(event.logicalKey);
-    } else if (event is KeyUpEvent) {
-      activeKeys.remove(event.logicalKey);
-    }
-
-    // Update player movement based on active keys
-    Vector2 movement = Vector2.zero();
-    if (activeKeys.contains(LogicalKeyboardKey.keyW)) {
-      movement.y -= 1;
-    }
-    if (activeKeys.contains(LogicalKeyboardKey.keyS)) {
-      movement.y += 1;
-    }
-    if (activeKeys.contains(LogicalKeyboardKey.keyA)) {
-      movement.x -= 1;
-    }
-    if (activeKeys.contains(LogicalKeyboardKey.keyD)) {
-      movement.x += 1;
-    }
-
-    if (movement.length > 0) {
-      movement.normalize(); // Prevent diagonal movement from being too fast
-    }
-
-    player.updateJoystick(movement);
-
-    // Return handled for all key events to prevent system sounds
-    return KeyEventResult.handled;
-  }
+  RogueShooterGame({
+    required this.selectedAbilities,
+    required this.equippedItems,
+  });
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    hasInitialized = true;
+    try {
+      print('🎮 Starting game initialization...');
 
-    // Initialize DamageTracker first
-    print('📊 Initializing DamageTracker...');
-    await DamageTracker().initialize();
-    print('🧹 Clearing previous damage data...');
-    DamageTracker().clearAllDamageData();
+      // Initialize DamageTracker first
+      print('📊 Initializing DamageTracker...');
+      await DamageTracker.clearAllDamageData();
 
-    // Start the ticker to control frame rate
-    _ticker = Ticker(_onTick);
-    _ticker.start();
-    //debugMode = true; // ✅ Show hitboxes and outlines
-    gameTimer = TimerComponent(period: 1.0, repeat: true, onTick: () {});
-    // ✅ Now safely start the timer
-    startGameTimer();
-// ✅ Ensure this runs when the game starts
-    // ✅ Loot notification bar
-    lootNotificationBar = LootNotificationBar(this);
-    add(lootNotificationBar);
-    print("✅ LootNotificationBar added to the game");
+      // Initialize camera first
+      print('🎥 Initializing camera...');
+      customCamera = CustomCamera(
+        screenSize: size,
+        worldSize: Vector2(1280, 1280),
+      );
 
-    // ✅ Background music setup
-    bgmPlayer = AudioPlayer();
-    await bgmPlayer.setReleaseMode(ReleaseMode.loop);
-    await bgmPlayer.play(AssetSource('music/soft_etheral.mp3'));
-    await bgmPlayer.setVolume(.0);
+      // Load and add grass map
+      print('🗺️ Loading grass map...');
+      grassMap = SpriteComponent(
+        sprite: await loadSprite('grass_map.png'),
+        size: Vector2(1280, 1280),
+        position: Vector2.zero(),
+      );
+      add(grassMap);
 
-    // ✅ Initialize HUD notifier
-    gameHudNotifier = ValueNotifier<dynamic>(elapsedTime);
+      // Initialize player
+      print('👤 Initializing player...');
+      player = Player(
+        selectedAbilities: selectedAbilities,
+        equippedItems: equippedItems,
+      )
+        ..position = Vector2(size.x / 2, size.y / 2)
+        ..size = Vector2(64, 64);
+      add(player);
 
-    // ✅ Initialize custom camera
-    customCamera = CustomCamera(
-      screenSize: size, // Ensure screen size is passed
-      worldSize: Vector2(1280, 1280), // Set the world size
-    );
+      // Initialize experience bar
+      print('✨ Initializing experience bar...');
+      experienceBar = SpiritBar();
 
-    // ✅ Load the game map
-    grassMap = SpriteComponent(
-      sprite: await loadSprite('grass_map.png'),
-      size: Vector2(1280, 1280),
-      position: Vector2.zero(),
-    );
-    add(grassMap);
+      // Apply abilities to player
+      print('🔥 Applying abilities...');
+      _applyAbilitiesToPlayer();
 
-    // ✅ Create and add player
-    player = Player(
-      selectedAbilities: selectedAbilities, // ✅ Pass abilities
-      equippedItems: equippedItems, // ✅ Ensure only equipped items are passed
-    )
-      ..position = Vector2(size.x / 2, size.y / 2)
-      ..size = Vector2(64, 64);
-    add(player);
-
-    _applyAbilitiesToPlayer();
-
-    // ✅ Initialize spirit/XP bar
-    experienceBar = SpiritBar();
-    customCamera.follow(player.position, 0);
-
-    // ✅ Show HUD
-    overlays.add('hud');
-
-    // ✅ Initialize the Spawn Controller (Handles all spawns now)
-    spawnController = SpawnController(game: this);
-    if (spawnController != null) {
+      // Initialize spawn controller
+      print('👾 Initializing spawn controller...');
+      spawnController = SpawnController(game: this);
       add(spawnController!);
+
+      // Initialize game timer
+      print('⏱️ Initializing game timer...');
+      startGameTimer();
+
+      // Initialize notifications
+      print('📢 Initializing notifications...');
+      lootNotificationBar = LootNotificationBar(this);
+      add(lootNotificationBar);
+
+      // Initialize audio
+      print('🎵 Initializing audio...');
+      await bgmPlayer.setReleaseMode(ReleaseMode.loop);
+      await bgmPlayer.setSource(AssetSource('music/soft_etheral.mp3'));
+      await bgmPlayer.setVolume(0.5);
+      await bgmPlayer.resume();
+
+      // Initialize notifiers
+      print('📱 Initializing notifiers...');
+      gameHudNotifier.value = elapsedTime;
+      bossHealthNotifier.value = null;
+      bossStaggerNotifier.value = 0.0;
+      activeBossNameNotifier.value = null;
+
+      // Add overlays
+      print('🎭 Adding overlays...');
+      overlays.add('hud');
+
+      print('✅ Game initialization complete');
+    } catch (e, stackTrace) {
+      print('❌ Error in game initialization: $e');
+      print('Stack trace: $stackTrace');
+      rethrow;
     }
-
-    overlays.addEntry(
-      'optionsMenu',
-      (context, game) => OptionsMenu(game: game as RogueShooterGame),
-    );
-
-    overlays.addEntry(
-      'damageReport',
-      (context, game) => ValueListenableBuilder<dynamic>(
-        valueListenable: gameHudNotifier,
-        builder: (context, value, _) {
-          if (value is String) {
-            return Container(
-              color: Colors.black.withOpacity(0.8),
-              padding: const EdgeInsets.all(16),
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                value,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: ElevatedButton(
-                          onPressed: () => (game as RogueShooterGame)
-                              .quitToMainMenu(context),
-                          child: const Text('Quit to Main Menu'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
-          return const SizedBox.shrink();
-        },
-      ),
-    );
   }
 
   void _onTick(Duration elapsed) {
@@ -564,28 +331,65 @@ class RogueShooterGame extends FlameGame
   }
 
   void _updateGameLogic() {
-    // Your game update logic goes here (e.g., movement, collisions, etc.)
-    // This will only run at a maximum of 60 FPS
+    if (!isPaused && spawnController != null) {
+      spawnController!.checkAndTriggerEvents(elapsedTime);
+    }
+
+    // Update player movement and other game logic
+    if (player.isMounted) {
+      player.updateMovement(targetTimeStep);
+    }
+
+    if (player.isMounted) {
+      experienceBar = SpiritBar();
+    }
+
+    // Update camera if needed
+    if (player.isMounted) {
+      customCamera.follow(player.position, targetTimeStep);
+    }
   }
 
   @override
   void update(double dt) {
-    super.update(dt);
+    if (isPaused) return;
 
-    // ✅ Ensure the camera follows the player
-    customCamera.follow(player.position, dt);
+    try {
+      // Update spawn controller
+      if (spawnController != null) {
+        spawnController!.checkAndTriggerEvents(elapsedTime);
+      }
+
+      // Update player
+      if (player.isMounted) {
+        player.update(dt);
+      }
+
+      // Update camera
+      if (player.isMounted && customCamera != null) {
+        customCamera.follow(player.position, dt);
+      }
+
+      super.update(dt);
+    } catch (e) {
+      print('❌ Error in update: $e');
+    }
   }
 
   @override
   void render(Canvas canvas) {
-    canvas.save();
-
-    // ✅ Apply custom camera transformation
-    customCamera.applyTransform(canvas);
-
-    super.render(canvas);
-
-    canvas.restore();
+    try {
+      if (customCamera != null) {
+        canvas.save();
+        customCamera.applyTransform(canvas);
+        super.render(canvas);
+        canvas.restore();
+      } else {
+        super.render(canvas);
+      }
+    } catch (e) {
+      print('❌ Error in render: $e');
+    }
   }
 
   void _applyAbilitiesToPlayer() {
@@ -657,20 +461,77 @@ class RogueShooterGame extends FlameGame
     return "$minutes:${secs.toString().padLeft(2, '0')}"; // Ensures two-digit seconds
   }
 
-  void endGame() {
-    overlays.add('gameOver');
-    pauseEngine();
+  void navigateToMainMenu(BuildContext context) async {
+    try {
+      print('🔄 Starting main menu navigation...');
+
+      // First cleanup the game
+      await quitToMainMenu(context);
+
+      // Call onRemove without await since it's void
+      onRemove();
+
+      // Use MaterialPageRoute for a clean transition
+      if (context.mounted) {
+        print('🎯 Navigating to main menu...');
+        await Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MainMenu(
+              startGame: () {
+                print("🎮 Starting new game...");
+                // Add your start game logic here
+              },
+              openOptions: () {
+                print("⚙️ Opening options...");
+                // Add your options logic here
+              },
+            ),
+          ),
+          (route) => false, // Remove all previous routes
+        );
+        print('✅ Navigation complete');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Navigation error: $e');
+      print('📚 Stack trace: $stackTrace');
+    }
   }
 
-  void quitToMainMenu(BuildContext context) {
+  Future<void> quitToMainMenu(BuildContext context) async {
     print("🛑 Starting game cleanup sequence...");
+
+    // Store and log initial context state
+    final isInitiallyMounted = context.mounted;
+    print("📌 Initial context mounted state: $isInitiallyMounted");
+
+    if (!isInitiallyMounted) {
+      print("⚠️ Context not mounted at start of cleanup");
+      return;
+    }
 
     // First pause the game engine
     pauseEngine();
     print("⏸️ Game engine paused");
 
-    // Store context reference
-    final navigatorContext = context;
+    // Try to navigate FIRST, before any cleanup
+    print("🚀 Attempting early navigation...");
+    if (context.mounted) {
+      try {
+        final navigatorState = Navigator.of(context);
+        await navigatorState.pushAndRemoveUntil(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const _LoadingScreen(),
+            transitionDuration: Duration.zero,
+          ),
+          (route) => false,
+        );
+        print("✅ Navigation scheduled");
+      } catch (navError) {
+        print("❌ Early navigation error: $navError");
+      }
+    }
 
     try {
       print("🧹 Beginning cleanup...");
@@ -682,18 +543,13 @@ class RogueShooterGame extends FlameGame
 
       // Stop background music
       print("🎵 Stopping background music...");
-      stopBackgroundMusic();
+      await stopBackgroundMusic();
       print("✅ Background music stopped");
 
       // Remove all game components
       print("🎮 Removing game components...");
       removeAll(children);
       print("✅ Game components removed");
-
-      // Stop the ticker
-      print("⏱️ Stopping game ticker...");
-      _ticker.stop();
-      print("✅ Ticker stopped");
 
       // Reset game state
       print("🔄 Resetting game state...");
@@ -705,61 +561,34 @@ class RogueShooterGame extends FlameGame
 
       // Reset all notifiers
       print("📢 Resetting notifiers...");
-      gameHudNotifier.dispose(); // Properly dispose notifiers
-      bossHealthNotifier.dispose();
-      bossStaggerNotifier.dispose();
-      activeBossNameNotifier.dispose();
-      print("✅ Notifiers disposed");
+      gameHudNotifier.value = null;
+      bossHealthNotifier.value = null;
+      bossStaggerNotifier.value = 0;
+      activeBossNameNotifier.value = null;
+      print("✅ Notifiers reset");
 
-      // Ensure we're detached
+      // Finally detach the game
       print("🔌 Detaching game...");
       onRemove();
       print("✅ Game detached");
-
-      print("🚀 Attempting navigation...");
-
-      if (navigatorContext.mounted) {
-        // Navigate back to root with a fresh state
-        Navigator.of(navigatorContext).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => const MaterialApp(
-              debugShowCheckedModeBanner: false, // Remove debug banner
-              home: Scaffold(
-                body: _LoadingScreen(),
-              ),
-            ),
-          ),
-          (route) => false,
-        );
-        print("✅ Navigation complete");
-      } else {
-        print("⚠️ Context not mounted");
-      }
     } catch (e, stackTrace) {
       print("❌ Error during cleanup: $e");
       print("📚 Stack trace: $stackTrace");
     }
   }
 
-  void navigateToMainMenu(BuildContext context) {
-    // First cleanup the game
-    quitToMainMenu(context);
-
-    // Ensure we're completely detached before navigation
-    onRemove();
-
-    // Use a delayed microtask to ensure complete cleanup
-    Future.delayed(Duration.zero, () {
-      if (context.mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-      }
-    });
-  }
-
   @override
   void onRemove() {
+    if (hasInitialized && _ticker != null) {
+      try {
+        _ticker?.stop();
+        _ticker = null;
+        print("✅ Ticker stopped safely");
+      } catch (e) {
+        print("⚠️ Error stopping ticker: $e");
+      }
+    }
     super.onRemove();
-    _ticker.stop(); // Ensure ticker is stopped when game is removed
   }
 
   Future<void> restartGame(BuildContext context) async {
@@ -772,8 +601,13 @@ class RogueShooterGame extends FlameGame
     try {
       // Remove all overlays except retry
       print("🎭 Removing overlays...");
-      overlays.clear();
-      print("✅ Overlays removed");
+      final currentOverlays = overlays.activeOverlays.toList();
+      for (final overlay in currentOverlays) {
+        if (overlay != 'retryOverlay') {
+          overlays.remove(overlay);
+        }
+      }
+      print("✅ Overlays handled");
 
       // Stop background music
       print("🎵 Stopping background music...");
@@ -799,10 +633,14 @@ class RogueShooterGame extends FlameGame
       activeBossNameNotifier.value = null;
       print("✅ Game state reset");
 
-      // Initialize new game
-      print("🎮 Initializing new game...");
+      // Re-initialize game components
+      print("🎮 Reinitializing game components...");
       await onLoad();
-      print("✅ New game initialized");
+      print("✅ Game components reinitialized");
+
+      // Add back necessary overlays
+      overlays.add('hud');
+      overlays.remove('retryOverlay');
 
       // Resume engine
       resumeEngine();
@@ -859,6 +697,188 @@ class RogueShooterGame extends FlameGame
     overlays.add('damageReport');
     gameHudNotifier.value = report;
   }
+
+  void onItemCollected(Item item) async {
+    try {
+      // Create inventory item from collected item
+      final inventoryItem = InventoryItem(
+        item: item,
+        isNew: true,
+        quantity: 1,
+      );
+
+      // Add to inventory
+      await InventoryManager.addItem(inventoryItem);
+
+      // Show notification with proper ItemRarity enum
+      showNotification('Collected ${item.name}', item.rarity);
+
+      // Play collection sound
+      await AudioPlayer().play(AssetSource('assets/audio/collect_item.mp3'));
+
+      print('✨ Item collected and added to inventory: ${item.name}');
+    } catch (e) {
+      print('❌ Error collecting item: $e');
+    }
+  }
+
+  void showNotification(String message, ItemRarity rarity) {
+    notificationBar.showNotification(message, rarity);
+  }
+
+  Future<void> stopBackgroundMusic() async {
+    try {
+      print('🎵 Stopping background music...');
+      if (bgmPlayer.state == PlayerState.playing) {
+        await bgmPlayer.stop();
+      }
+      await bgmPlayer.dispose();
+      print('✅ Background music stopped and disposed');
+    } catch (e) {
+      print('❌ Error stopping background music: $e');
+    }
+  }
+
+  Future<void> playGameOverMusic() async {
+    try {
+      print('🎵 Playing game over music...');
+
+      // Stop any currently playing music first
+      await stopBackgroundMusic();
+
+      // Create the asset source
+      final source = AssetSource('audio/game_over.mp3');
+
+      // Load and play the game over music
+      await bgmPlayer.setSource(source);
+      await bgmPlayer.setVolume(0.5); // Adjust volume as needed
+      await bgmPlayer.play(source);
+
+      print('✅ Game over music started');
+    } catch (e) {
+      print('❌ Error playing game over music: $e');
+      // Fail silently but log the error
+    }
+  }
+
+  @override
+  KeyEventResult onKeyEvent(
+    KeyEvent event,
+    Set<LogicalKeyboardKey> keysPressed,
+  ) {
+    // Update active keys
+    if (event is KeyDownEvent) {
+      activeKeys.add(event.logicalKey);
+    } else if (event is KeyUpEvent) {
+      activeKeys.remove(event.logicalKey);
+    }
+
+    // Handle ESC key for options menu
+    if (event is KeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        if (!isPaused) {
+          pauseGame();
+          overlays.add('optionsMenu');
+        } else {
+          resumeGame();
+          overlays.remove('optionsMenu');
+        }
+        return KeyEventResult.handled;
+      }
+    }
+
+    // Handle WASD/Arrow keys for movement
+    if (player.isMounted) {
+      Vector2 movement = Vector2.zero();
+
+      // Check active keys and update movement vector
+      if (keysPressed.contains(LogicalKeyboardKey.keyW) ||
+          keysPressed.contains(LogicalKeyboardKey.arrowUp)) {
+        movement.y -= 1;
+      }
+      if (keysPressed.contains(LogicalKeyboardKey.keyS) ||
+          keysPressed.contains(LogicalKeyboardKey.arrowDown)) {
+        movement.y += 1;
+      }
+      if (keysPressed.contains(LogicalKeyboardKey.keyA) ||
+          keysPressed.contains(LogicalKeyboardKey.arrowLeft)) {
+        movement.x -= 1;
+      }
+      if (keysPressed.contains(LogicalKeyboardKey.keyD) ||
+          keysPressed.contains(LogicalKeyboardKey.arrowRight)) {
+        movement.x += 1;
+      }
+
+      // If there's movement, normalize it
+      if (movement != Vector2.zero()) {
+        movement.normalize();
+      }
+
+      // Always update the joystick, even with zero movement
+      player.updateJoystick(movement);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  // Add this method to track active keys
+  bool isKeyPressed(LogicalKeyboardKey key) {
+    return activeKeys.contains(key);
+  }
+
+  void pauseGame() {
+    isPaused = true;
+    pauseEngine();
+    print('⏸️ Game paused');
+  }
+
+  void resumeGame() {
+    isPaused = false;
+    resumeEngine();
+    print('▶️ Game resumed');
+  }
+}
+
+class RetryOverlay extends StatelessWidget {
+  final RogueShooterGame game;
+
+  const RetryOverlay({Key? key, required this.game}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Game Over',
+            style: TextStyle(
+              fontSize: 48,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  blurRadius: 20,
+                  color: Colors.black,
+                  offset: Offset(0, 0),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () => game.restartGame(context),
+            child: Text('Retry'),
+          ),
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () => game.navigateToMainMenu(context),
+            child: Text('Main Menu'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _LoadingScreen extends StatefulWidget {
@@ -877,11 +897,11 @@ class _LoadingScreenState extends State<_LoadingScreen> {
 
   Future<void> _loadAndNavigate() async {
     try {
-      final items = await loadInventoryItems();
+      final items = await InventoryStorage.loadInventory();
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => MyApp(inventoryItems: items),
+            builder: (context) => MyApp(),
           ),
         );
       }
@@ -894,6 +914,65 @@ class _LoadingScreenState extends State<_LoadingScreen> {
   Widget build(BuildContext context) {
     return const Center(
       child: CircularProgressIndicator(),
+    );
+  }
+}
+
+class DamageReportOverlay extends StatelessWidget {
+  final RogueShooterGame game;
+
+  const DamageReportOverlay({Key? key, required this.game}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.all(40),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.8,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Damage Report',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 20),
+            Flexible(
+              child: SingleChildScrollView(
+                child: ValueListenableBuilder(
+                  valueListenable: game.gameHudNotifier,
+                  builder: (context, value, child) {
+                    return Text(
+                      value?.toString() ?? '',
+                      style: TextStyle(color: Colors.white),
+                    );
+                  },
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                game.overlays.remove('damageReport');
+                game.resumeEngine();
+              },
+              child: Text('Close'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

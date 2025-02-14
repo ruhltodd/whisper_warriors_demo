@@ -19,7 +19,7 @@ abstract class Ability {
   Ability({
     required this.name,
     required this.description,
-    required this.type, // Default to white if not specified
+    required this.type,
   }) : damageReport = DamageReport(name);
 
   // Override these methods for specific ability behavior
@@ -34,7 +34,7 @@ abstract class Ability {
 class WhisperingFlames extends Component
     with HasGameRef<RogueShooterGame>
     implements Ability {
-  final DamageTracker damageTracker = DamageTracker();
+  final DamageTracker damageTracker;
   double _elapsedTime = 0.0;
   final double baseDamagePerSecond = 45;
   final double range = 200;
@@ -54,8 +54,10 @@ class WhisperingFlames extends Component
 
   late final Player _player;
 
-  WhisperingFlames() : damageReport = DamageReport("Whispering Flames") {
-    damageTracker.initialize(); // Initialize the Hive tracker
+  WhisperingFlames()
+      : damageTracker = DamageTracker("Whispering Flames"),
+        damageReport = DamageReport("Whispering Flames") {
+    DamageTracker.initialize();
     print('🔥 WhisperingFlames initialized with Hive damage tracker');
   }
 
@@ -102,7 +104,7 @@ class WhisperingFlames extends Component
 
             print(
                 '🔥 WhisperingFlames hitting enemy at distance $distance with $finalDamage damage (Crit: $isCritical)');
-            enemy.takeDamage(finalDamage, isCritical: isCritical);
+            enemy.takeDamage(finalDamage.toDouble(), isCritical: isCritical);
 
             // Use onHit to record the damage instead of direct damageReport access
             onHit(_player, enemy, finalDamage, isCritical: isCritical);
@@ -157,7 +159,7 @@ class WhisperingFlames extends Component
 
 /// 🗡️ **Shadow Blades Ability Controller**
 class ShadowBlades extends PositionComponent implements Ability {
-  final DamageTracker damageTracker = DamageTracker();
+  final DamageTracker damageTracker;
   double _timeSinceLastTick = 0;
   final double tickInterval = 0.5;
   final double range = 150;
@@ -173,8 +175,8 @@ class ShadowBlades extends PositionComponent implements Ability {
   @override
   final AbilityType type = AbilityType.passive;
 
-  ShadowBlades() {
-    damageTracker.initialize();
+  ShadowBlades() : damageTracker = DamageTracker("Shadow Blades") {
+    DamageTracker.initialize();
   }
 
   @override
@@ -348,9 +350,8 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
       int finalDamage = isCritical
           ? (damage * (1 + player.critMultiplier / 100)).toInt()
           : damage;
-
       // Apply damage
-      other.takeDamage(finalDamage);
+      other.takeDamage(finalDamage.toDouble());
 
       // Notify ability of hit
       ability.onHit(player, other, finalDamage, isCritical: isCritical);
@@ -424,7 +425,7 @@ class CursedEcho extends Ability {
 
           // Apply the damage
           if (target is BaseEnemy) {
-            target.takeDamage(echoDamage, isCritical: isCritical);
+            target.takeDamage(echoDamage.toDouble(), isCritical: isCritical);
           }
         } else {
           print('⚠️ Target no longer exists for Cursed Echo');
@@ -473,7 +474,7 @@ extension ExplosionCooldown on Player {
     for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
       double distance = (enemy.position - position).length;
       if (distance < 100.0) {
-        int damage = (10.0 * spiritMultiplier).toInt().clamp(1, 9999);
+        double damage = (10.0 * spiritMultiplier).clamp(1.0, 9999.0);
         enemy.takeDamage(damage);
       }
     }
@@ -514,16 +515,17 @@ class DamageReport {
 }
 
 class BasicAttack extends Ability {
-  final DamageTracker damageTracker = DamageTracker();
+  final DamageTracker damageTracker;
 
   BasicAttack()
-      : super(
+      : damageTracker = DamageTracker("Basic Attack"),
+        super(
           name: 'Basic Attack',
           description: 'Your standard projectile attack',
           type: AbilityType.projectile,
         ) {
     // Initialize the damage tracker
-    damageTracker.initialize();
+    DamageTracker.initialize();
     print('🎯 BasicAttack initialized with damage tracker');
   }
 

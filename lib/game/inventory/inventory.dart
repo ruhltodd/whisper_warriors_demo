@@ -1,121 +1,147 @@
-import 'package:hive/hive.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/player/player.dart';
+import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
 
 class InventoryManager {
-  static final Box<InventoryItem> _inventoryBox =
-      Hive.box<InventoryItem>('inventoryBox');
-
   /// Add an item to inventory
-  static void addItem(InventoryItem item) {
-    if (item.item is! GoldCoin &&
-        item.item is! BlueCoin &&
-        item.item is! GreenCoin) {
-      // First add to box, then save
-      _inventoryBox.put(item.name, item);
-      item.save(); // Now it's safe to save since the item is in the box
-      print("👜 Item added: ${item.name}");
+  static Future<void> addItem(InventoryItem item) async {
+    try {
+      if (item.item is! GoldCoin &&
+          item.item is! BlueCoin &&
+          item.item is! GreenCoin) {
+        // Load current inventory
+        final currentItems = await InventoryStorage.loadInventory();
 
-      // Debug: Print current inventory state after adding
-      debugPrintInventory();
-    } else {
-      print("⚠️ GoldCoin not saved to inventory.");
+        // Check if item already exists
+        final existingItemIndex =
+            currentItems.indexWhere((i) => i.item.name == item.item.name);
+
+        if (existingItemIndex != -1) {
+          // Update quantity if item exists
+          currentItems[existingItemIndex].quantity += 1;
+          print("📦 Updated quantity for: ${item.item.name}");
+        } else {
+          // Add new item
+          currentItems.add(item);
+          print("👜 Added new item: ${item.item.name}");
+        }
+
+        // Save updated inventory
+        await InventoryStorage.saveInventory(currentItems);
+
+        // Debug: Print current inventory state
+        await debugPrintInventory();
+      } else {
+        print("💰 Coin collected, skipping inventory save");
+      }
+    } catch (e) {
+      print("❌ Error adding item: $e");
     }
   }
 
   /// Remove an item from inventory
-  static void removeItem(String itemName) {
-    _inventoryBox.delete(itemName);
-    print("🗑️ Item removed: $itemName");
+  static Future<void> removeItem(String itemName) async {
+    try {
+      final currentItems = await InventoryStorage.loadInventory();
+      currentItems.removeWhere((item) => item.item.name == itemName);
+      await InventoryStorage.saveInventory(currentItems);
+      print("🗑️ Removed item: $itemName");
+    } catch (e) {
+      print("❌ Error removing item: $e");
+    }
   }
 
   /// Equip an item
-  static void equipItem(String itemName, Player player) {
-    bool itemFound = false;
+  static Future<void> equipItem(String itemName, Player player) async {
+    try {
+      final currentItems = await InventoryStorage.loadInventory();
+      bool itemFound = false;
 
-    for (var item in _inventoryBox.values) {
-      if (item.name == itemName) {
-        if (!item.isEquipped) {
-          item.isEquipped = true;
-          item.save(); // Save the equipped status in the Hive box
-          item.applyEffect(player); // Apply effects of the equipped item
-          print("⚔️ Equipped: $itemName");
+      for (var item in currentItems) {
+        if (item.item.name == itemName) {
+          if (!item.isEquipped) {
+            item.isEquipped = true;
+            item.applyEffect(player);
+            print("⚔️ Equipped: $itemName");
+          }
+          itemFound = true;
+        } else if (item.isEquipped) {
+          // Unequip previously equipped items
+          item.isEquipped = false;
+          item.removeEffect(player);
         }
-        itemFound = true;
-      } else if (item.isEquipped) {
-        // Only unequip previously equipped items
-        item.isEquipped = false;
-        item.save();
       }
-    }
 
-    if (!itemFound) {
-      print("⚠️ Item not found: $itemName");
+      if (!itemFound) {
+        print("⚠️ Item not found: $itemName");
+        return;
+      }
+
+      await InventoryStorage.saveInventory(currentItems);
+    } catch (e) {
+      print("❌ Error equipping item: $e");
     }
   }
 
   /// Unequip an item
-  static void unequipItem(String itemName) {
-    final item = _inventoryBox.get(itemName);
-    if (item != null && item.isEquipped) {
-      item.isEquipped = false;
-      item.save();
-      print("❌ Unequipped: $itemName");
-    } else {
-      print("⚠️ Item not found or not equipped: $itemName");
+  static Future<void> unequipItem(String itemName, Player player) async {
+    try {
+      final currentItems = await InventoryStorage.loadInventory();
+      final item = currentItems.firstWhere(
+        (i) => i.item.name == itemName,
+        orElse: () => throw Exception("Item not found"),
+      );
+
+      if (item.isEquipped) {
+        item.isEquipped = false;
+        item.removeEffect(player);
+        await InventoryStorage.saveInventory(currentItems);
+        print("❌ Unequipped: $itemName");
+      } else {
+        print("⚠️ Item not equipped: $itemName");
+      }
+    } catch (e) {
+      print("❌ Error unequipping item: $e");
     }
   }
 
-  /// Load inventory from Hive with state verification
-  static List<InventoryItem> getInventory() {
+  /// Get all inventory items
+  static Future<List<InventoryItem>> getInventory() async {
     try {
-      final items = _inventoryBox.values.toList();
-      // Verify each item's state and ensure it's properly saved
-      for (var item in items) {
-        if (!_inventoryBox.containsKey(item.name)) {
-          _inventoryBox.put(item.name, item);
-        }
-      }
+      final items = await InventoryStorage.loadInventory();
       print("📦 Loaded ${items.length} items from inventory");
       return items;
     } catch (e) {
-      print("⚠️ Error loading inventory: $e");
+      print("❌ Error loading inventory: $e");
       return [];
     }
   }
 
-  /// Get currently equipped items
-  static List<InventoryItem> getEquippedItems() {
-    return _inventoryBox.values.where((item) => item.isEquipped).toList();
-  }
-
-  /// Initialize or verify inventory state
-  static void initializeInventory() {
+  /// Get equipped items
+  static Future<List<InventoryItem>> getEquippedItems() async {
     try {
-      final items = _inventoryBox.values.toList();
-
-      // Verify existing items only
-      for (var item in items) {
-        // Ensure each item's state is properly saved
-        if (!_inventoryBox.containsKey(item.name)) {
-          _inventoryBox.put(item.name, item);
-        }
-        item.save();
-        print("📦 Verified item: ${item.name} (Equipped: ${item.isEquipped})");
-      }
-      print("✅ Inventory initialized with ${items.length} items");
+      final List<InventoryItem> items = await InventoryStorage.loadInventory();
+      return items.where((item) => item.isEquipped).toList();
     } catch (e) {
-      print("⚠️ Error initializing inventory: $e");
+      print("❌ Error loading equipped items: $e");
+      return [];
     }
   }
 
   /// Debug method to print current inventory state
-  static void debugPrintInventory() {
-    final items = _inventoryBox.values.toList();
-    print("📦 Current Inventory State:");
-    for (var item in items) {
-      print("- ${item.name} (Equipped: ${item.isEquipped})");
+  static Future<void> debugPrintInventory() async {
+    try {
+      final items = await InventoryStorage.loadInventory();
+      print("\n📦 Current Inventory State:");
+      for (var item in items) {
+        print("- ${item.item.name}");
+        print("  Equipped: ${item.isEquipped}");
+        print("  Quantity: ${item.quantity}");
+        print("  Stats: ${item.item.stats}\n");
+      }
+    } catch (e) {
+      print("❌ Error printing inventory: $e");
     }
   }
 }

@@ -9,13 +9,21 @@ class PlayerProgressManager {
 
   static Future<void> initialize() async {
     if (!_isInitialized) {
-      if (!Hive.isBoxOpen(progressBoxName)) {
+      try {
+        if (!Hive.isBoxOpen(progressBoxName)) {
+          _progressBox = await Hive.openBox(progressBoxName);
+        } else {
+          _progressBox = Hive.box(progressBoxName);
+        }
+        _isInitialized = true;
+        print('✅ PlayerProgressManager initialized');
+      } catch (e) {
+        print('❌ Error initializing PlayerProgressManager: $e');
+        // Create a new box if there's an error
+        await Hive.deleteBoxFromDisk(progressBoxName);
         _progressBox = await Hive.openBox(progressBoxName);
-      } else {
-        _progressBox = Hive.box(progressBoxName);
+        _isInitialized = true;
       }
-      _isInitialized = true;
-      print('✅ PlayerProgressManager initialized');
     }
   }
 

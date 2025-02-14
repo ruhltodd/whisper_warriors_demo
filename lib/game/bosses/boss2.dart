@@ -150,7 +150,7 @@ class LaserBeam extends PositionComponent
     if (_playerInBeam()) {
       timeSinceLastDamage += dt;
       if (timeSinceLastDamage >= 1.0) {
-        gameRef.player.takeDamage(damagePerSecond.toInt());
+        gameRef.player.takeDamage(damagePerSecond);
         timeSinceLastDamage = 0.0;
       }
     }
@@ -274,12 +274,13 @@ class Boss2 extends BaseEnemy with Staggerable {
   }
 
   @override
-  void takeDamage(int baseDamage, {bool isCritical = false}) {
+  void takeDamage(double baseDamage, {bool isCritical = false}) {
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
-    int finalDamage =
-        isCritical ? (baseDamage * player.critMultiplier).toInt() : baseDamage;
+    int finalDamage = isCritical
+        ? (baseDamage * player.critMultiplier).toInt()
+        : baseDamage.toInt();
     health -= finalDamage;
     onHealthChanged(health.toDouble());
     applyStaggerDamage(finalDamage, isCritical: isCritical);
