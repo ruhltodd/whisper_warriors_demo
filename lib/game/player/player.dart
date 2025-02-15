@@ -19,6 +19,7 @@ import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/damage/damage_tracker.dart';
 import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
+import 'package:whisper_warriors/game/utils/audiomanager.dart';
 
 class Player extends PositionComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
@@ -482,9 +483,10 @@ class Player extends PositionComponent
         gameRef.overlays.add('retryOverlay');
       });
 
-      // Handle music
-      await gameRef.stopBackgroundMusic();
-      await gameRef.playGameOverMusic();
+      // Handle music using AudioManager
+      final audioManager = AudioManager();
+      await audioManager.stopBackgroundMusic();
+      await audioManager.playGameOverMusic();
     }
   }
 

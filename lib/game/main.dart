@@ -28,6 +28,7 @@ import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/ui/textstyles.dart';
+import 'package:whisper_warriors/game/utils/audiomanager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -297,10 +298,9 @@ class RogueShooterGame extends FlameGame
 
       // Initialize audio
       print('🎵 Initializing audio...');
-      await bgmPlayer.setReleaseMode(ReleaseMode.loop);
-      await bgmPlayer.setSource(AssetSource('music/soft_etheral.mp3'));
-      await bgmPlayer.setVolume(0.5);
-      await bgmPlayer.resume();
+      final audioManager = AudioManager();
+      await audioManager.preloadAudio();
+      await audioManager.playBackgroundMusic('music/soft_etheral.mp3');
 
       // Initialize notifiers
       print('📱 Initializing notifiers...');
@@ -758,9 +758,8 @@ class RogueShooterGame extends FlameGame
   Future<void> stopBackgroundMusic() async {
     try {
       print('🎵 Stopping background music...');
-      if (bgmPlayer.state == PlayerState.playing) {
-        await bgmPlayer.stop();
-      }
+      final audioManager = AudioManager();
+      await audioManager.stopBackgroundMusic();
       print('✅ Background music stopped');
     } catch (e) {
       print('❌ Error stopping background music: $e');
@@ -770,20 +769,8 @@ class RogueShooterGame extends FlameGame
   Future<void> playGameOverMusic() async {
     try {
       print('🎵 Playing game over music...');
-
-      // Stop any currently playing music first
-      await stopBackgroundMusic();
-
-      // Create a new audio player specifically for game over music
-      final gameOverPlayer = AudioPlayer();
-
-      // Set up the game over music
-      await gameOverPlayer.setSource(AssetSource('music/game_over.mp3'));
-      await gameOverPlayer.setVolume(0.5);
-      await gameOverPlayer.setReleaseMode(ReleaseMode.stop); // Don't loop
-      await gameOverPlayer
-          .play(AssetSource('music/game_over.mp3')); // Added source
-
+      final audioManager = AudioManager();
+      await audioManager.playGameOverMusic();
       print('✅ Game over music started');
     } catch (e) {
       print('❌ Error playing game over music: $e');

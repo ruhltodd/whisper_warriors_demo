@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:whisper_warriors/game/utils/audiomanager.dart';
+import 'package:whisper_warriors/game/ui/optionscreen.dart';
 
 class MainMenu extends StatefulWidget {
   final Function startGame;
@@ -15,28 +16,37 @@ class MainMenu extends StatefulWidget {
 class _MainMenuState extends State<MainMenu> {
   double startButtonOpacity = 1.0;
   double optionsButtonOpacity = 1.0;
-  late final AudioPlayer _bgmPlayer;
+  late final AudioManager _audioManager;
 
   @override
   void initState() {
     super.initState();
-    _bgmPlayer = AudioPlayer();
+    _audioManager = AudioManager();
     _playBackgroundMusic();
   }
 
   void _playBackgroundMusic() async {
-    await _bgmPlayer.setReleaseMode(ReleaseMode.loop); // ✅ Loop the music
-    await _bgmPlayer.play(AssetSource('music/mystical-winds.mp3'));
+    await _audioManager.playBackgroundMusic('music/mystical-winds.mp3');
   }
 
   void _stopMusic() async {
-    await _bgmPlayer.stop(); // ✅ Stop music when leaving menu
+    await _audioManager.stopBackgroundMusic();
+  }
+
+  void _openOptions() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OptionsScreen(
+          onBack: () => Navigator.pop(context),
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
     _stopMusic();
-    _bgmPlayer.dispose();
     super.dispose();
   }
 
@@ -98,7 +108,7 @@ class _MainMenuState extends State<MainMenu> {
                         setState(() => optionsButtonOpacity = 0.6),
                     onTapUp: (_) {
                       setState(() => optionsButtonOpacity = 1.0);
-                      widget.openOptions(); // ✅ Open Options
+                      _openOptions(); // Use our new method instead of widget.openOptions()
                     },
                     child: AnimatedOpacity(
                       duration: Duration(milliseconds: 150),
