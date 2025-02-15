@@ -90,9 +90,8 @@ class AudioManager {
   // Preload audio files
   Future<void> preloadAudio() async {
     await FlameAudio.audioCache.loadAll([
-      'background_music.mp3',
-      'menu_click.mp3',
-      'ability_unlock.mp3',
+      'soft_etheral.mp3',
+      'game_over.mp3',
       // Add other audio files here
     ]);
   }
@@ -103,10 +102,10 @@ class AudioManager {
       await stopBackgroundMusic();
 
       // Set up and play game over music
-      await _gameOverPlayer.setSource(AssetSource('music/game_over.mp3'));
+      await _gameOverPlayer.setSource(AssetSource('game_over.mp3'));
       await _gameOverPlayer.setVolume(_musicVolume);
       await _gameOverPlayer.setReleaseMode(ReleaseMode.stop); // Don't loop
-      await _gameOverPlayer.play(AssetSource('music/game_over.mp3'));
+      await _gameOverPlayer.play(AssetSource('game_over.mp3'));
     } catch (e) {
       print('❌ Error playing game over music: $e');
     }

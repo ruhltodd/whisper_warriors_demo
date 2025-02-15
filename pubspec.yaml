@@ -42,7 +42,7 @@ dependencies:
   hive_flutter: ^1.1.0
   path_provider: ^2.1.1
   shared_preferences: ^2.0.0
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -109,9 +109,9 @@ flutter:
     - assets/images/7.png
     - assets/images/8.png
     - assets/images/9.png
-    - assets/music/mystical-winds.mp3
-    - assets/music/soft_etheral.mp3
-    - assets/music/game_over.mp3
+    - assets/audio/mystical-winds.mp3
+    - assets/audio/soft_etheral.mp3
+    - assets/audio/game_over.mp3
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

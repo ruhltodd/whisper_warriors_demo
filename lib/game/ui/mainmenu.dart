@@ -26,7 +26,7 @@ class _MainMenuState extends State<MainMenu> {
   }
 
   void _playBackgroundMusic() async {
-    await _audioManager.playBackgroundMusic('music/mystical-winds.mp3');
+    await _audioManager.playBackgroundMusic('audio/mystical-winds.mp3');
   }
 
   void _stopMusic() async {

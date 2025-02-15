@@ -300,7 +300,7 @@ class RogueShooterGame extends FlameGame
       print('🎵 Initializing audio...');
       final audioManager = AudioManager();
       await audioManager.preloadAudio();
-      await audioManager.playBackgroundMusic('music/soft_etheral.mp3');
+      await audioManager.playBackgroundMusic('audio/soft_etheral.mp3');
 
       // Initialize notifiers
       print('📱 Initializing notifiers...');
@@ -745,7 +745,7 @@ class RogueShooterGame extends FlameGame
       print('✨ Collected and replaced duplicate: ${item.name}');
       showNotification('Item updated: ${item.name}', item.rarity);
 
-      await AudioPlayer().play(AssetSource('assets/audio/collect_item.mp3'));
+      await AudioPlayer().play(AssetSource('audio/collect_item.mp3'));
     } catch (e) {
       print('❌ Error collecting item: $e');
     }

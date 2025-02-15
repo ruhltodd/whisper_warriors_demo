@@ -49,7 +49,7 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   }
 
   Future<void> _playMusic() async {
-    await _audioPlayer.play(AssetSource('music/mystical-winds.mp3'),
+    await _audioPlayer.play(AssetSource('audio/mystical-winds.mp3'),
         volume: 0.5);
   }
 
