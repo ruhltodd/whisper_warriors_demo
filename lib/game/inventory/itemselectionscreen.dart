@@ -3,6 +3,7 @@ import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
 import 'package:whisper_warriors/game/items/itemrarity.dart';
 import 'package:whisper_warriors/game/ui/globalexperiencelevelbar.dart';
+import 'package:whisper_warriors/game/ui/itemframe.dart';
 import 'package:whisper_warriors/game/ui/textstyles.dart';
 
 const String INVENTORY_BOX_NAME = 'inventory_items';
@@ -27,9 +28,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize with already equipped items
-    selectedItems =
-        widget.availableItems.where((item) => item.isEquipped).toList();
+    // Initialize with empty selection instead of equipped items
+    selectedItems = [];
+    print('🎮 Inventory opened with no pre-selected items');
   }
 
   Future<void> _confirmSelection() async {
@@ -239,16 +240,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
       onExit: (_) => setState(() => _hoveredItem = null),
       child: GestureDetector(
         onTap: () => _toggleItemSelection(item),
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: borderColor,
-              width: 2,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
+        child: AnimatedItemFrame(
+          rarityColor: borderColor,
           child: Opacity(
             opacity: isSelected ? 0.5 : 1,
             child: Image.asset(
