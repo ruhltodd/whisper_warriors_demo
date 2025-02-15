@@ -1,6 +1,7 @@
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/projectiles/projectile.dart';
 import 'package:whisper_warriors/game/items/itemrarity.dart';
+import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 
 abstract class Item {
   String get name;
@@ -145,8 +146,11 @@ class VeilOfTheForgotten extends Item {
     if (player.currentHealth < player.maxHealth * 0.5) {
       player.baseDefense *= (1 + stats["Defense Bonus"]!);
     }
-    // Apply other effects
-    player.spiritMultiplier *= (1 + stats["Spirit Bonus"]!);
+
+    // Apply spirit bonus through PlayerProgressManager
+    double currentBonus = PlayerProgressManager.getSpiritItemBonus();
+    PlayerProgressManager.setSpiritItemBonus(
+        currentBonus + stats["Spirit Bonus"]!);
 
     print("Applied Veil of the Forgotten effect to player.");
   }
@@ -157,7 +161,11 @@ class VeilOfTheForgotten extends Item {
     if (player.currentHealth < player.maxHealth * 0.5) {
       player.baseDefense /= (1 + stats["Defense Bonus"]!);
     }
-    player.spiritMultiplier /= (1 + stats["Spirit Bonus"]!);
+
+    // Remove spirit bonus through PlayerProgressManager
+    double currentBonus = PlayerProgressManager.getSpiritItemBonus();
+    PlayerProgressManager.setSpiritItemBonus(
+        currentBonus - stats["Spirit Bonus"]!);
 
     print("Removed Veil of the Forgotten effect from player.");
   }
@@ -187,15 +195,33 @@ class ShardOfUmbrathos extends Item {
 
   @override
   void applyEffect(Player player) {
-    player.spiritMultiplier *= (1 + stats["Spirit Multiplier"]!);
-    // Note: Dark Power stat is shown but not implemented yet
-    print("Applied ShardOfUmbrathos effect to player.");
+    if (player.hasEffect("ShardOfUmbrathos")) {
+      print("⚠️ Shard of Umbrathos already applied. Skipping.");
+      return;
+    }
+
+    double bonus = 0.15; // 15% boost
+    double currentBonus = PlayerProgressManager.getSpiritItemBonus();
+    PlayerProgressManager.setSpiritItemBonus(currentBonus + bonus);
+
+    player.addEffect(
+        "ShardOfUmbrathos"); // Store to prevent duplicate applications
+    print("✅ Applied Shard of Umbrathos (+15% Spirit)");
   }
 
   @override
   void removeEffect(Player player) {
-    player.spiritMultiplier /= (1 + stats["Spirit Multiplier"]!);
-    print("Removed ShardOfUmbrathos effect from player.");
+    if (!player.hasEffect("ShardOfUmbrathos")) {
+      print("⚠️ Shard of Umbrathos not found. Skipping removal.");
+      return;
+    }
+
+    double bonus = 0.15; // Same 15% boost
+    double currentBonus = PlayerProgressManager.getSpiritItemBonus();
+    PlayerProgressManager.setSpiritItemBonus(currentBonus - bonus);
+
+    player.removeEffect("ShardOfUmbrathos");
+    print("✅ Removed Shard of Umbrathos (-15% Spirit)");
   }
 }
 

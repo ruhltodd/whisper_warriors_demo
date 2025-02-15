@@ -26,33 +26,40 @@ class Player extends PositionComponent
   final DamageTracker damageTracker =
       DamageTracker('player'); // Add ability name
 
+  // Base stats
+  static const double DEFAULT_SPEED = 140.0;
+  static const double DEFAULT_DAMAGE = 10.0;
+  static const double DEFAULT_ATTACK_COOLDOWN = 1.0;
+
+  // Current stats
+  double speed = DEFAULT_SPEED;
+  double baseDamage = DEFAULT_DAMAGE;
+  double attackCooldown = DEFAULT_ATTACK_COOLDOWN;
+
   // Base Stats (before Spirit Level modifications)
   double baseHealth = 100.0;
   double baseSpeed = 100.0;
   double baseAttackSpeed = 1.0; // Attacks per second
   double baseDefense = 0.0; // % Damage reduction
-  double baseDamage = 10.0;
   double baseCritChance = 5.0; // % Chance
   double baseCritMultiplier = 1.5; // 1.5x damage on crit
 
-  // Spirit Level System
-  double spiritMultiplier = 5.0; // Scales with Spirit Level
-  int spiritLevel = 1;
-  double spiritExp = 0.0;
-  double spiritExpToNextLevel = 500.0;
-
-  // Derived Stats (calculated from Spirit Level)
-  double get maxHealth => baseHealth * spiritMultiplier;
-  double get movementSpeed => baseSpeed * spiritMultiplier;
-  double get attackSpeed => baseAttackSpeed * (1 + (spiritMultiplier - 1));
-  double get defense => baseDefense * spiritMultiplier;
-  double get damage => baseDamage * spiritMultiplier;
-  double get critChance => baseCritChance * spiritMultiplier;
+  // Derived Stats (now using PlayerProgressManager)
+  double get maxHealth =>
+      baseHealth * PlayerProgressManager.getSpiritMultiplier();
+  double get movementSpeed =>
+      baseSpeed * PlayerProgressManager.getSpiritMultiplier();
+  double get attackSpeed =>
+      baseAttackSpeed * (1 + (PlayerProgressManager.getSpiritMultiplier() - 1));
+  double get defense =>
+      baseDefense * PlayerProgressManager.getSpiritMultiplier();
+  double get damage => baseDamage * PlayerProgressManager.getSpiritMultiplier();
+  double get critChance =>
+      baseCritChance * PlayerProgressManager.getSpiritMultiplier();
   double get critMultiplier =>
-      baseCritMultiplier + ((spiritMultiplier - 1) * 0.5);
-  double get pickupRange =>
-      100.0 *
-      spiritMultiplier; // Base range of 100, scales with spirit multiplier
+      baseCritMultiplier +
+      ((PlayerProgressManager.getSpiritMultiplier() - 1) * 0.5);
+  double get pickupRange => 100.0 * PlayerProgressManager.getSpiritMultiplier();
 
   // Current Health (tracks real-time health)
   double currentHealth = 100.0;
@@ -60,7 +67,6 @@ class Player extends PositionComponent
   // UI & Game Elements
   HealthBar? healthBar;
   Vector2 _joystickDelta = Vector2.zero();
-  double speed = 140; // Adjust this value to control player movement speed
   Vector2 movementDirection = Vector2.zero(); // Stores movement direction
   late WhisperWarrior whisperWarrior;
   BaseEnemy? closestEnemy;
@@ -78,7 +84,6 @@ class Player extends PositionComponent
   // Special Player Stats
   double vampiricHealing = 0;
   double blackHoleCooldown = 10;
-  double firingCooldown = 1.0;
   double timeSinceLastShot = 1.0;
   double lastExplosionTime = 0.0;
   double explosionCooldown = 0.2;
@@ -92,6 +97,24 @@ class Player extends PositionComponent
   bool hasUmbralFang = false;
   bool hasVeilOfForgotten = false;
   bool hasShardOfUmbrathos = false;
+
+  // Track active effects
+  final Set<String> _activeEffects = {};
+
+  // Effect management methods
+  bool hasEffect(String effectName) {
+    return _activeEffects.contains(effectName);
+  }
+
+  void addEffect(String effectName) {
+    _activeEffects.add(effectName);
+    print('➕ Added effect: $effectName');
+  }
+
+  void removeEffect(String effectName) {
+    _activeEffects.remove(effectName);
+    print('➖ Removed effect: $effectName');
+  }
 
   // Check if the player has a specific item by name
   bool hasItem(String itemName) {
@@ -165,13 +188,22 @@ class Player extends PositionComponent
           addAbility(ability);
         }
       }
-      print("🔥 Player Loaded with Abilities: $unlockedAbilities");
+      print("�� Player Loaded with Abilities: $unlockedAbilities");
 
       // Apply equipped items
       for (var item in equippedItems) {
         item.applyEffect(this);
         print("🎭 Applied ${item.name} to Player");
       }
+
+      // Reset stats to defaults
+      speed = DEFAULT_SPEED;
+      baseDamage = DEFAULT_DAMAGE;
+      attackCooldown = DEFAULT_ATTACK_COOLDOWN;
+      print("🔄 Reset player stats to defaults:");
+      print("   Speed: $speed");
+      print("   Damage: $baseDamage");
+      print("   Attack Speed: ${1 / attackCooldown} shots/sec");
 
       print('✅ Player initialization complete');
       print('   Position: $position');
@@ -295,7 +327,9 @@ class Player extends PositionComponent
       if (stat == "Attack Speed") baseAttackSpeed *= (1 + value);
       if (stat == "Defense Bonus" && currentHealth < maxHealth * 0.5)
         baseDefense *= (1 + value);
-      if (stat == "Spirit Multiplier") spiritMultiplier *= (1 + value);
+      if (stat == "Spirit Multiplier") {
+        PlayerProgressManager.setSpiritItemBonus(value);
+      }
     });
   }
 
@@ -304,18 +338,10 @@ class Player extends PositionComponent
     item.stats.forEach((stat, value) {
       if (stat == "Attack Speed") baseAttackSpeed /= (1 + value);
       if (stat == "Defense Bonus") baseDefense /= (1 + value);
-      if (stat == "Spirit Multiplier") spiritMultiplier /= (1 + value);
+      if (stat == "Spirit Multiplier") {
+        PlayerProgressManager.setSpiritItemBonus(0.0);
+      }
     });
-  }
-
-  // Update spirit multiplier based on spirit level and equipped items
-  void updateSpiritMultiplier() {
-    spiritMultiplier = 1.0 + (spiritLevel * 0.05);
-
-    // Apply "Shard of Umbrathos" bonus if equipped
-    if (equippedItems.any((item) => item is ShardOfUmbrathos)) {
-      spiritMultiplier *= 1.15; // 15% Bonus to Spirit Multiplier
-    }
   }
 
   // Update joystick input for movement
@@ -336,6 +362,7 @@ class Player extends PositionComponent
     super.update(dt);
 
     if (!isDead) {
+      updateClosestEnemy(); // ✅ Ensure enemies are tracked each frame
       updateMovement(dt);
     }
   }
@@ -344,9 +371,6 @@ class Player extends PositionComponent
     if (!isMounted || isDead) {
       return; // Don't do anything if dead or unmounted
     }
-
-    updateSpiritMultiplier();
-    updateClosestEnemy();
 
     Vector2 totalMovement = movementDirection + _joystickDelta;
     if (totalMovement.length > 0) {
@@ -392,32 +416,9 @@ class Player extends PositionComponent
     }
   }
 
-  // Gain spirit experience and handle level-ups
+  // Gain experience (now delegates to PlayerProgressManager)
   void gainSpiritExp(double amount) {
-    while (amount > 0) {
-      double remainingToLevel = spiritExpToNextLevel - spiritExp;
-
-      if (amount >= remainingToLevel) {
-        spiritExp = spiritExpToNextLevel;
-        amount -= remainingToLevel;
-        spiritLevelUp(); // Level up before adding more XP
-      } else {
-        spiritExp += amount;
-        amount = 0;
-      }
-    }
-
-    // Update experience bar
-    gameRef.experienceBar
-        .updateSpirit(spiritExp, spiritExpToNextLevel, spiritLevel);
-  }
-
-  // Handle spirit level up
-  void spiritLevelUp() {
-    spiritLevel++;
-    spiritExp -= spiritExpToNextLevel;
-    spiritExpToNextLevel *= 1.2;
-    updateSpiritMultiplier();
+    PlayerProgressManager.gainSpiritExp(amount);
   }
 
   // Take damage and handle death
@@ -558,14 +559,21 @@ class Player extends PositionComponent
   // Update the closest enemy
   void updateClosestEnemy() {
     final enemies = gameRef.children.whereType<BaseEnemy>().toList();
+
     if (enemies.isEmpty) {
       closestEnemy = null;
+      print("⚠️ No enemies found in game world");
       return;
     }
 
+    print("🔍 Found ${enemies.length} enemies");
+
     BaseEnemy? newClosest;
     double closestDistance = double.infinity;
+
     for (final enemy in enemies) {
+      if (!enemy.isMounted) continue; // Skip dead/unmounted enemies
+
       final distance = (enemy.position - position).length;
       if (distance < closestDistance) {
         closestDistance = distance;
@@ -575,6 +583,13 @@ class Player extends PositionComponent
 
     if (newClosest != closestEnemy) {
       closestEnemy = newClosest;
+      if (closestEnemy != null) {
+        print("🎯 New target acquired:");
+        print("   Distance: ${closestDistance.toStringAsFixed(1)}");
+        print("   Position: ${closestEnemy?.position}");
+      } else {
+        print("❌ Lost target - no valid enemies in range");
+      }
     }
   }
 
@@ -608,7 +623,8 @@ class Player extends PositionComponent
 
     // Calculate explosion damage based on Spirit Level
     double explosionDamage = damage * 0.25; // Base: 25% of player damage
-    explosionDamage *= spiritMultiplier; // Scale with Spirit Level
+    explosionDamage *=
+        PlayerProgressManager.getSpiritMultiplier(); // Scale with Spirit Level
 
     // Apply damage to nearby enemies
     for (var enemy in gameRef.children.whereType<BaseEnemy>()) {

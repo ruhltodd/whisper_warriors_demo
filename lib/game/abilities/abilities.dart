@@ -5,6 +5,7 @@ import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/main.dart';
+import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 
 /// Enum for ability types (optional, for categorization)
 enum AbilityType { passive, onHit, onKill, aura, scaling, projectile }
@@ -84,11 +85,16 @@ class WhisperingFlames extends Component
 
     _elapsedTime += dt;
     if (_elapsedTime >= tickRate) {
-      print('🔥 WhisperingFlames tick at ${_elapsedTime.toStringAsFixed(1)}s');
       _elapsedTime = 0.0;
-      double scaledDamage = baseDamagePerSecond * _player.spiritMultiplier;
-      print(
-          '🔥 Base damage: $baseDamagePerSecond × ${_player.spiritMultiplier} = $scaledDamage');
+      double spiritMultiplier = PlayerProgressManager.getSpiritMultiplier();
+      double scaledDamage = baseDamagePerSecond * spiritMultiplier;
+
+      // Rate-limited debug print
+      if (_shouldPrintDebug()) {
+        print('🔥 WhisperingFlames tick');
+        print(
+            '🔥 Base damage: $baseDamagePerSecond × ${spiritMultiplier.toStringAsFixed(2)} = $scaledDamage');
+      }
 
       try {
         int enemiesInRange = 0;
@@ -155,6 +161,16 @@ class WhisperingFlames extends Component
     // The actual update logic is handled in the Component's update() method
     // This is just to satisfy the Ability interface
   }
+
+  double _lastDebugPrint = 0;
+  bool _shouldPrintDebug() {
+    double currentTime = DateTime.now().millisecondsSinceEpoch / 1000;
+    if (currentTime - _lastDebugPrint >= 1.0) {
+      _lastDebugPrint = currentTime;
+      return true;
+    }
+    return false;
+  }
 }
 
 /// 🗡️ **Shadow Blades Ability Controller**
@@ -197,9 +213,8 @@ class ShadowBlades extends PositionComponent implements Ability {
         final rotationAngle = direction.angleToSigned(Vector2(1, 0));
 
         // Calculate damage with spirit multiplier
-        int scaledDamage = (baseDamage * player.spiritMultiplier).toInt();
-        print(
-            '🗡️ Shadow Blade Damage: $baseDamage × ${player.spiritMultiplier.toStringAsFixed(2)} = $scaledDamage');
+        double spiritMultiplier = PlayerProgressManager.getSpiritMultiplier();
+        int scaledDamage = (baseDamage * spiritMultiplier).toInt();
 
         final projectile = ShadowBladeProjectile(
           player: player,
@@ -363,9 +378,9 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
 
 /// 🔁 **Cursed Echo Ability** - Chance to repeat attacks
 class CursedEcho extends Ability {
-  static const double BASE_PROC_CHANCE = 0.35; // Increased to 35%
+  static const double BASE_PROC_CHANCE = 0.35; // 35% base chance
   static const double DELAY_BETWEEN_REPEATS = 0.1; // 100ms delay
-  static const double PROC_COOLDOWN = 0.5; // Reduced to 0.5s cooldown
+  static const double PROC_COOLDOWN = 0.75; // 750ms cooldown
   double _lastProcTime = 0.0;
 
   CursedEcho()
@@ -377,13 +392,14 @@ class CursedEcho extends Ability {
         );
 
   double getProcChance(Player player) {
-    double chance =
-        (BASE_PROC_CHANCE + (player.spiritLevel * 0.01)).clamp(0, 1);
+    int spiritLevel = PlayerProgressManager.getSpiritLevel();
+    double chance = (BASE_PROC_CHANCE + (spiritLevel * 0.01)).clamp(0, 1);
+
     print(
         '🎲 Cursed Echo base chance: ${(BASE_PROC_CHANCE * 100).toStringAsFixed(1)}%');
-    print(
-        '🌟 Spirit Level bonus: +${(player.spiritLevel).toStringAsFixed(1)}%');
+    print('🌟 Spirit Level bonus: +${(spiritLevel).toStringAsFixed(1)}%');
     print('✨ Final proc chance: ${(chance * 100).toStringAsFixed(1)}%');
+
     return chance;
   }
 
@@ -393,47 +409,32 @@ class CursedEcho extends Ability {
     double currentTime = player.gameRef.currentTime();
     double timeSinceLastProc = currentTime - _lastProcTime;
 
-    print('⚡ Cursed Echo checking hit...');
-    print('⏱️ Time since last proc: ${timeSinceLastProc.toStringAsFixed(2)}s');
-    print(
-        '⌛ Cooldown remaining: ${(PROC_COOLDOWN - timeSinceLastProc).toStringAsFixed(2)}s');
-
     if (timeSinceLastProc < PROC_COOLDOWN) {
       print(
-          '❌ Cursed Echo on cooldown (${(PROC_COOLDOWN - timeSinceLastProc).toStringAsFixed(2)}s remaining)');
+          "❌ Cursed Echo on cooldown (${(PROC_COOLDOWN - timeSinceLastProc).toStringAsFixed(2)}s remaining)");
       return;
     }
 
     double procChance = getProcChance(player);
     double roll = player.gameRef.random.nextDouble();
-    print('🎲 Rolling: $roll vs ${procChance.toStringAsFixed(2)}');
 
     if (roll < procChance) {
       _lastProcTime = currentTime;
-      print(
-          '✨ Cursed Echo triggered! (Roll: $roll < ${procChance.toStringAsFixed(2)})');
 
-      Future.delayed(
-          Duration(milliseconds: (DELAY_BETWEEN_REPEATS * 1000).toInt()), () {
-        if (target.isMounted) {
-          // Calculate echo damage (same as original)
-          int echoDamage = (damage * player.spiritMultiplier).toInt();
+      Future.delayed(Duration(milliseconds: 100), () {
+        if (target.isMounted && target is BaseEnemy) {
+          double spiritMultiplier = PlayerProgressManager.getSpiritMultiplier();
+          int echoDamage = (damage * spiritMultiplier).toInt();
 
-          // Record the echoed hit
-          damageReport.recordHit(echoDamage, isCritical);
-          print('💥 Cursed Echo dealt $echoDamage damage (Crit: $isCritical)');
+          // Mark as echoed damage to prevent XP gain
+          target.takeDamage(echoDamage.toDouble(),
+              isCritical: isCritical, isEchoed: true // This prevents XP gain
+              );
 
-          // Apply the damage
-          if (target is BaseEnemy) {
-            target.takeDamage(echoDamage.toDouble(), isCritical: isCritical);
-          }
-        } else {
-          print('⚠️ Target no longer exists for Cursed Echo');
+          print(
+              '🔥 Cursed Echo dealt $echoDamage damage (Crit: $isCritical) - No XP awarded');
         }
       });
-    } else {
-      print(
-          '❌ Cursed Echo failed to proc (Roll: $roll >= ${procChance.toStringAsFixed(2)})');
     }
   }
 }
@@ -474,7 +475,10 @@ extension ExplosionCooldown on Player {
     for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
       double distance = (enemy.position - position).length;
       if (distance < 100.0) {
+        double spiritMultiplier = PlayerProgressManager.getSpiritMultiplier();
         double damage = (10.0 * spiritMultiplier).clamp(1.0, 9999.0);
+        print(
+            "💥 Explosion damage: ${damage.toStringAsFixed(1)} (${spiritMultiplier.toStringAsFixed(1)}x multiplier)");
         enemy.takeDamage(damage);
       }
     }

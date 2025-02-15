@@ -17,26 +17,41 @@ import 'package:whisper_warriors/game/ui/shadoweffect.dart';
 abstract class BaseEnemy extends SpriteAnimationComponent
     with CollisionCallbacks, HasGameRef<RogueShooterGame>, ShadowEffectMixin {
   final Player player;
-  double _baseSpeed; // ✅ Store base speed internally
+  double _baseSpeed;
+  int _baseHealth; // Store base health
   int health;
   VoidCallback? onRemoveCallback;
 
   double timeSinceLastDamageNumber = 0.0;
   final double damageNumberInterval = 0.5;
 
-  bool hasExploded = false; // ✅ Prevent multiple explosions
-  bool hasDroppedItem = false; // ✅ Prevent multiple drops
+  bool hasExploded = false;
+  bool hasDroppedItem = false;
 
   BaseEnemy({
     required this.player,
-    required this.health,
-    required double speed, // ✅ Accept initial speed as parameter
+    required int health,
+    required double speed,
     required Vector2 size,
   })  : _baseSpeed = speed,
+        _baseHealth = health,
+        health = health, // Will be scaled in onLoad
         super(size: size, anchor: Anchor.center);
 
-  double get speed => _baseSpeed; // ✅ Now `speed` can be modified in subclasses
-  set speed(double value) => _baseSpeed = value; // ✅ Al
+  double get speed => _baseSpeed;
+  set speed(double value) => _baseSpeed = value;
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+
+    // Scale health with enemy scaling
+    double enemyScaling = PlayerProgressManager.getEnemyScaling();
+    health = (_baseHealth * enemyScaling).round();
+
+    print('🔄 Enemy scaled with spirit level: ${enemyScaling}x');
+    print('💪 Base Health: $_baseHealth → Scaled Health: $health');
+  }
 
   @override
   void update(double dt) {
@@ -47,36 +62,39 @@ abstract class BaseEnemy extends SpriteAnimationComponent
     position += direction * speed * dt;
 
     if ((player.position - position).length < 10) {
-      player.takeDamage(1);
+      double enemyScaling = PlayerProgressManager.getEnemyScaling();
+      int scaledDamage = (1 * enemyScaling).round();
+      player.takeDamage(scaledDamage.toDouble());
       removeFromParent();
     }
   }
 
-  void takeDamage(double damage, {bool isCritical = false}) {
+  void takeDamage(double amount,
+      {bool isCritical = false, bool isEchoed = false}) {
     if (health <= 0) return;
-    // Apply damage
-    health -= damage.toInt();
 
+    // Convert damage to int for health calculation
+    int damageAmount = amount.round();
+    health -= damageAmount;
+
+    // Add damage number display
     // Show damage number
     if (timeSinceLastDamageNumber >= damageNumberInterval) {
       final damageNumber = DamageNumber(
-        damage.toInt(),
+        damageAmount,
         position.clone(),
         isCritical: isCritical,
       );
       gameRef.add(damageNumber);
       timeSinceLastDamageNumber = 0;
     }
-    // Play hit animation
-    // TODO: Implement hit animation system
-    // playAnimation('hit'); // Removed since method doesn't exist yet
 
-    // Check for death
+    print(
+        '💥 Enemy took $damageAmount damage${isCritical ? " (CRIT!)" : ""}${isEchoed ? " (Echo)" : ""}. Health: $health');
+
     if (health <= 0) {
       die();
     }
-
-    print('💥 Enemy took $damage damage. Health: $health');
   }
 
   void die() {
@@ -96,7 +114,7 @@ abstract class BaseEnemy extends SpriteAnimationComponent
 
     // ✅ Grant XP for defeating this enemy
     int xpEarned = this is Wave2Enemy ? 160 : 80; // ✅ Green Coin = Double XP
-    PlayerProgressManager.addXp(xpEarned);
+    PlayerProgressManager.gainSpiritExp(xpEarned.toDouble());
     print("⚔️ Enemy Defeated! +$xpEarned XP");
 
     // ✅ Notify SpawnController that an enemy has been removed

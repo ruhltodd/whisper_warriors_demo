@@ -207,7 +207,8 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   @override
-  void takeDamage(double baseDamage, {bool isCritical = false}) {
+  void takeDamage(double baseDamage,
+      {bool isCritical = false, bool isEchoed = false}) {
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
@@ -226,7 +227,12 @@ class Boss1 extends BaseEnemy with Staggerable {
       _enterEnrageMode();
     }
     if (health <= 0) {
-      die();
+      if (!isEchoed) {
+        die();
+      } else {
+        removeFromParent();
+        print("🔄 Boss killed by Cursed Echo - No rewards granted");
+      }
     }
   }
 

@@ -292,7 +292,8 @@ class Boss2 extends BaseEnemy with Staggerable {
   }
 
   @override
-  void takeDamage(double baseDamage, {bool isCritical = false}) {
+  void takeDamage(double baseDamage,
+      {bool isCritical = false, bool isEchoed = false}) {
     // Early return if boss is dying or removed
     if (_isDying || _isRemoved) {
       print("⚠️ Ignored damage on dying/removed boss");
@@ -318,7 +319,15 @@ class Boss2 extends BaseEnemy with Staggerable {
 
     if (currentHealth <= 0 && !_isDying) {
       print("💀 Boss2 health reached 0, initiating death");
-      die();
+      // Only grant rewards for non-echoed kills
+      if (!isEchoed) {
+        die();
+      } else {
+        // Still remove the boss but don't trigger rewards
+        _isDying = true;
+        removeFromParent();
+        print("🔄 Boss2 killed by Cursed Echo - No rewards granted");
+      }
     }
 
     // Update boss health whenever damage is taken
