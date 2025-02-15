@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/main.dart';
+import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 
 class SpiritBar extends PositionComponent with HasGameRef<RogueShooterGame> {
   final double barWidth = 200;
@@ -11,40 +11,47 @@ class SpiritBar extends PositionComponent with HasGameRef<RogueShooterGame> {
   double spiritExpToNextLevel = 500.0;
   int spiritLevel = 1;
 
-  // Bind UI updates to ProgressManager's Notifiers
+  // Add notifiers
   late final ValueNotifier<double> _spiritExpNotifier;
   late final ValueNotifier<int> _spiritLevelNotifier;
+  bool _isDisposed = false;
 
   SpiritBar() {
     width = barWidth;
     height = barHeight;
 
-    // Initialize notifier references
     _spiritExpNotifier = PlayerProgressManager.spiritExpNotifier;
     _spiritLevelNotifier = PlayerProgressManager.spiritLevelNotifier;
 
-    // Listen to XP and Level changes
-    _spiritExpNotifier.addListener(() {
-      updateSpirit(
-          _spiritExpNotifier.value *
-              PlayerProgressManager.getSpiritExpToNextLevel(),
-          PlayerProgressManager.getSpiritExpToNextLevel(),
-          _spiritLevelNotifier.value);
-    });
-
-    _spiritLevelNotifier.addListener(() {
-      updateSpirit(spiritExp, PlayerProgressManager.getSpiritExpToNextLevel(),
-          _spiritLevelNotifier.value);
-    });
+    // Add listeners
+    _spiritExpNotifier.addListener(_updateSpirit);
+    _spiritLevelNotifier.addListener(_updateSpirit);
   }
 
-  void updateSpirit(double spirit, double spiritToNextLevel, int level) {
-    spiritExp = spirit;
-    spiritExpToNextLevel = spiritToNextLevel;
-    spiritLevel = level;
+  void _updateSpirit() {
+    if (!_isDisposed) {
+      spiritExp = _spiritExpNotifier.value * spiritExpToNextLevel;
+      spiritLevel = _spiritLevelNotifier.value;
+    }
+  }
 
-    print(
-        "🔄 SpiritBar Updated: Level $spiritLevel | XP: ${spiritExp.toStringAsFixed(1)} / ${spiritExpToNextLevel.toStringAsFixed(1)} (${(_spiritExpNotifier.value * 100).toStringAsFixed(1)}%)");
+  @override
+  void onRemove() {
+    dispose();
+    super.onRemove();
+  }
+
+  void dispose() {
+    if (!_isDisposed) {
+      try {
+        _spiritExpNotifier.removeListener(_updateSpirit);
+        _spiritLevelNotifier.removeListener(_updateSpirit);
+        _isDisposed = true;
+        print('🌟 SpiritBarLevel disposed safely');
+      } catch (e) {
+        print('⚠️ Warning: Error disposing SpiritBarLevel: $e');
+      }
+    }
   }
 
   @override
@@ -54,10 +61,41 @@ class SpiritBar extends PositionComponent with HasGameRef<RogueShooterGame> {
   }
 
   @override
-  void onRemove() {
-    super.onRemove();
-    // Clean up listeners
-    _spiritExpNotifier.removeListener(() {});
-    _spiritLevelNotifier.removeListener(() {});
+  void render(Canvas canvas) {
+    super.render(canvas);
+
+    // Draw background
+    final bgPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(Rect.fromLTWH(0, 0, barWidth, barHeight), bgPaint);
+
+    // Draw progress
+    final progressPaint = Paint()
+      ..color = Colors.purple.withOpacity(0.8)
+      ..style = PaintingStyle.fill;
+
+    final progress = (spiritExp / spiritExpToNextLevel).clamp(0.0, 1.0);
+    canvas.drawRect(
+        Rect.fromLTWH(0, 0, barWidth * progress, barHeight), progressPaint);
+
+    // Draw level text
+    final textSpan = TextSpan(
+      text: 'Spirit Level $spiritLevel',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(0, -20));
   }
 }

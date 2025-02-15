@@ -29,6 +29,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/ui/textstyles.dart';
 import 'package:whisper_warriors/game/utils/audiomanager.dart';
+import 'package:whisper_warriors/game/ui/screentransition.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -85,75 +86,151 @@ class _MyAppState extends State<MyApp> {
   }
 
   void startGame() {
-    setState(() {
-      _selectingAbilities = true;
-    });
-  }
+    Navigator.push(
+      context,
+      GamePageTransition(
+        builder: (context) => AbilitySelectionScreen(
+          onAbilitiesSelected: (abilities) async {
+            final availableItems = await InventoryStorage.loadInventory();
 
-  void onAbilitiesSelected(List<String> abilities) {
-    setState(() {
-      selectedAbilities = abilities;
-      _selectingAbilities = false;
-      _selectingItems =
-          true; // Go to Inventory selection instead of starting the game
-    });
-  }
+            Navigator.pushReplacement(
+              context,
+              GamePageTransition(
+                builder: (context) => InventoryScreen(
+                  availableItems: availableItems,
+                  onConfirm: (selectedItems) async {
+                    print(
+                        "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
 
-  void openOptions() {
-    print("⚙ Options menu clicked!");
+                    // Update equipped status
+                    final items = await InventoryStorage.loadInventory();
+                    for (var item in items) {
+                      item.isEquipped = selectedItems
+                          .any((selected) => selected.name == item.name);
+                    }
+                    await InventoryStorage.saveInventory(items);
+
+                    gameInstance = RogueShooterGame(
+                      selectedAbilities: abilities,
+                      equippedItems: selectedItems,
+                    );
+
+                    Navigator.pushReplacement(
+                      context,
+                      GamePageTransition(
+                        builder: (context) => GameWidget(
+                          game: gameInstance,
+                          overlayBuilderMap: {
+                            'hud': (_, game) => HUD(
+                                  onJoystickMove: (delta) =>
+                                      (game).player.updateJoystick(delta),
+                                  experienceBar:
+                                      (game as RogueShooterGame).experienceBar,
+                                  game: game,
+                                  bossHealthNotifier: (game).bossHealthNotifier,
+                                  bossStaggerNotifier:
+                                      (game).bossStaggerNotifier,
+                                ),
+                            'retryOverlay': (_, game) =>
+                                RetryOverlay(game: game as RogueShooterGame),
+                            'optionsMenu': (_, game) =>
+                                OptionsMenu(game: game as RogueShooterGame),
+                            'damageReport': (_, game) => DamageReportOverlay(
+                                game: game as RogueShooterGame),
+                          },
+                        ),
+                        transitionType: TransitionType.fade,
+                        duration: Duration(milliseconds: 400),
+                      ),
+                    );
+
+                    Future.delayed(Duration(milliseconds: 500), () {
+                      gameInstance.player.applyEquippedItems();
+                    });
+                  },
+                ),
+                transitionType: TransitionType.slideUp,
+                duration: Duration(milliseconds: 300),
+              ),
+            );
+          },
+        ),
+        transitionType: TransitionType.slideUp,
+        duration: Duration(milliseconds: 300),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<InventoryItem>>(
-        future: InventoryStorage.loadInventory(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
-          }
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => MainMenu(
+            startGame: () {
+              Navigator.push(
+                context,
+                GamePageTransition(
+                  builder: (context) => AbilitySelectionScreen(
+                    onAbilitiesSelected: (abilities) async {
+                      final availableItems =
+                          await InventoryStorage.loadInventory();
 
-          final items = snapshot.data ?? [];
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            initialRoute: '/',
-            routes: {
-              '/': (context) => Scaffold(
-                    body: Stack(
-                      children: [
-                        if (!_gameStarted &&
-                            !_selectingAbilities &&
-                            !_selectingItems)
-                          MainMenu(
-                            startGame: startGame,
-                            openOptions: openOptions,
-                          ),
-                        if (_selectingAbilities)
-                          AbilitySelectionScreen(
-                            onAbilitiesSelected: onAbilitiesSelected,
-                          ),
-                        if (_selectingItems)
-                          InventoryScreen(
-                            availableItems: items,
+                      Navigator.pushReplacement(
+                        context,
+                        GamePageTransition(
+                          builder: (context) => InventoryScreen(
+                            availableItems: availableItems,
                             onConfirm: (selectedItems) async {
                               print(
                                   "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
 
                               // Update equipped status
+                              final items =
+                                  await InventoryStorage.loadInventory();
                               for (var item in items) {
                                 item.isEquipped = selectedItems.any(
                                     (selected) => selected.name == item.name);
                               }
                               await InventoryStorage.saveInventory(items);
 
-                              setState(() {
-                                _selectingItems = false;
-                                _gameStarted = true;
-                                equippedItems = List.from(selectedItems);
-                              });
-
                               gameInstance = RogueShooterGame(
-                                selectedAbilities: selectedAbilities,
+                                selectedAbilities: abilities,
                                 equippedItems: selectedItems,
+                              );
+
+                              Navigator.pushReplacement(
+                                context,
+                                GamePageTransition(
+                                  builder: (context) => GameWidget(
+                                    game: gameInstance,
+                                    overlayBuilderMap: {
+                                      'hud': (_, game) => HUD(
+                                            onJoystickMove: (delta) => (game)
+                                                .player
+                                                .updateJoystick(delta),
+                                            experienceBar:
+                                                (game as RogueShooterGame)
+                                                    .experienceBar,
+                                            game: game,
+                                            bossHealthNotifier:
+                                                (game).bossHealthNotifier,
+                                            bossStaggerNotifier:
+                                                (game).bossStaggerNotifier,
+                                          ),
+                                      'retryOverlay': (_, game) => RetryOverlay(
+                                          game: game as RogueShooterGame),
+                                      'optionsMenu': (_, game) => OptionsMenu(
+                                          game: game as RogueShooterGame),
+                                      'damageReport': (_, game) =>
+                                          DamageReportOverlay(
+                                              game: game as RogueShooterGame),
+                                    },
+                                  ),
+                                  transitionType: TransitionType.fade,
+                                  duration: Duration(milliseconds: 400),
+                                ),
                               );
 
                               Future.delayed(Duration(milliseconds: 500), () {
@@ -161,35 +238,21 @@ class _MyAppState extends State<MyApp> {
                               });
                             },
                           ),
-                        if (_gameStarted)
-                          GameWidget(
-                            game: gameInstance,
-                            overlayBuilderMap: {
-                              'hud': (_, game) => HUD(
-                                    onJoystickMove: (delta) =>
-                                        (game).player.updateJoystick(delta),
-                                    experienceBar: (game as RogueShooterGame)
-                                        .experienceBar,
-                                    game: game,
-                                    bossHealthNotifier:
-                                        (game).bossHealthNotifier,
-                                    bossStaggerNotifier:
-                                        (game).bossStaggerNotifier,
-                                  ),
-                              'retryOverlay': (_, game) =>
-                                  RetryOverlay(game: game as RogueShooterGame),
-                              'optionsMenu': (_, game) =>
-                                  OptionsMenu(game: game as RogueShooterGame),
-                              'damageReport': (_, game) => DamageReportOverlay(
-                                  game: game as RogueShooterGame),
-                            },
-                          ),
-                      ],
-                    ),
+                          transitionType: TransitionType.fade,
+                          duration: Duration(milliseconds: 300),
+                        ),
+                      );
+                    },
                   ),
+                  transitionType: TransitionType.fade,
+                  duration: Duration(milliseconds: 300),
+                ),
+              );
             },
-          );
-        });
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -231,6 +294,9 @@ class RogueShooterGame extends FlameGame
   Set<LogicalKeyboardKey> activeKeys = {};
   late final LootNotificationBar notificationBar;
   bool hasInitialized = false;
+
+  // Add flags to track if notifiers are disposed
+  bool _notifiersDisposed = false;
 
   RogueShooterGame({
     required this.selectedAbilities,
@@ -492,10 +558,6 @@ class RogueShooterGame extends FlameGame
                 print("🎮 Starting new game...");
                 // Add your start game logic here
               },
-              openOptions: () {
-                print("⚙️ Opening options...");
-                // Add your options logic here
-              },
             ),
           ),
           (route) => false, // Remove all previous routes
@@ -590,19 +652,20 @@ class RogueShooterGame extends FlameGame
 
   @override
   void onRemove() {
-    if (hasInitialized && _ticker != null) {
+    if (!_notifiersDisposed) {
       try {
-        _ticker?.stop();
-        _ticker = null;
-        print("✅ Ticker stopped safely");
+        bossHealthNotifier.dispose();
+        bossStaggerNotifier.dispose();
+        experienceBar.dispose();
+        // Any other notifiers...
+
+        _notifiersDisposed = true;
+        print('🎮 Game notifiers disposed safely');
       } catch (e) {
-        print("⚠️ Error stopping ticker: $e");
+        print('⚠️ Warning: Some notifiers were already disposed');
       }
     }
-    bossNameNotifier.dispose();
-    bossHealthNotifier.dispose();
-    bossStaggerNotifier.dispose();
-    activeBossNameNotifier.dispose();
+
     super.onRemove();
   }
 
