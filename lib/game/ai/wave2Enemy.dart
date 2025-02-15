@@ -23,7 +23,7 @@ class Wave2Enemy extends BaseEnemy {
 
     final spriteSheet = SpriteSheet(
       image: await gameRef.images.load('mob2.png'),
-      srcSize: Vector2(64, 64),
+      srcSize: Vector2(84, 84),
     );
 
     animation = spriteSheet.createAnimation(

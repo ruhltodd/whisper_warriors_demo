@@ -91,7 +91,7 @@ class SpawnController extends Component {
             player: game.player,
             speed: 90,
             health: 500,
-            size: Vector2(128, 128),
+            size: Vector2(84, 84),
           );
         } else {
           enemy = Wave1Enemy(
