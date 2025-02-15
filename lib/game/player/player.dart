@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
@@ -333,6 +334,16 @@ class Player extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
+    if (!isDead) {
+      updateMovement(dt);
+    }
+  }
+
+  void updateMovement(double dt) {
+    if (!isMounted || isDead) {
+      return; // Don't do anything if dead or unmounted
+    }
+
     updateSpiritMultiplier();
     updateClosestEnemy();
 
@@ -355,25 +366,28 @@ class Player extends PositionComponent
           Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
     }
 
-    // Update abilities
-    for (var ability in abilities) {
-      ability.onUpdate(this, dt);
-    }
+    // Only update abilities and shooting if not dead
+    if (!isDead) {
+      // Update abilities
+      for (var ability in abilities) {
+        ability.onUpdate(this, dt);
+      }
 
-    // Handle shooting
-    timeSinceLastShot += dt;
-    if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
-      final projectile = Projectile.shootFromPlayer(
-        player: this,
-        targetPosition: closestEnemy!.position,
-        projectileSpeed: 500,
-        damage: damage.toDouble(),
-        onHit: (enemy) {
-          // Handle any specific on-hit effects if needed
-        },
-      );
-      gameRef.add(projectile);
-      timeSinceLastShot = 0.0;
+      // Handle shooting
+      timeSinceLastShot += dt;
+      if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
+        final projectile = Projectile.shootFromPlayer(
+          player: this,
+          targetPosition: closestEnemy!.position,
+          projectileSpeed: 500,
+          damage: damage.toDouble(),
+          onHit: (enemy) {
+            // Handle any specific on-hit effects if needed
+          },
+        );
+        gameRef.add(projectile);
+        timeSinceLastShot = 0.0;
+      }
     }
   }
 
@@ -686,53 +700,6 @@ class Player extends PositionComponent
   void heal(double amount) {
     setHealth(currentHealth + amount);
     print('💚 Player healed $amount. Health: $currentHealth/$maxHealth');
-  }
-
-  void updateMovement(double dt) {
-    if (!isMounted) return;
-
-    updateSpiritMultiplier();
-    updateClosestEnemy();
-
-    Vector2 totalMovement = movementDirection + _joystickDelta;
-    if (totalMovement.length > 0) {
-      Vector2 prevPosition = position.clone();
-      position = prevPosition +
-          (totalMovement.normalized() * movementSpeed * dt) * 0.75;
-      whisperWarrior.scale.x = totalMovement.x > 0 ? -1 : 1;
-      whisperWarrior.playAnimation('attack');
-    } else {
-      whisperWarrior.playAnimation('idle');
-    }
-
-    whisperWarrior.position = position.clone();
-
-    // Update health bar position
-    if (healthBar != null) {
-      healthBar!.position = position +
-          Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
-    }
-
-    // Update abilities
-    for (var ability in abilities) {
-      ability.onUpdate(this, dt);
-    }
-
-    // Handle shooting
-    timeSinceLastShot += dt;
-    if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
-      final projectile = Projectile.shootFromPlayer(
-        player: this,
-        targetPosition: closestEnemy!.position,
-        projectileSpeed: 500,
-        damage: damage.toDouble(),
-        onHit: (enemy) {
-          // Handle any specific on-hit effects if needed
-        },
-      );
-      gameRef.add(projectile);
-      timeSinceLastShot = 0.0;
-    }
   }
 }
 

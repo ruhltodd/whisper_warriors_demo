@@ -6,6 +6,7 @@ import 'package:whisper_warriors/game/items/items.dart';
 
 class InventoryStorage {
   static const String fileName = 'inventory.json';
+  static const int maxSlots = 20; // ✅ Define maximum inventory slots
 
   static Future<String> get _localPath async {
     final directory = await getApplicationDocumentsDirectory();
@@ -77,10 +78,27 @@ class InventoryStorage {
   }
 
   static Future<void> saveInventory(List<InventoryItem> items) async {
+    // ✅ Remove duplicates by keeping only one copy of each item
+    final Map<String, InventoryItem> uniqueItems = {};
+
+    for (var item in items) {
+      uniqueItems[item.item.name] =
+          item; // Overwrites duplicates, keeping the latest one
+    }
+
+    // Convert map values to a list and enforce maxSlots limit
+    final List<InventoryItem> deduplicatedItems = uniqueItems.values.toList();
+
+    if (deduplicatedItems.length > maxSlots) {
+      print(
+          '⚠️ Inventory exceeds max slots ($maxSlots). Some items may be lost!');
+      deduplicatedItems.removeRange(maxSlots, deduplicatedItems.length);
+    }
+
     final file = await _localFile;
-    final List<Map<String, dynamic>> jsonList = items
+    final List<Map<String, dynamic>> jsonList = deduplicatedItems
         .map((item) => {
-              'name': item.name,
+              'name': item.item.name,
               'isEquipped': item.isEquipped,
               'isNew': item.isNew,
               'quantity': item.quantity,
@@ -88,12 +106,17 @@ class InventoryStorage {
         .toList();
 
     await file.writeAsString(json.encode(jsonList));
-    print('💾 Saved ${items.length} items to inventory');
+    print('💾 Saved ${deduplicatedItems.length} unique items to inventory');
   }
 
   static Future<List<InventoryItem>> loadEquippedItems() async {
     final allItems = await loadInventory();
     return allItems.where((item) => item.isEquipped).toList();
+  }
+
+  static Future<bool> hasOpenSlot() async {
+    final inventory = await loadInventory();
+    return inventory.length < maxSlots;
   }
 
   static Future<void> debugInventory() async {

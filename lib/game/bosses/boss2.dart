@@ -192,6 +192,10 @@ class Boss2 extends BaseEnemy with Staggerable {
   final Random random = Random();
   final ValueNotifier<double> bossStaggerNotifier;
   int attackCount = 0;
+  double _currentHealth;
+  bool _isDying = false;
+  bool _isRemoved = false;
+  bool _isAttacking = false;
 
   Boss2({
     required Player player,
@@ -202,7 +206,8 @@ class Boss2 extends BaseEnemy with Staggerable {
     required this.onDeath,
     required this.onStaggerChanged,
     required this.bossStaggerNotifier,
-  }) : super(
+  })  : _currentHealth = health.toDouble(),
+        super(
           player: player,
           health: health,
           speed: speed,
@@ -210,6 +215,14 @@ class Boss2 extends BaseEnemy with Staggerable {
         ) {
     maxHealth = health.toDouble();
     staggerBar = StaggerBar(maxStagger: 100.0, currentStagger: 0);
+  }
+
+  double get currentHealth => _currentHealth;
+  set currentHealth(double value) {
+    _currentHealth = value.clamp(0, maxHealth);
+    health = _currentHealth
+        .toInt(); // Update base health when current health changes
+    onHealthChanged(_currentHealth);
   }
 
   @override
@@ -248,7 +261,16 @@ class Boss2 extends BaseEnemy with Staggerable {
   }
 
   void _spawnLaserWheel() {
-    gameRef.add(LaserWheel(bossPosition: position, onLaserWheelRemove: () {}));
+    if (_isDying || _isRemoved) return;
+
+    _isAttacking = true;
+    gameRef.add(LaserWheel(
+      bossPosition: position,
+      onLaserWheelRemove: () {
+        print("🛑 LaserWheel removed naturally");
+        _isAttacking = false; // Reset attack state
+      },
+    ));
     print("🚀 Spawning LaserWheel!");
   }
 
@@ -266,30 +288,33 @@ class Boss2 extends BaseEnemy with Staggerable {
     }
   }
 
-  void update(double dt) {
-    super.update(dt);
-    updateStagger(dt);
-    updateStaggerBar();
-    _updateMovement(dt);
-  }
-
   @override
   void takeDamage(double baseDamage, {bool isCritical = false}) {
+    // Early return if boss is dying or removed
+    if (_isDying || _isRemoved) {
+      print("⚠️ Ignored damage on dying/removed boss");
+      return;
+    }
+
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
-    int finalDamage = isCritical
-        ? (baseDamage * player.critMultiplier).toInt()
-        : baseDamage.toInt();
-    health -= finalDamage;
-    onHealthChanged(health.toDouble());
-    applyStaggerDamage(finalDamage, isCritical: isCritical);
 
-    if (health <= (maxHealth * 0.3) && !enraged) {
+    double finalDamage =
+        isCritical ? (baseDamage * player.critMultiplier) : baseDamage;
+    currentHealth -= finalDamage;
+
+    applyStaggerDamage(finalDamage.toInt(), isCritical: isCritical);
+    print(
+        "👻 Boss2 took $finalDamage damage. Health: $currentHealth / $maxHealth");
+
+    if (currentHealth <= (maxHealth * 0.3) && !enraged) {
       enraged = true;
       _enterEnrageMode();
     }
-    if (health <= 0) {
+
+    if (currentHealth <= 0 && !_isDying) {
+      print("💀 Boss2 health reached 0, initiating death");
       die();
     }
   }
@@ -309,6 +334,17 @@ class Boss2 extends BaseEnemy with Staggerable {
 
   @override
   void die() {
+    if (_isDying || _isRemoved) {
+      print("⚠️ Attempted to kill already dying/removed boss");
+      return;
+    }
+
+    _isDying = true;
+    print("💀 Boss2 death sequence started");
+
+    // Cancel any ongoing attacks
+    _isAttacking = false;
+
     if (!hasDroppedItem) {
       hasDroppedItem = true;
       final dropItems = _getDropItems();
@@ -319,15 +355,48 @@ class Boss2 extends BaseEnemy with Staggerable {
       print("🗃️ LootBox spawned at position: ${lootBox.position}");
     }
 
-    // Remove laser beams
-    for (var laser in gameRef.children.whereType<LaserBeam>()) {
+    // Remove all laser-related components
+    gameRef.children.whereType<LaserBeam>().forEach((laser) {
       laser.removeFromParent();
-    }
-    print("🛑 All laser beams removed!");
+      print("🔫 Removed laser beam");
+    });
 
+    gameRef.children.whereType<LaserWheel>().forEach((wheel) {
+      wheel.removeFromParent();
+      print("⭕ Removed laser wheel");
+    });
+
+    // Remove UI components
+    staggerBar.removeFromParent();
+    print("📊 Removed stagger bar");
+
+    // Call onDeath callback
     onDeath();
     gameRef.add(Explosion(position));
+
+    _isRemoved = true;
     removeFromParent();
+    print("🎮 Boss2 completely removed from game");
+  }
+
+  @override
+  void onRemove() {
+    print(
+        "🔄 Boss2 onRemove called. Is Dying: $_isDying, Is Removed: $_isRemoved, Is Attacking: $_isAttacking");
+
+    if (!_isDying) {
+      print("⚠️ WARNING: Boss2 removed unexpectedly!");
+      // Try to clean up any remaining components
+      gameRef.children
+          .whereType<LaserBeam>()
+          .forEach((laser) => laser.removeFromParent());
+      gameRef.children
+          .whereType<LaserWheel>()
+          .forEach((wheel) => wheel.removeFromParent());
+      staggerBar.removeFromParent();
+    }
+
+    super.onRemove();
   }
 
   List<DropItem> _getDropItems() {
@@ -348,5 +417,20 @@ class Boss2 extends BaseEnemy with Staggerable {
       const Color(0xFFFF0000),
       EffectController(duration: 0.5, reverseDuration: 0.5),
     ));
+  }
+
+  @override
+  void update(double dt) {
+    if (_isDying || _isRemoved) return;
+
+    super.update(dt);
+    updateStagger(dt);
+    updateStaggerBar();
+    _updateMovement(dt);
+
+    // Only spawn new laser wheel if not attacking and not dying
+    if (!_isAttacking && !_isDying && !_isRemoved) {
+      _spawnLaserWheel();
+    }
   }
 }

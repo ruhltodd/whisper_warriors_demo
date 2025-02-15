@@ -211,8 +211,8 @@ class RogueShooterGame extends FlameGame
   late final ValueNotifier<String?> activeBossNameNotifier =
       ValueNotifier<String?>(null);
   Ticker? _ticker;
-  final double targetFps = 60.0;
-  final double targetTimeStep = 1.0 / 60.0;
+  static const double targetFps = 60.0;
+  static const double timeStep = 1.0 / targetFps;
   double _accumulator = 0.0;
   double _elapsedTime = 0.0;
   int enemyCount = 0;
@@ -324,7 +324,7 @@ class RogueShooterGame extends FlameGame
     _elapsedTime += elapsed.inMicroseconds / 1000000.0;
 
     // Update game logic at 60 FPS
-    if (_elapsedTime >= targetTimeStep) {
+    if (_elapsedTime >= timeStep) {
       _updateGameLogic();
       _elapsedTime = 0.0;
     }
@@ -337,7 +337,7 @@ class RogueShooterGame extends FlameGame
 
     // Update player movement and other game logic
     if (player.isMounted) {
-      player.updateMovement(targetTimeStep);
+      player.updateMovement(timeStep);
     }
 
     if (player.isMounted) {
@@ -346,7 +346,7 @@ class RogueShooterGame extends FlameGame
 
     // Update camera if needed
     if (player.isMounted) {
-      customCamera.follow(player.position, targetTimeStep);
+      customCamera.follow(player.position, timeStep);
     }
   }
 
@@ -354,25 +354,32 @@ class RogueShooterGame extends FlameGame
   void update(double dt) {
     if (isPaused) return;
 
-    try {
-      // Update spawn controller
-      if (spawnController != null) {
-        spawnController!.checkAndTriggerEvents(elapsedTime);
-      }
+    // Accumulate time
+    _accumulator += dt;
 
-      // Update player
-      if (player.isMounted) {
-        player.update(dt);
-      }
+    // Update in fixed time steps
+    while (_accumulator >= timeStep) {
+      try {
+        // Update spawn controller
+        if (spawnController != null) {
+          spawnController!.checkAndTriggerEvents(elapsedTime);
+        }
 
-      // Update camera
-      if (player.isMounted && customCamera != null) {
-        customCamera.follow(player.position, dt);
-      }
+        // Update player
+        if (player.isMounted) {
+          player.update(timeStep); // Use fixed timeStep instead of dt
+        }
 
-      super.update(dt);
-    } catch (e) {
-      print('❌ Error in update: $e');
+        // Update camera
+        if (player.isMounted && customCamera != null) {
+          customCamera.follow(player.position, timeStep); // Use fixed timeStep
+        }
+
+        super.update(timeStep); // Use fixed timeStep
+        _accumulator -= timeStep;
+      } catch (e) {
+        print('❌ Error in update: $e');
+      }
     }
   }
 
@@ -700,23 +707,36 @@ class RogueShooterGame extends FlameGame
 
   void onItemCollected(Item item) async {
     try {
-      // Create inventory item from collected item
+      final inventory = await InventoryStorage.loadInventory();
+
+      // Remove existing duplicate before adding new item
+      inventory.removeWhere((invItem) => invItem.item.name == item.name);
+
+      // Check for available slots
+      bool hasOpenSlot = inventory.length < InventoryStorage.maxSlots;
+
+      if (!hasOpenSlot) {
+        print('⛔ Inventory is full, cannot collect ${item.name}');
+        showNotification(
+            'Inventory full! Cannot collect: ${item.name}', item.rarity);
+        return;
+      }
+
+      // Add the new item
       final inventoryItem = InventoryItem(
         item: item,
         isNew: true,
         quantity: 1,
+        isEquipped: false, // ✅ Never auto-equip if already owned
       );
 
-      // Add to inventory
-      await InventoryManager.addItem(inventoryItem);
+      inventory.add(inventoryItem);
+      await InventoryStorage.saveInventory(inventory);
 
-      // Show notification with proper ItemRarity enum
-      showNotification('Collected ${item.name}', item.rarity);
+      print('✨ Collected and replaced duplicate: ${item.name}');
+      showNotification('Item updated: ${item.name}', item.rarity);
 
-      // Play collection sound
       await AudioPlayer().play(AssetSource('assets/audio/collect_item.mp3'));
-
-      print('✨ Item collected and added to inventory: ${item.name}');
     } catch (e) {
       print('❌ Error collecting item: $e');
     }
@@ -732,8 +752,7 @@ class RogueShooterGame extends FlameGame
       if (bgmPlayer.state == PlayerState.playing) {
         await bgmPlayer.stop();
       }
-      await bgmPlayer.dispose();
-      print('✅ Background music stopped and disposed');
+      print('✅ Background music stopped');
     } catch (e) {
       print('❌ Error stopping background music: $e');
     }
@@ -746,18 +765,19 @@ class RogueShooterGame extends FlameGame
       // Stop any currently playing music first
       await stopBackgroundMusic();
 
-      // Create the asset source
-      final source = AssetSource('audio/game_over.mp3');
+      // Create a new audio player specifically for game over music
+      final gameOverPlayer = AudioPlayer();
 
-      // Load and play the game over music
-      await bgmPlayer.setSource(source);
-      await bgmPlayer.setVolume(0.5); // Adjust volume as needed
-      await bgmPlayer.play(source);
+      // Set up the game over music
+      await gameOverPlayer.setSource(AssetSource('music/game_over.mp3'));
+      await gameOverPlayer.setVolume(0.5);
+      await gameOverPlayer.setReleaseMode(ReleaseMode.stop); // Don't loop
+      await gameOverPlayer
+          .play(AssetSource('music/game_over.mp3')); // Added source
 
       print('✅ Game over music started');
     } catch (e) {
       print('❌ Error playing game over music: $e');
-      // Fail silently but log the error
     }
   }
 

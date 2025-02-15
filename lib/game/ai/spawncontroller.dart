@@ -188,14 +188,9 @@ class SpawnController extends Component {
     // Add debug logging
     if (currentTime >= 100 && currentTime <= 115) {}
 
+    // Only spawn Boss1 at 60 seconds if no boss is active
     if (currentTime == 60 && !_bossActive) {
       spawnBoss1();
-    }
-
-    // Boss spawn check - adjust timing as needed
-    if (currentTime >= 108 && !_bossActive) {
-      spawnBoss2();
-      _bossActive = true;
     }
   }
 
@@ -255,16 +250,20 @@ class SpawnController extends Component {
 
   /// ✅ **After Boss 1 Dies - Resume Enemy Waves**
   void onBoss1Death() {
-    print("👹 Resuming enemy waves after Boss 1");
+    print("👹 Boss 1 defeated! Starting post-boss sequence");
     game.bossHealthNotifier.value = null;
     _bossActive = false;
 
     // ✅ **Spawn tougher enemies before Boss 2 arrives**
     _postBossEnemySpawn();
 
-    // ✅ **Schedule Boss 2 after 1 min**
+    // ✅ **Schedule Boss 2 after exactly 1 minute**
     Future.delayed(Duration(seconds: 60), () {
-      spawnBoss2();
+      if (!_bossActive) {
+        // Double check boss isn't active
+        print("⏰ One minute passed after Boss 1's death, spawning Boss 2");
+        spawnBoss2();
+      }
     });
   }
 
