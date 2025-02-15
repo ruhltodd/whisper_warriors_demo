@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/ui/globalexperiencelevelbar.dart'; // ✅ Added for ability unlocks
+import 'package:whisper_warriors/game/ui/textstyles.dart';
 
 class AbilitySelectionScreen extends StatefulWidget {
   final Function(List<String>) onAbilitiesSelected;
@@ -15,7 +16,7 @@ class AbilitySelectionScreen extends StatefulWidget {
 
 class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   List<String> selectedAbilities = [];
-  final int maxAbilities = 4;
+  final int maxAbilities = 3;
   late AudioPlayer _audioPlayer;
   late List<String> unlockedAbilities; // ✅ Store unlocked abilities
   String? _hoveredAbility; // Add this to track hovered ability
@@ -60,6 +61,8 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final int totalGridSpaces = 16;
+
     return Scaffold(
       backgroundColor: Colors.black87,
       body: Stack(
@@ -70,11 +73,21 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
               fit: BoxFit.cover,
             ),
           ),
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Text(
+              "Abilities",
+              style: GameTextStyles.gameTitle(
+                fontSize: 22,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
           Column(
             children: [
-              SizedBox(height: 20),
-              XPBar(),
-              SizedBox(height: 20),
+              SizedBox(height: 100), // Space for hover stats
+              // Available abilities grid
               Expanded(
                 child: GridView.builder(
                   padding: EdgeInsets.all(16),
@@ -84,53 +97,86 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
                     mainAxisSpacing: 4,
                     childAspectRatio: 1,
                   ),
-                  itemCount: unlockedAbilities.length,
+                  itemCount: totalGridSpaces,
                   itemBuilder: (context, index) {
-                    if (index >= unlockedAbilities.length) {
-                      print(
-                          "⚠️ Invalid index: $index, available: ${unlockedAbilities.length}");
-                      return SizedBox();
+                    if (index < unlockedAbilities.length) {
+                      return _buildAbilityTile(unlockedAbilities[index]);
+                    } else {
+                      return _buildLockedAbilityTile();
                     }
-                    String ability = unlockedAbilities[index];
-                    return _buildAbilityTile(ability);
                   },
                 ),
               ),
+              // Selected abilities grid (3 slots)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                child: Text(
-                  "${selectedAbilities.length}/$maxAbilities Abilities Selected",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                padding: const EdgeInsets.only(bottom: 24.0, top: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    if (index < selectedAbilities.length) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: Image.asset(
+                              'assets/images/${selectedAbilities[index].toLowerCase().replaceAll(" ", "_")}.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      );
+                    } else {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.black38,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.grey.shade600,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  }),
                 ),
               ),
+              // Experience bar
+              XPBar(),
+              SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  children: [
-                    SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () => _confirmSelection(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: selectedAbilities.isEmpty
-                            ? Colors.grey
-                            : Colors.white,
-                        foregroundColor: selectedAbilities.isEmpty
-                            ? Colors.black45
-                            : Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text("Confirm Selection"),
+                child: ElevatedButton(
+                  onPressed: () => _confirmSelection(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        selectedAbilities.isEmpty ? Colors.grey : Colors.white,
+                    foregroundColor: selectedAbilities.isEmpty
+                        ? Colors.black45
+                        : Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    SizedBox(height: 10),
-                  ],
+                  ),
+                  child: Text("Confirm Selection"),
                 ),
               ),
+              SizedBox(height: 10),
             ],
           ),
           if (_hoveredAbility != null) _buildHoverStats(),
@@ -147,44 +193,66 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
       onExit: (_) => setState(() => _hoveredAbility = null),
       child: GestureDetector(
         onTap: isUnlocked ? () => _toggleAbilitySelection(ability) : null,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: selectedAbilities.contains(ability)
-                    ? Colors.green
-                    : isUnlocked
-                        ? Colors.blueGrey
-                        : Colors.grey.shade800,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: selectedAbilities.contains(ability)
-                      ? Colors.greenAccent
-                      : isUnlocked
-                          ? Colors.white
-                          : Colors.grey.shade600,
-                  width: 2,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(6.0),
-                child: Opacity(
-                  opacity: isUnlocked ? 1.0 : 0.4,
-                  child: Image.asset(
-                    'assets/images/${ability.toLowerCase().replaceAll(" ", "_")}.png',
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(Icons.help_outline,
-                          size: 32, color: Colors.white);
-                    },
-                  ),
-                ),
+        child: Container(
+          width: 48, // Explicit width
+          height: 48, // Explicit height
+          decoration: BoxDecoration(
+            color: selectedAbilities.contains(ability)
+                ? Colors.green
+                : isUnlocked
+                    ? Colors.blueGrey
+                    : Colors.grey.shade800,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selectedAbilities.contains(ability)
+                  ? Colors.greenAccent
+                  : isUnlocked
+                      ? Colors.white
+                      : Colors.grey.shade600,
+              width: 2,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(4.0), // Reduced padding
+            child: Opacity(
+              opacity: isUnlocked ? 1.0 : 0.4,
+              child: Image.asset(
+                'assets/images/${ability.toLowerCase().replaceAll(" ", "_")}.png',
+                width: 40, // Slightly smaller to account for padding
+                height: 40, // Slightly smaller to account for padding
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(Icons.help_outline,
+                      size: 24, color: Colors.white);
+                },
               ),
             ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLockedAbilityTile() {
+    return Container(
+      width: 48, // Explicit width
+      height: 48, // Explicit height
+      decoration: BoxDecoration(
+        color: Colors.grey.shade800,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.grey.shade600,
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: Opacity(
+          opacity: 0.4,
+          child: Icon(
+            Icons.lock,
+            color: Colors.grey.shade400,
+            size: 24, // Smaller icon size
+          ),
         ),
       ),
     );
@@ -195,7 +263,7 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
 
     return Positioned(
       left: MediaQuery.of(context).size.width / 2 - 120,
-      top: MediaQuery.of(context).size.height / 2 - 160,
+      top: 20,
       child: Container(
         width: 240,
         padding: EdgeInsets.all(10),

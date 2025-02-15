@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
 import 'package:whisper_warriors/game/items/itemrarity.dart';
+import 'package:whisper_warriors/game/ui/globalexperiencelevelbar.dart';
+import 'package:whisper_warriors/game/ui/textstyles.dart';
 
 const String INVENTORY_BOX_NAME = 'inventory_items';
 
@@ -78,6 +80,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final int totalGridSpaces = 16;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -88,34 +92,111 @@ class _InventoryScreenState extends State<InventoryScreen> {
               fit: BoxFit.cover,
             ),
           ),
+          // Add "Inventory" text to top right
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Text(
+              "Inventory",
+              style: GameTextStyles.gameTitle(
+                fontSize: 22,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
           Column(
             children: [
-              const SizedBox(height: 40),
-              Text(
-                "Select Your Equipment",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              SizedBox(height: 100), // Space for hover stats
+              // Available items grid
+              Expanded(
+                child: GridView.builder(
+                  padding: EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 8,
+                    crossAxisSpacing: 4,
+                    mainAxisSpacing: 4,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: totalGridSpaces,
+                  itemBuilder: (context, index) {
+                    if (index < widget.availableItems.length) {
+                      return _buildItemTile(widget.availableItems[index]);
+                    } else {
+                      return _buildLockedItemTile();
+                    }
+                  },
                 ),
               ),
-              const SizedBox(height: 10),
-              _buildEquippedSlots(),
-              const SizedBox(height: 20),
-              Expanded(child: _buildInventoryGrid()),
+              // Selected items slots (3 slots)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                child: Text(
-                  "${selectedItems.length}/5 Items Selected",
+                padding: const EdgeInsets.only(bottom: 24.0, top: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    if (index < selectedItems.length) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: Image.asset(
+                              'assets/images/${selectedItems[index].item.name.toLowerCase().replaceAll(" ", "_")}.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      );
+                    } else {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.black38,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.grey.shade600,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  }),
+                ),
+              ),
+              // XP Bar
+              XPBar(),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _confirmSelection,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 123, 123, 123),
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text(
+                  "Confirm Selection",
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              _buildConfirmButton(context),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
             ],
           ),
           if (_hoveredItem != null) _buildHoverStats(),
@@ -124,92 +205,58 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  /// Equipped Slots
-  Widget _buildEquippedSlots() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(5, (index) {
-        // Safely check if we have an item at this index
-        final hasItemAtIndex = index < widget.availableItems.length;
-
-        return GestureDetector(
-          onTap: () {
-            if (!hasItemAtIndex) return; // Don't do anything if no item exists
-            setState(() {
-              selectedItems.removeWhere((item) =>
-                  item.item.name == widget.availableItems[index].item.name);
-            });
-          },
-          child: Container(
-            width: 64,
-            height: 64,
-            margin: EdgeInsets.symmetric(horizontal: 6),
-            decoration: BoxDecoration(
-              color: hasItemAtIndex &&
-                      selectedItems.any((item) =>
-                          item.item.name ==
-                          widget.availableItems[index].item.name)
-                  ? Colors.grey[800]
-                  : Colors.black45,
-              border: Border.all(color: Colors.white, width: 2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: hasItemAtIndex &&
-                    selectedItems.any((item) =>
-                        item.item.name ==
-                        widget.availableItems[index].item.name)
-                ? Image.asset(
-                    'assets/images/${widget.availableItems[index].item.name.toLowerCase().replaceAll(" ", "_")}.png',
-                    fit: BoxFit.cover,
-                  )
-                : Icon(Icons.lock, color: Colors.white54, size: 30),
+  Widget _buildLockedItemTile() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade800,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.grey.shade600,
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: Opacity(
+          opacity: 0.4,
+          child: Icon(
+            Icons.lock,
+            color: Colors.grey.shade400,
+            size: 24,
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 
-  /// Inventory Grid with Hover Effect
-  Widget _buildInventoryGrid() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 10,
-          crossAxisSpacing: 4,
-          mainAxisSpacing: 4,
-          childAspectRatio: 1,
-        ),
-        itemCount: widget.availableItems.length,
-        itemBuilder: (context, index) {
-          InventoryItem item = widget.availableItems[index];
-          bool isSelected = selectedItems.contains(item);
-          Color borderColor = _getRarityColor(item.item.rarity);
+  Widget _buildItemTile(InventoryItem item) {
+    bool isSelected = selectedItems.contains(item);
+    Color borderColor = _getRarityColor(item.item.rarity);
 
-          return MouseRegion(
-            onEnter: (_) => setState(() => _hoveredItem = item),
-            onExit: (_) => setState(() => _hoveredItem = null),
-            child: GestureDetector(
-              onTap: () => _toggleItemSelection(item),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: borderColor,
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Opacity(
-                  opacity: isSelected ? 0.5 : 1,
-                  child: Image.asset(
-                    'assets/images/${item.item.name.toLowerCase().replaceAll(" ", "_")}.png',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hoveredItem = item),
+      onExit: (_) => setState(() => _hoveredItem = null),
+      child: GestureDetector(
+        onTap: () => _toggleItemSelection(item),
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: borderColor,
+              width: 2,
             ),
-          );
-        },
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Opacity(
+            opacity: isSelected ? 0.5 : 1,
+            child: Image.asset(
+              'assets/images/${item.item.name.toLowerCase().replaceAll(" ", "_")}.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -278,27 +325,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
               }).toList(),
             ],
           ],
-        ),
-      ),
-    );
-  }
-
-  /// Confirm Button
-  Widget _buildConfirmButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: _confirmSelection,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromARGB(255, 123, 123, 123),
-        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ),
-      child: const Text(
-        "Confirm Selection",
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );
