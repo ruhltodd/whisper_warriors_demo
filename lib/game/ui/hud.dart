@@ -7,6 +7,7 @@ import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/abilities/abilitybar.dart';
 import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
 import 'package:whisper_warriors/game/bosses/staggerable.dart'; // Add this line
+import 'package:whisper_warriors/game/ui/textstyles.dart'; // Add this import
 
 class HUD extends StatelessWidget {
   final void Function(Vector2 delta) onJoystickMove;
@@ -40,16 +41,13 @@ class HUD extends StatelessWidget {
               if (value is int) {
                 return Text(
                   game.formatTime(value),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: GameTextStyles.gameTitle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'MyCustomFont',
+                    letterSpacing: 1.5, // Slightly more spread for timer
                   ),
                 );
               }
-              return const SizedBox
-                  .shrink(); // Don't show string values (damage report) in HUD
+              return const SizedBox.shrink();
             },
           ),
         ),
@@ -73,73 +71,64 @@ class HUD extends StatelessWidget {
           ),
         ),
 
-        // 👑 Boss UI (Health Bar + Stagger Bar)
-        // 👑 Boss UI (Health Bar + Stagger Bar)
+        // 👑 Boss UI
         Positioned(
           top: safeTop + 40,
           left: MediaQuery.of(context).size.width / 2 - 100, // ✅ Centered UI
           child: ValueListenableBuilder<String?>(
-            valueListenable:
-                game.activeBossNameNotifier, // ✅ Listen for changes
+            valueListenable: game.bossNameNotifier,
             builder: (context, bossName, _) {
               return ValueListenableBuilder<double?>(
-                valueListenable: bossHealthNotifier,
+                valueListenable: game.bossHealthNotifier,
                 builder: (context, bossHealth, _) {
-                  return ValueListenableBuilder<double?>(
-                    valueListenable:
-                        game.bossStaggerNotifier, // ✅ Stagger Notifier
-                    builder: (context, bossStagger, _) {
-                      if (bossHealth == null || bossName == null) {
-                        return const SizedBox.shrink();
-                      }
+                  if (bossHealth == null || bossName == null) {
+                    return SizedBox(
+                      width: 200, // ✅ Prevents layout issues
+                      height: 50, // ✅ Ensures valid layout even if hidden
+                    );
+                  }
 
-                      // Assuming maxStagger is a constant or can be retrieved
-                      double maxStagger =
-                          100.0; // You can replace this with the actual value if needed
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // 👑 Dynamic Boss Name
-                          Text(
-                            bossName, // ✅ Uses dynamic boss name
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // 👑 Dynamic Boss Name (Ensures Layout Stability)
+                      AnimatedOpacity(
+                        duration: Duration(milliseconds: 300),
+                        opacity: (bossName.isNotEmpty) ? 1.0 : 0.0,
+                        child: Container(
+                          width: 200,
+                          height:
+                              30, // ✅ Increased from 24 to 30 for more space
+                          alignment: Alignment.center,
+                          child: Text(
+                            bossName,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'MyCustomFont',
+                            style: GameTextStyles.gameTitle(
+                              fontSize: 20, // ✅ Decreased from 24 to 20
+                              letterSpacing: 1.5, // ✅ Slightly reduced spacing
                             ),
                           ),
-                          const SizedBox(height: 5),
+                        ),
+                      ),
+                      const SizedBox(height: 5),
 
-                          // 🔴 **Boss Health Bar**
-                          SizedBox(
-                            width: 200,
-                            child: BossHealthBar(
-                              bossHealth: game.bossHealthNotifier.value ?? 1,
-                              maxBossHealth: game.maxBossHealth,
-                            ),
+                      // 🔴 Boss Health Bar (Prevents Layout Issues)
+                      AnimatedOpacity(
+                        duration: Duration(milliseconds: 300),
+                        opacity: (bossHealth > 0) ? 1.0 : 0.0,
+                        child: SizedBox(
+                          width: 200,
+                          height: 20, // ✅ Ensures valid layout
+                          child: BossHealthBar(
+                            bossHealth: bossHealth,
+                            maxBossHealth: game.maxBossHealth > 0
+                                ? game.maxBossHealth
+                                : 1, // ✅ Avoid division by zero
                           ),
-
-                          const SizedBox(height: 5), // ✅ Space between bars
-
-                          // ⚡ **Stagger Bar (Now Re-Added)**
-                          if (bossStagger !=
-                              null) // ✅ Only show if stagger exists
-                            SizedBox(
-                              width: 200,
-                              child: CustomPaint(
-                                size: Size(200, 8), // Size of the stagger bar
-                                painter: StaggerBarPainter(
-                                  bossStagger, // current stagger value
-                                  maxStagger, // max stagger value
-                                ),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
+                        ),
+                      ),
+                    ],
                   );
                 },
               );
@@ -308,24 +297,9 @@ class SpiritBarPainter extends CustomPainter {
     // ✅ Draw Spirit Level Text with improved visibility
     final TextSpan textSpan = TextSpan(
       text: "Spirit Level ${spiritBar.spiritLevel}",
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 16, // Increased from 12 to 16
-        fontWeight: FontWeight.bold,
-        fontFamily: 'MyCustomFont',
-        letterSpacing: 1.0, // Add spacing between letters
-        shadows: [
-          Shadow(
-            color: Colors.black,
-            offset: Offset(2, 2),
-            blurRadius: 3,
-          ),
-          Shadow(
-            color: Colors.black,
-            offset: Offset(-1, -1),
-            blurRadius: 3,
-          ),
-        ],
+      style: GameTextStyles.gameTitle(
+        fontSize: 16,
+        letterSpacing: 1.0,
       ),
     );
 

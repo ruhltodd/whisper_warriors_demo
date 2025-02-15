@@ -210,6 +210,8 @@ class RogueShooterGame extends FlameGame
       ValueNotifier<double>(0.0);
   late final ValueNotifier<String?> activeBossNameNotifier =
       ValueNotifier<String?>(null);
+  late final ValueNotifier<String?> bossNameNotifier =
+      ValueNotifier<String?>(null);
   Ticker? _ticker;
   static const double targetFps = 60.0;
   static const double timeStep = 1.0 / targetFps;
@@ -306,6 +308,7 @@ class RogueShooterGame extends FlameGame
       bossHealthNotifier.value = null;
       bossStaggerNotifier.value = 0.0;
       activeBossNameNotifier.value = null;
+      bossNameNotifier.value = null;
 
       // Add overlays
       print('🎭 Adding overlays...');
@@ -572,6 +575,7 @@ class RogueShooterGame extends FlameGame
       bossHealthNotifier.value = null;
       bossStaggerNotifier.value = 0;
       activeBossNameNotifier.value = null;
+      bossNameNotifier.value = null;
       print("✅ Notifiers reset");
 
       // Finally detach the game
@@ -595,6 +599,10 @@ class RogueShooterGame extends FlameGame
         print("⚠️ Error stopping ticker: $e");
       }
     }
+    bossNameNotifier.dispose();
+    bossHealthNotifier.dispose();
+    bossStaggerNotifier.dispose();
+    activeBossNameNotifier.dispose();
     super.onRemove();
   }
 
@@ -638,6 +646,7 @@ class RogueShooterGame extends FlameGame
       bossHealthNotifier.value = null;
       bossStaggerNotifier.value = 0;
       activeBossNameNotifier.value = null;
+      bossNameNotifier.value = null;
       print("✅ Game state reset");
 
       // Re-initialize game components
@@ -857,6 +866,13 @@ class RogueShooterGame extends FlameGame
     isPaused = false;
     resumeEngine();
     print('▶️ Game resumed');
+  }
+
+  // Update boss info
+  void updateBossInfo(String name, double health, double maxHealth) {
+    bossNameNotifier.value = name;
+    bossHealthNotifier.value = health;
+    maxBossHealth = maxHealth;
   }
 }
 

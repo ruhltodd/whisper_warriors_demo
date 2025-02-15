@@ -258,6 +258,9 @@ class Boss2 extends BaseEnemy with Staggerable {
     add(RectangleHitbox());
     gameRef.add(staggerBar);
     _spawnLaserWheel();
+
+    // Update boss info when spawned
+    gameRef.updateBossInfo('Voidweaver, The Eternal', currentHealth, maxHealth);
   }
 
   void _spawnLaserWheel() {
@@ -317,6 +320,9 @@ class Boss2 extends BaseEnemy with Staggerable {
       print("💀 Boss2 health reached 0, initiating death");
       die();
     }
+
+    // Update boss health whenever damage is taken
+    gameRef.bossHealthNotifier.value = currentHealth;
   }
 
   void _enterEnrageMode() {
@@ -377,6 +383,9 @@ class Boss2 extends BaseEnemy with Staggerable {
     _isRemoved = true;
     removeFromParent();
     print("🎮 Boss2 completely removed from game");
+
+    // Clear boss info when boss is removed
+    gameRef.updateBossInfo('', 0, 0);
   }
 
   @override
@@ -396,6 +405,8 @@ class Boss2 extends BaseEnemy with Staggerable {
       staggerBar.removeFromParent();
     }
 
+    // Clear boss info when boss is removed
+    gameRef.updateBossInfo('', 0, 0);
     super.onRemove();
   }
 

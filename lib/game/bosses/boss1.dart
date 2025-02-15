@@ -17,7 +17,6 @@ import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'staggerable.dart';
 import 'package:flame/timer.dart';
 import '../main.dart'; // Import main.dart
-import 'package:whisper_warriors/game/player/player.dart';
 
 class Boss1 extends BaseEnemy with Staggerable {
   bool enraged = false;
@@ -29,7 +28,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   final Function(double) onHealthChanged;
   final ValueChanged<double> onStaggerChanged;
   VoidCallback onDeath;
-  late final double maxHealth;
+  late final double maxHealth = 50000;
   late final SpriteAnimation idleAnimation;
   late final SpriteAnimation walkAnimation;
   late StaggerBar staggerBar;
@@ -47,6 +46,8 @@ class Boss1 extends BaseEnemy with Staggerable {
   static const double projectileCooldown =
       0.5; // Shoot every 0.5 seconds while targeting
   bool _isExecutingTargetedAttack = false;
+  double currentHealth = 50000;
+  bool isDead = false;
 
   Boss1({
     required Player player,
@@ -63,7 +64,8 @@ class Boss1 extends BaseEnemy with Staggerable {
           speed: speed,
           size: size,
         ) {
-    maxHealth = health.toDouble();
+    anchor = Anchor.center;
+    size = Vector2(128, 128);
     staggerBar = StaggerBar(maxStagger: 100.0, currentStagger: 0);
 
     // Initialize standing timer with proper onTick callback
@@ -83,6 +85,12 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   @override
   Future<void> onLoad() async {
+    await super.onLoad();
+
+    // Update boss info when spawned
+    gameRef.updateBossInfo(
+        'Umbrathos, The Fading King', currentHealth, maxHealth);
+
     idleAnimation = await gameRef.loadSpriteAnimation(
       'boss1_idle.png',
       SpriteAnimationData.sequenced(
@@ -231,25 +239,19 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   @override
-  void takeDamage(double baseDamage, {bool isCritical = false}) {
-    if (!isCritical) {
-      isCritical = gameRef.random.nextDouble() < player.critChance / 100;
-    }
-    int finalDamage = isCritical
-        ? (baseDamage * player.critMultiplier).toInt()
-        : baseDamage.toInt();
-    health -= finalDamage;
-    onHealthChanged(health.toDouble());
-    applyStaggerDamage(finalDamage, isCritical: isCritical); //stagger update
+  void takeDamage(double amount, {bool isCritical = false}) {
+    if (isDead) return;
 
-    if (health <= maxHealth * 0.5 && !isFading) {
-      _enterFadingPhase();
-    }
-    if (health <= (maxHealth * 0.3) && !enraged) {
-      enraged = true;
-      _enterEnrageMode();
-    }
-    if (health <= 0) {
+    currentHealth -= amount;
+    print(
+        '🗡️ Boss took ${isCritical ? "CRITICAL " : ""}$amount damage. Health: $currentHealth/$maxHealth');
+
+    // Update boss health whenever damage is taken
+    gameRef.bossHealthNotifier.value = currentHealth;
+
+    if (currentHealth <= 0 && !isDead) {
+      isDead = true;
+      // Handle death
       die();
     }
   }
@@ -299,6 +301,9 @@ class Boss1 extends BaseEnemy with Staggerable {
     } else {
       print("⚠️ SpawnController is missing! Boss2 won't spawn.");
     }
+
+    // Clear boss info when boss is removed
+    gameRef.updateBossInfo('', 0, 0);
   }
 
   List<DropItem> _getDropItems() {
