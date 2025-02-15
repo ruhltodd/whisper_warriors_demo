@@ -25,9 +25,9 @@ import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/ui/optionsmenu.dart';
 import 'package:whisper_warriors/game/damage/damage_tracker.dart';
 import 'package:whisper_warriors/game/inventory/inventorystorage.dart';
-import 'package:whisper_warriors/game/inventory/inventory.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
+import 'package:whisper_warriors/game/ui/textstyles.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -889,27 +889,40 @@ class RetryOverlay extends StatelessWidget {
         children: [
           Text(
             'Game Over',
-            style: TextStyle(
+            style: GameTextStyles.gameTitle(
               fontSize: 48,
-              color: Colors.white,
-              shadows: [
-                Shadow(
-                  blurRadius: 20,
-                  color: Colors.black,
-                  offset: Offset(0, 0),
-                ),
-              ],
+              letterSpacing: 3.0,
             ),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+              backgroundColor: Colors.purple.shade900,
+            ),
             onPressed: () => game.restartGame(context),
-            child: Text('Retry'),
+            child: Text(
+              'Try Again',
+              style: GameTextStyles.gameTitle(
+                fontSize: 24,
+                letterSpacing: 1.5,
+              ),
+            ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+              backgroundColor: Colors.purple.shade900,
+            ),
             onPressed: () => game.navigateToMainMenu(context),
-            child: Text('Main Menu'),
+            child: Text(
+              'Main Menu',
+              style: GameTextStyles.gameTitle(
+                fontSize: 24,
+                letterSpacing: 1.5,
+              ),
+            ),
           ),
         ],
       ),
