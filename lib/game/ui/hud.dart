@@ -305,14 +305,27 @@ class SpiritBarPainter extends CustomPainter {
 
     canvas.drawRRect(progressRect, progressPaint);
 
-    // ✅ Draw Spirit Level Text
+    // ✅ Draw Spirit Level Text with improved visibility
     final TextSpan textSpan = TextSpan(
       text: "Spirit Level ${spiritBar.spiritLevel}",
-      style: const TextStyle(
+      style: TextStyle(
         color: Colors.white,
-        fontSize: 12,
+        fontSize: 16, // Increased from 12 to 16
         fontWeight: FontWeight.bold,
         fontFamily: 'MyCustomFont',
+        letterSpacing: 1.0, // Add spacing between letters
+        shadows: [
+          Shadow(
+            color: Colors.black,
+            offset: Offset(2, 2),
+            blurRadius: 3,
+          ),
+          Shadow(
+            color: Colors.black,
+            offset: Offset(-1, -1),
+            blurRadius: 3,
+          ),
+        ],
       ),
     );
 
