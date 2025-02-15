@@ -9,6 +9,7 @@ class WhisperWarrior extends SpriteAnimationComponent
     with HasGameRef<RogueShooterGame>, CollisionCallbacks {
   late Map<String, SpriteAnimation> animations;
   bool isLoaded = false;
+  String currentAnimation = 'idle';
 
   WhisperWarrior()
       : super(
@@ -42,7 +43,7 @@ class WhisperWarrior extends SpriteAnimationComponent
       srcSize: Vector2(128, 128),
     );
     animations['attack'] = attackSpriteSheet.createAnimation(
-        row: 0, stepTime: 0.15, from: 0, to: 10);
+        row: 0, stepTime: 0.1, from: 0, to: 10);
 
     // ✅ Load the hit animation from `whisper_warrior_hit.png`
     final hitSpriteSheet = SpriteSheet(
@@ -50,7 +51,7 @@ class WhisperWarrior extends SpriteAnimationComponent
       srcSize: Vector2(128, 128),
     );
     animations['hit'] =
-        hitSpriteSheet.createAnimation(row: 0, stepTime: 0.25, from: 0, to: 5);
+        hitSpriteSheet.createAnimation(row: 0, stepTime: 0.125, from: 0, to: 5);
 
     // ✅ Load the death animation from `whisper_warrior_death.png`
     final deathSpriteSheet = SpriteSheet(
@@ -68,27 +69,60 @@ class WhisperWarrior extends SpriteAnimationComponent
   void playAnimation(String animationName) {
     if (!isLoaded) return;
 
-    if (animations.containsKey(animationName)) {
-      animation = animations[animationName];
+    // Don't switch if we're already playing this animation (unless it's hit or death)
+    if (currentAnimation == animationName &&
+        animationName != 'hit' &&
+        animationName != 'death') {
+      return;
+    }
 
-      if (animationName == 'hit') {
-        animation!.loop = false; // ✅ Prevent looping so it plays fully
+    if (animations.containsKey(animationName)) {
+      // Don't override death animation
+      if (currentAnimation == 'death') {
+        return;
       }
 
-      if (animationName == 'death') {
-        // ✅ Prevent looping by setting `loop` to false
-        animation!.loop = false;
+      // Don't override hit animation unless it's death
+      if (currentAnimation == 'hit' && animationName != 'death') {
+        return;
+      }
 
-        // ✅ Get animation duration correctly
+      currentAnimation = animationName;
+
+      if (animationName == 'hit') {
+        animation = animations[animationName]!.clone();
+        animation!.loop = false;
+        print('👊 Playing hit animation');
+
         final double duration =
             animation!.frames.length * animation!.frames.first.stepTime;
 
-        Future.delayed(Duration(milliseconds: (duration * 1000).toInt()), () {
-          animation = SpriteAnimation.spriteList(
-            [animation!.frames.last.sprite], // ✅ Freeze on last frame
-            stepTime: double.infinity,
-          );
+        Future.delayed(Duration(milliseconds: (duration * 200).toInt()), () {
+          if (currentAnimation == 'hit') {
+            currentAnimation = 'idle';
+            animation = animations['idle']!.clone();
+          }
         });
+      } else if (animationName == 'death') {
+        animation = animations[animationName]!.clone();
+        animation!.loop = false;
+
+        final double duration =
+            animation!.frames.length * animation!.frames.first.stepTime;
+
+        Future.delayed(Duration(milliseconds: (duration * 100).toInt()), () {
+          if (currentAnimation == 'death') {
+            animation = SpriteAnimation.spriteList(
+              [animation!.frames.last.sprite],
+              stepTime: double.infinity,
+            );
+          }
+        });
+      } else {
+        // For attack and idle animations
+        animation =
+            animations[animationName]!; // Don't clone regular animations
+        animation!.loop = true;
       }
     }
   }
