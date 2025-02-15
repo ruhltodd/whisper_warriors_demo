@@ -72,63 +72,72 @@ class HUD extends StatelessWidget {
         ),
 
         // 👑 Boss UI
+        // 👑 Boss UI (Health Bar + Stagger Bar)
         Positioned(
           top: safeTop + 40,
           left: MediaQuery.of(context).size.width / 2 - 100, // ✅ Centered UI
           child: ValueListenableBuilder<String?>(
-            valueListenable: game.bossNameNotifier,
+            valueListenable:
+                game.activeBossNameNotifier, // ✅ Listen for changes
             builder: (context, bossName, _) {
               return ValueListenableBuilder<double?>(
-                valueListenable: game.bossHealthNotifier,
+                valueListenable: bossHealthNotifier,
                 builder: (context, bossHealth, _) {
-                  if (bossHealth == null || bossName == null) {
-                    return SizedBox(
-                      width: 200, // ✅ Prevents layout issues
-                      height: 50, // ✅ Ensures valid layout even if hidden
-                    );
-                  }
+                  return ValueListenableBuilder<double?>(
+                    valueListenable:
+                        game.bossStaggerNotifier, // ✅ Stagger Notifier
+                    builder: (context, bossStagger, _) {
+                      if (bossHealth == null || bossName == null) {
+                        return const SizedBox.shrink();
+                      }
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 👑 Dynamic Boss Name (Ensures Layout Stability)
-                      AnimatedOpacity(
-                        duration: Duration(milliseconds: 300),
-                        opacity: (bossName.isNotEmpty) ? 1.0 : 0.0,
-                        child: Container(
-                          width: 200,
-                          height:
-                              30, // ✅ Increased from 24 to 30 for more space
-                          alignment: Alignment.center,
-                          child: Text(
-                            bossName,
+                      // Assuming maxStagger is a constant or can be retrieved
+                      double maxStagger =
+                          100.0; // You can replace this with the actual value if needed
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // 👑 Dynamic Boss Name
+                          Text(
+                            bossName, // ✅ Uses dynamic boss name
                             textAlign: TextAlign.center,
-                            style: GameTextStyles.gameTitle(
-                              fontSize: 20, // ✅ Decreased from 24 to 20
-                              letterSpacing: 1.5, // ✅ Slightly reduced spacing
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'MyCustomFont',
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
+                          const SizedBox(height: 5),
 
-                      // 🔴 Boss Health Bar (Prevents Layout Issues)
-                      AnimatedOpacity(
-                        duration: Duration(milliseconds: 300),
-                        opacity: (bossHealth > 0) ? 1.0 : 0.0,
-                        child: SizedBox(
-                          width: 200,
-                          height: 20, // ✅ Ensures valid layout
-                          child: BossHealthBar(
-                            bossHealth: bossHealth,
-                            maxBossHealth: game.maxBossHealth > 0
-                                ? game.maxBossHealth
-                                : 1, // ✅ Avoid division by zero
+                          // 🔴 **Boss Health Bar**
+                          SizedBox(
+                            width: 200,
+                            child: BossHealthBar(
+                              bossHealth: game.bossHealthNotifier.value ?? 1,
+                              maxBossHealth: game.maxBossHealth,
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+
+                          const SizedBox(height: 5), // ✅ Space between bars
+
+                          // ⚡ **Stagger Bar (Now Re-Added)**
+                          if (bossStagger !=
+                              null) // ✅ Only show if stagger exists
+                            SizedBox(
+                              width: 200,
+                              child: CustomPaint(
+                                size: Size(200, 8), // Size of the stagger bar
+                                painter: StaggerBarPainter(
+                                  bossStagger, // current stagger value
+                                  maxStagger, // max stagger value
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   );
                 },
               );

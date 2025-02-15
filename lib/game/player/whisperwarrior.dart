@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,12 @@ class WhisperWarrior extends SpriteAnimationComponent
   WhisperWarrior()
       : super(
           size: Vector2(128, 128),
-          paint: Paint()..blendMode = BlendMode.srcOver,
+          paint: Paint()
+            ..imageFilter = ImageFilter.blur(sigmaX: 0, sigmaY: 0)
+            ..colorFilter = ColorFilter.mode(
+              Color.fromRGBO(70, 130, 180, 0.4), // Increased opacity to 0.4
+              BlendMode.srcATop,
+            ),
         );
 
   @override
@@ -135,5 +141,49 @@ class WhisperWarrior extends SpriteAnimationComponent
     if (parent is PositionComponent) {
       position = (parent as PositionComponent).position;
     }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    // Render the shadow first
+    canvas.save();
+    canvas.translate(4, 4); // Increased offset from 2 to 4
+    paint.imageFilter =
+        ImageFilter.blur(sigmaX: 4, sigmaY: 4); // Increased blur spread
+    super.render(canvas);
+    canvas.restore();
+
+    // Add a second shadow layer for more depth
+    canvas.save();
+    canvas.translate(2, 2);
+    paint.imageFilter = ImageFilter.blur(sigmaX: 2, sigmaY: 2);
+    super.render(canvas);
+    canvas.restore();
+
+    // Render the main sprite with increased contrast
+    paint.imageFilter = null;
+    paint.colorFilter = ColorFilter.matrix([
+      1.2,
+      0,
+      0,
+      0,
+      0.1,
+      0,
+      1.2,
+      0,
+      0,
+      0.1,
+      0,
+      0,
+      1.2,
+      0,
+      0.1,
+      0,
+      0,
+      0,
+      1,
+      0,
+    ]);
+    super.render(canvas);
   }
 }

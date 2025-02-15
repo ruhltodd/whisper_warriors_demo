@@ -7,7 +7,7 @@ mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
   double staggerProgress = 0.0;
   bool isStaggered = false;
   double staggerWindow = 5.0;
-  double staggerDuration = 5.0; // 5 seconds of stagger
+  double staggerDuration = 5.0;
   double staggerCooldown = 5.0;
   double staggerDamageMultiplier = 5.0;
 
@@ -16,7 +16,7 @@ mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
   double _staggerCooldownTimer = 0;
   static const double _staggerFillRate = 0.5 / 20000;
   double _damageTickTime = 0.0;
-  double _originalSpeed = 0.0; // Store original speed
+  double _originalSpeed = 0.0;
 
   ValueNotifier<double> bossStaggerNotifier = ValueNotifier(0);
 
@@ -30,7 +30,6 @@ mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
 
   void updateStagger(double dt) {
     if (isStaggered) {
-      // Keep speed at 0 while staggered
       speed = 0;
       return;
     }
@@ -85,17 +84,16 @@ mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
     _staggerCooldownTimer = staggerCooldown;
     _damageReceived = 0;
 
-    // Store original speed before setting to 0
     _originalSpeed = speed;
     print('💾 Stored original speed: $_originalSpeed');
-    speed = 0; // Immediately stop movement
+    speed = 0;
 
     applyStaggerVisuals();
 
     Future.delayed(Duration(seconds: staggerDuration.toInt()), () {
       print('💫 Boss recovering from stagger');
       isStaggered = false;
-      speed = _originalSpeed; // Restore original speed
+      speed = _originalSpeed;
       print('⚡ Restored speed to: $_originalSpeed');
       attackCooldown /= 1.5;
       staggerProgress = 0;

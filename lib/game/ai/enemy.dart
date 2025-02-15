@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart'; // Import for VoidCallback
@@ -10,9 +12,10 @@ import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'package:whisper_warriors/game/items/items.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
+import 'package:whisper_warriors/game/ui/shadoweffect.dart';
 
 abstract class BaseEnemy extends SpriteAnimationComponent
-    with CollisionCallbacks, HasGameRef<RogueShooterGame> {
+    with CollisionCallbacks, HasGameRef<RogueShooterGame>, ShadowEffectMixin {
   final Player player;
   double _baseSpeed; // ✅ Store base speed internally
   int health;
@@ -34,6 +37,7 @@ abstract class BaseEnemy extends SpriteAnimationComponent
 
   double get speed => _baseSpeed; // ✅ Now `speed` can be modified in subclasses
   set speed(double value) => _baseSpeed = value; // ✅ Al
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -101,5 +105,10 @@ abstract class BaseEnemy extends SpriteAnimationComponent
     }
 
     removeFromParent(); // ✅ Ensure the enemy is removed from the game world
+  }
+
+  @override
+  void render(Canvas canvas) {
+    renderWithShadow(canvas);
   }
 }
