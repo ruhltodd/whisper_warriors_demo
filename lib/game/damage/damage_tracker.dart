@@ -182,3 +182,8 @@ class DamageTracker {
     }
   }
 }
+
+void someDamageFunction(String abilityName, int damage, bool isCritical) {
+  DamageTracker tracker = DamageTracker(abilityName);
+  tracker.logDamage(abilityName, damage, isCritical);
+}

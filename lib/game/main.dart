@@ -86,6 +86,9 @@ class _MyAppState extends State<MyApp> {
   }
 
   void startGame() {
+    // Clear damage logs
+    Hive.box<AbilityDamageLog>('ability_damage_logs').clear();
+
     Navigator.push(
       context,
       GamePageTransition(
@@ -738,39 +741,9 @@ class RogueShooterGame extends FlameGame
   }
 
   void showDamageReport() {
-    print("📊 Generating damage report...");
-
-    String report = "📊 Damage Report\n";
-    report += "================\n\n";
-
-    try {
-      // Get the damage logs box
-      final damageLogsBox = Hive.box<AbilityDamageLog>('ability_damage_logs');
-      final reports = damageLogsBox.values.toList();
-
-      // Sort by total damage
-      reports.sort((a, b) => b.totalDamage.compareTo(a.totalDamage));
-
-      // Build report string
-      for (var log in reports) {
-        report += "${log.abilityName}:\n";
-        report += "  Total Damage: ${log.totalDamage}\n";
-        report += "  Hits: ${log.hits}\n";
-        report += "  Critical Hits: ${log.criticalHits}\n\n";
-      }
-
-      // Calculate total damage across all abilities
-      int totalGameDamage =
-          reports.fold(0, (sum, log) => sum + log.totalDamage);
-      report += "\n🔥 Total Game Damage: $totalGameDamage\n";
-    } catch (e) {
-      print("❌ Error generating damage report: $e");
-      report += "Error generating damage report.\n";
-    }
-
-    print("📝 Damage report generated:");
+    DamageTracker tracker = DamageTracker('report');
+    String report = tracker.generateDamageReport();
     print(report);
-
     // Pause game and show report
     pauseEngine();
     overlays.add('damageReport');
@@ -1054,79 +1027,64 @@ class DamageReportOverlay extends StatelessWidget {
                 child: ValueListenableBuilder(
                   valueListenable: game.gameHudNotifier,
                   builder: (context, value, child) {
+                    final damageTracker = DamageTracker('report');
+                    final logs = damageTracker.getAllLogs();
+
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Critical Hits: 0',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: 14,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          '🔥 Total Game Damage: 2926',
-                          style: TextStyle(
-                            color: Colors.redAccent,
-                            fontSize: 14,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Shadow Blades:',
-                          style: TextStyle(
-                            color: Colors.lightBlueAccent,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        const Text(
-                          'Total Damage: 2766',
-                          style: TextStyle(
-                            color: Colors.lightBlueAccent,
-                            fontSize: 14,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        const Text(
-                          'Hits: 36',
-                          style: TextStyle(
-                            color: Colors.lightBlueAccent,
-                            fontSize: 14,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        const Text(
-                          'Critical Hits: 4',
-                          style: TextStyle(
-                            color: Colors.lightBlueAccent,
-                            fontSize: 14,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Basic Attack:',
-                          style: TextStyle(
-                            color: Colors.greenAccent,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        const Text(
-                          'Total Damage: 150',
-                          style: TextStyle(
-                            color: Colors.greenAccent,
-                            fontSize: 14,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ],
+                      children: logs.map((log) {
+                        double critRate = log.hits > 0
+                            ? (log.criticalHits / log.hits) * 100
+                            : 0;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${log.abilityName}:',
+                              style: const TextStyle(
+                                color: Colors.lightBlueAccent,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            Text(
+                              'Total Damage: ${log.totalDamage}',
+                              style: const TextStyle(
+                                color: Colors.lightBlueAccent,
+                                fontSize: 14,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            Text(
+                              'Hits: ${log.hits}',
+                              style: const TextStyle(
+                                color: Colors.lightBlueAccent,
+                                fontSize: 14,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            Text(
+                              'Critical Hits: ${log.criticalHits}',
+                              style: const TextStyle(
+                                color: Colors.lightBlueAccent,
+                                fontSize: 14,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            Text(
+                              'Crit Rate: ${critRate.toStringAsFixed(1)}%',
+                              style: const TextStyle(
+                                color: Colors.lightBlueAccent,
+                                fontSize: 14,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        );
+                      }).toList(),
                     );
                   },
                 ),
