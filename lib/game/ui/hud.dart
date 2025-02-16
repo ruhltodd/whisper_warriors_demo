@@ -117,6 +117,7 @@ class HUD extends StatelessWidget {
                             child: BossHealthBar(
                               bossHealth: game.bossHealthNotifier.value ?? 1,
                               maxBossHealth: game.maxBossHealth,
+                              segmentSize: 1000,
                             ),
                           ),
 
