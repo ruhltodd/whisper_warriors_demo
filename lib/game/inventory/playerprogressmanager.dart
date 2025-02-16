@@ -22,6 +22,7 @@ class PlayerProgressManager {
   static final ValueNotifier<double> spiritExpNotifier =
       ValueNotifier<double>(0.0);
   static final ValueNotifier<int> spiritLevelNotifier = ValueNotifier<int>(1);
+  static final ValueNotifier<double> xpNotifier = ValueNotifier<double>(0);
 
   static Future<void> initialize() async {
     if (!_isInitialized) {
@@ -303,6 +304,7 @@ class PlayerProgressManager {
     // Update UI notifiers
     spiritExpNotifier.value = currentExp / getSpiritExpToNextLevel();
     spiritLevelNotifier.value = getSpiritLevel();
+    xpNotifier.value = getXp().toDouble();
 
     print(
         "💾 Spirit XP Gained: ${(amount * scalingFactor).toStringAsFixed(1)} (Scaling: ${scalingFactor.toStringAsFixed(2)}x)");
@@ -344,5 +346,6 @@ class PlayerProgressManager {
   static void dispose() {
     spiritExpNotifier.dispose();
     spiritLevelNotifier.dispose();
+    xpNotifier.dispose();
   }
 }
