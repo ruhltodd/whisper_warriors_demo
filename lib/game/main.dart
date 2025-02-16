@@ -140,6 +140,10 @@ class _MyAppState extends State<MyApp> {
                                 OptionsMenu(game: game as RogueShooterGame),
                             'damageReport': (_, game) => DamageReportOverlay(
                                 game: game as RogueShooterGame),
+                            'playerStatsOverlay': (_, game) =>
+                                PlayerStatsOverlay(
+                                    player: gameInstance.player,
+                                    game: gameInstance),
                           },
                         ),
                         transitionType: TransitionType.fade,
@@ -229,6 +233,10 @@ class _MyAppState extends State<MyApp> {
                                       'damageReport': (_, game) =>
                                           DamageReportOverlay(
                                               game: game as RogueShooterGame),
+                                      'playerStatsOverlay': (_, game) =>
+                                          PlayerStatsOverlay(
+                                              player: gameInstance.player,
+                                              game: gameInstance),
                                     },
                                   ),
                                   transitionType: TransitionType.fade,
@@ -300,6 +308,8 @@ class RogueShooterGame extends FlameGame
 
   // Add flags to track if notifiers are disposed
   bool _notifiersDisposed = false;
+
+  bool _isRunning = false;
 
   RogueShooterGame({
     required this.selectedAbilities,
@@ -740,6 +750,11 @@ class RogueShooterGame extends FlameGame
     }
   }
 
+  void showPlayerStats() {
+    print("Showing player stats...");
+    overlays.add('playerStatsOverlay');
+  }
+
   void showDamageReport() {
     DamageTracker tracker = DamageTracker('report');
     String report = tracker.generateDamageReport();
@@ -897,6 +912,20 @@ class RogueShooterGame extends FlameGame
     bossHealthNotifier.value = health;
     maxBossHealth = maxHealth;
   }
+
+  void resumeEngine() {
+    if (!_isRunning) {
+      _isRunning = true;
+      print("Game resumed");
+    }
+  }
+
+  void pauseEngine() {
+    _isRunning = false;
+    print("Game paused");
+  }
+
+  bool get isRunning => _isRunning;
 }
 
 class RetryOverlay extends StatelessWidget {
@@ -1093,8 +1122,8 @@ class DamageReportOverlay extends StatelessWidget {
             const SizedBox(height: 20),
             TextButton(
               onPressed: () {
-                game.overlays.remove('damageReport');
                 game.resumeEngine();
+                game.overlays.remove('damageReport');
               },
               style: TextButton.styleFrom(
                 backgroundColor: Colors.grey[800],

@@ -87,6 +87,14 @@ class OptionsMenu extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _buildButton(
+              'Player Stats',
+              () {
+                game.showPlayerStats();
+                game.overlays.remove('optionsMenu');
+              },
+            ),
+            const SizedBox(height: 10),
+            _buildButton(
               'Quit to Main Menu',
               () {
                 game.overlays

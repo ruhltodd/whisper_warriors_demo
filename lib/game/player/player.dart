@@ -39,23 +39,23 @@ class Player extends PositionComponent
   // Base Stats (before Spirit Level modifications)
   double baseHealth = 100.0;
   double baseSpeed = 100.0;
-  double baseAttackSpeed = 1.0; // Attacks per second
+  double baseAttackSpeed = 1.0; // Base attack speed
   double baseDefense = 0.0; // % Damage reduction
-  double baseCritChance = 5.0; // % Chance
+  double baseCritChance = 5.0; // Base crit chance at 5%
   double baseCritMultiplier = 1.5; // 1.5x damage on crit
 
   // Derived Stats (now using PlayerProgressManager)
   double get maxHealth =>
       baseHealth * PlayerProgressManager.getSpiritMultiplier();
   double get movementSpeed =>
-      baseSpeed * PlayerProgressManager.getSpiritMultiplier();
+      baseSpeed * (1.0 + (PlayerProgressManager.getSpiritLevel() * 0.01));
   double get attackSpeed =>
-      baseAttackSpeed * (1 + (PlayerProgressManager.getSpiritMultiplier() - 1));
+      baseAttackSpeed * PlayerProgressManager.getSpiritLevel();
   double get defense =>
       baseDefense * PlayerProgressManager.getSpiritMultiplier();
   double get damage => baseDamage * PlayerProgressManager.getSpiritMultiplier();
   double get critChance =>
-      baseCritChance * PlayerProgressManager.getSpiritMultiplier();
+      baseCritChance + PlayerProgressManager.getSpiritLevel();
   double get critMultiplier =>
       baseCritMultiplier +
       ((PlayerProgressManager.getSpiritMultiplier() - 1) * 0.5);
@@ -719,6 +719,102 @@ class Player extends PositionComponent
     setHealth(currentHealth + amount);
     print('💚 Player healed $amount. Health: $currentHealth/$maxHealth');
   }
+
+  // Add these getters
+  int get level => PlayerProgressManager.getLevel();
+  int get xp => PlayerProgressManager.getXp();
+  double get health => currentHealth;
 }
 
 // Update WhisperWarrior class to ensure sprite loading
+
+class PlayerStatsOverlay extends StatelessWidget {
+  final Player player;
+  final RogueShooterGame game;
+
+  const PlayerStatsOverlay({Key? key, required this.player, required this.game})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.all(30),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.6,
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Player Stats',
+              style: TextStyle(
+                color: Colors.yellow,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.none,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildStatText('Max Health', player.maxHealth),
+            _buildStatText('Current Health', player.currentHealth),
+            _buildStatText('Movement Speed', player.movementSpeed),
+            _buildStatText('Attack Speed', player.attackSpeed),
+            _buildStatText('Defense', player.defense),
+            _buildStatText('Damage', player.damage),
+            _buildStatText('Crit Chance', player.critChance),
+            _buildStatText('Crit Multiplier', player.critMultiplier),
+            _buildStatText('Pickup Range', player.pickupRange),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: () {
+                print("Attempting to close Player Stats");
+                game.resumeEngine(); // Resume the game engine
+                print("Resumed game engine");
+                game.overlays
+                    .remove('playerStatsOverlay'); // Remove the overlay
+                print("Removed playerStatsOverlay");
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.grey[800],
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Close',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatText(String label, double value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(
+        '$label: ${value.toStringAsFixed(2)}',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          decoration: TextDecoration.none,
+        ),
+      ),
+    );
+  }
+}

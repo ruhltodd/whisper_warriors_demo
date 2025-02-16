@@ -185,27 +185,32 @@ class PlayerProgressManager {
 
   // For player stats and abilities
   static double getSpiritMultiplier() {
-    // Base multiplier from spirit level (2% per level instead of 5%)
-    double baseMultiplier = 1.0 + (getSpiritLevel() * 0.02);
+    int spiritLevel = getSpiritLevel();
 
-    // Limit item bonus to 1.5x max
-    double itemBonus = _sessionSpiritItemBonus.clamp(0.0, 1.5);
+    // Base multiplier for other stats
+    double baseMultiplier = 1.0 + (spiritLevel * 0.02);
 
-    // Calculate final multiplier (additive with item bonus)
-    double finalMultiplier =
-        (baseMultiplier * (1 + itemBonus)).clamp(1.0, MAX_SPIRIT_MULTIPLIER);
+    // New multipliers for specific stats
+    double critRateMultiplier = 1.0 + (spiritLevel * 0.01);
+    double attackSpeedMultiplier = 1.0 + (spiritLevel * 0.01);
+    double movementSpeedMultiplier = 1.0 + (spiritLevel * 0.01);
 
-    // Rate-limited debug print
+    // Print debug information
     double currentTime = DateTime.now().millisecondsSinceEpoch / 1000;
     if (currentTime - _lastPrintTime >= PRINT_INTERVAL) {
-      print('🌟 Spirit Level: ${getSpiritLevel()}');
+      print('🌟 Spirit Level: $spiritLevel');
       print('🌟 Base Multiplier: ${baseMultiplier.toStringAsFixed(2)}x');
-      print('🌟 Item Bonus: ${itemBonus.toStringAsFixed(2)}x');
-      print('🌟 Final Multiplier: ${finalMultiplier.toStringAsFixed(2)}x');
+      print(
+          '🌟 Crit Rate Multiplier: ${critRateMultiplier.toStringAsFixed(2)}x');
+      print(
+          '🌟 Attack Speed Multiplier: ${attackSpeedMultiplier.toStringAsFixed(2)}x');
+      print(
+          '🌟 Movement Speed Multiplier: ${movementSpeedMultiplier.toStringAsFixed(2)}x');
       _lastPrintTime = currentTime;
     }
 
-    return finalMultiplier;
+    // Return the base multiplier for general use
+    return baseMultiplier;
   }
 
   // For enemy scaling (no item bonuses, different scaling formula)
