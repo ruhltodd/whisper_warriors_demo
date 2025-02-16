@@ -470,7 +470,6 @@ class Player extends PositionComponent
     if (whisperWarrior != null) {
       whisperWarrior.playAnimation('death');
 
-      // Get animation duration correctly
       final double animationDuration = whisperWarrior.animation!.frames.length *
           whisperWarrior.animation!.frames.first.stepTime;
 
@@ -479,7 +478,6 @@ class Player extends PositionComponent
         removeFromParent();
       });
 
-      // Show retry overlay after a delay
       Future.delayed(Duration(seconds: 2), () {
         gameRef.overlays.add('retryOverlay');
       });
@@ -487,7 +485,9 @@ class Player extends PositionComponent
       // Handle music using AudioManager
       final audioManager = AudioManager();
       await audioManager.stopBackgroundMusic();
+      print('🔊 Stopped background music');
       await audioManager.playGameOverMusic();
+      print('🔊 Playing game over music');
     }
   }
 

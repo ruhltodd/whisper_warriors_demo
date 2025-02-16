@@ -34,7 +34,7 @@ class BossHealthBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int currentSegment = (bossHealth / segmentSize).ceil();
-    (maxBossHealth / segmentSize).ceil();
+    int totalSegments = (maxBossHealth / segmentSize).ceil();
     double remainingInSegment = bossHealth % segmentSize;
     double segmentPercentage = remainingInSegment / segmentSize;
 
@@ -72,21 +72,26 @@ class BossHealthBar extends StatelessWidget {
             ),
 
           // Segment label on the right
-          Center(
-            child: Text(
-              'X$currentSegment',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                decoration: TextDecoration.none,
-                shadows: [
-                  Shadow(
-                    blurRadius: 2,
-                    color: Colors.black.withOpacity(0.8),
-                    offset: Offset(1, 1),
-                  ),
-                ],
+          Positioned(
+            right: 5,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: Text(
+                'X$currentSegment',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.none,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 2,
+                      color: Colors.black,
+                      offset: Offset(1, 1),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

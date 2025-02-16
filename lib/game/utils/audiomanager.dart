@@ -102,10 +102,10 @@ class AudioManager {
       await stopBackgroundMusic();
 
       // Set up and play game over music
-      await _gameOverPlayer.setSource(AssetSource('game_over.mp3'));
+      await _gameOverPlayer.setSource(AssetSource('audio/game_over.mp3'));
       await _gameOverPlayer.setVolume(_musicVolume);
       await _gameOverPlayer.setReleaseMode(ReleaseMode.stop); // Don't loop
-      await _gameOverPlayer.play(AssetSource('game_over.mp3'));
+      await _gameOverPlayer.play(AssetSource('audio/game_over.mp3'));
     } catch (e) {
       print('❌ Error playing game over music: $e');
     }
