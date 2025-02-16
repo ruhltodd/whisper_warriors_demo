@@ -1,8 +1,8 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flame/collisions.dart';
+import 'package:whisper_warriors/game/bosses/boss1.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/items/items.dart';
@@ -398,9 +398,15 @@ class Player extends PositionComponent
         ability.onUpdate(this, dt);
       }
 
+      final bosses = gameRef.children.whereType<Boss1>().toList();
+      final targetable =
+          bosses.isEmpty || bosses.every((boss) => !boss.isFading);
+
       // Handle shooting
       timeSinceLastShot += dt;
-      if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
+      if (timeSinceLastShot >= (1 / attackSpeed) &&
+          closestEnemy != null &&
+          targetable) {
         final projectile = Projectile.shootFromPlayer(
           player: this,
           targetPosition: closestEnemy!.position,
@@ -445,6 +451,9 @@ class Player extends PositionComponent
       Future.delayed(Duration(milliseconds: (animationDuration * 100).toInt()),
           () {
         whisperWarrior.playAnimation('death');
+        final audioManager = AudioManager();
+        audioManager.stopBackgroundMusic();
+        audioManager.playGameOverMusic();
         removeFromParent();
         healthBar?.removeFromParent();
       });
@@ -633,7 +642,8 @@ class Player extends PositionComponent
       if (distance < 100.0) {
         // Explosion radius
         double finalDamage = explosionDamage.clamp(1, 9999);
-        enemy.takeDamage(finalDamage);
+        enemy.applyDamage(
+            finalDamage); // Use the applyDamage method on BaseEnemy
       }
     }
   }

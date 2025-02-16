@@ -8,6 +8,8 @@ import 'package:whisper_warriors/game/abilities/abilitybar.dart';
 import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
 import 'package:whisper_warriors/game/bosses/staggerable.dart'; // Add this line
 import 'package:whisper_warriors/game/ui/textstyles.dart'; // Add this import
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class HUD extends StatelessWidget {
   final void Function(Vector2 delta) onJoystickMove;
@@ -23,6 +25,15 @@ class HUD extends StatelessWidget {
     required this.bossHealthNotifier,
     required this.bossStaggerNotifier, // ✅ Track stagger bar
   });
+
+  bool get _shouldShowJoystick {
+    if (kIsWeb) return false; // Don't show on web
+    try {
+      return Platform.isAndroid || Platform.isIOS; // Only show on mobile
+    } catch (e) {
+      return false; // Default to not showing if platform check fails
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +65,11 @@ class HUD extends StatelessWidget {
 
         // 📈 XP Bar (Above Spirit Level)
         Positioned(
-          top: safeTop + 2, // ✅ Moves XP Bar slightly higher
-          left: MediaQuery.of(context).size.width / 2 - 75, // ✅ Centered
-          child: XPBar(smallSize: true), // ✅ Uses the compact version for HUD
+          top: safeTop + 2,
+          left: MediaQuery.of(context).size.width / 2 - 75,
+          child: GlobalExperienceLevelBar(
+              smallSize:
+                  true), // Changed from XPBar to GlobalExperienceLevelBar
         ),
         // ⚡ Spirit Bar (Top Center)
         Positioned(
@@ -116,7 +129,8 @@ class HUD extends StatelessWidget {
                           SizedBox(
                             width: 200,
                             child: BossHealthBar(
-                              bossHealth: game.bossHealthNotifier.value ?? 1,
+                              bossHealth: game
+                                  .bossHealthNotifier, // Pass the ValueNotifier itself
                               maxBossHealth: game.maxBossHealth,
                               segmentSize: 1000,
                             ),
@@ -154,17 +168,19 @@ class HUD extends StatelessWidget {
         ),
 
         // 🛡 Inventory Bar (Below the Ability Bar)
-        Positioned(
-          top: safeTop +
-              70, // Adjust this value if needed based on your AbilityBar's height
-          left: 10,
-          child: InventoryBar(player: game.player),
-        ),
-        // 🎮 Joystick (Bottom Left)
-        Align(
-          alignment: Alignment.bottomLeft,
-          child: JoystickOverlay(onMove: onJoystickMove),
-        ),
+        if (game.player.inventory.isNotEmpty)
+          Positioned(
+            top: safeTop + 70, // Adjust if needed
+            left: 10,
+            child: InventoryBar(player: game.player),
+          ),
+        // Conditionally show joystick
+        if (_shouldShowJoystick)
+          Positioned(
+            left: 30,
+            bottom: 30,
+            child: JoystickOverlay(onMove: onJoystickMove),
+          ),
       ],
     );
   }

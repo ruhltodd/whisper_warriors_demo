@@ -157,7 +157,7 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
                 ),
               ),
               // Experience bar
-              XPBar(),
+              GlobalExperienceLevelBar(),
               SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.all(12.0),

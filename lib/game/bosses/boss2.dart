@@ -14,6 +14,10 @@ import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'staggerable.dart';
+import 'package:whisper_warriors/game/player/player.dart';
+import 'package:whisper_warriors/game/ai/enemy.dart';
+import 'package:whisper_warriors/game/ai/spawncontroller.dart';
+import 'package:whisper_warriors/game/bosses/bosshealthbar.dart'; // Import BossHealthBar
 
 /// The LaserBeam class represents a laser beam component in the game.
 /// It is used to create laser beams that rotate and deal damage to the player
@@ -176,6 +180,7 @@ class LaserBeam extends PositionComponent
 }
 
 class Boss2 extends BaseEnemy with Staggerable {
+  final ValueNotifier<double> healthNotifier;
   bool enraged = false;
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
@@ -192,7 +197,6 @@ class Boss2 extends BaseEnemy with Staggerable {
   final Random random = Random();
   final ValueNotifier<double> bossStaggerNotifier;
   int attackCount = 0;
-  double _currentHealth;
   bool _isDying = false;
   bool _isRemoved = false;
   bool _isAttacking = false;
@@ -206,23 +210,16 @@ class Boss2 extends BaseEnemy with Staggerable {
     required this.onDeath,
     required this.onStaggerChanged,
     required this.bossStaggerNotifier,
-  })  : _currentHealth = health.toDouble(),
+  })  : healthNotifier =
+            ValueNotifier(health.toDouble()), // Initialize the ValueNotifier
         super(
           player: player,
-          health: health,
+          health: health, // Remove
           speed: speed,
           size: size,
         ) {
     maxHealth = health.toDouble();
     staggerBar = StaggerBar(maxStagger: 100.0, currentStagger: 0);
-  }
-
-  double get currentHealth => _currentHealth;
-  set currentHealth(double value) {
-    _currentHealth = value.clamp(0, maxHealth);
-    health = _currentHealth
-        .toInt(); // Update base health when current health changes
-    onHealthChanged(_currentHealth);
   }
 
   @override
@@ -260,7 +257,8 @@ class Boss2 extends BaseEnemy with Staggerable {
     _spawnLaserWheel();
 
     // Update boss info when spawned
-    gameRef.updateBossInfo('Voidweaver, The Eternal', currentHealth, maxHealth);
+    gameRef.updateBossInfo(
+        'Voidweaver, The Eternal', healthNotifier.value, maxHealth);
   }
 
   void _spawnLaserWheel() {
@@ -294,44 +292,23 @@ class Boss2 extends BaseEnemy with Staggerable {
   @override
   void takeDamage(double baseDamage,
       {bool isCritical = false, bool isEchoed = false}) {
-    // Early return if boss is dying or removed
-    if (_isDying || _isRemoved) {
-      print("⚠️ Ignored damage on dying/removed boss");
-      return;
-    }
-
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
+    int finalDamage = isCritical
+        ? (baseDamage * player.critMultiplier).toInt()
+        : baseDamage.toInt();
 
-    double finalDamage =
-        isCritical ? (baseDamage * player.critMultiplier) : baseDamage;
+    // Apply damage to the local class
+    double currentHealth = healthNotifier.value;
     currentHealth -= finalDamage;
+    // Update
+    healthNotifier.value = currentHealth.toDouble();
 
-    applyStaggerDamage(finalDamage.toInt(), isCritical: isCritical);
-    print(
-        "👻 Boss2 took $finalDamage damage. Health: $currentHealth / $maxHealth");
+    onHealthChanged(healthNotifier.value);
+    print('⚠️ Boss took damage! Health: ${healthNotifier.value}');
 
-    if (currentHealth <= (maxHealth * 0.3) && !enraged) {
-      enraged = true;
-      _enterEnrageMode();
-    }
-
-    if (currentHealth <= 0 && !_isDying) {
-      print("💀 Boss2 health reached 0, initiating death");
-      // Only grant rewards for non-echoed kills
-      if (!isEchoed) {
-        die();
-      } else {
-        // Still remove the boss but don't trigger rewards
-        _isDying = true;
-        removeFromParent();
-        print("🔄 Boss2 killed by Cursed Echo - No rewards granted");
-      }
-    }
-
-    // Update boss health whenever damage is taken
-    gameRef.bossHealthNotifier.value = currentHealth;
+    applyStaggerDamage(finalDamage, isCritical: isCritical);
   }
 
   void _enterEnrageMode() {

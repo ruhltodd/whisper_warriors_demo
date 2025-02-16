@@ -19,7 +19,6 @@ abstract class BaseEnemy extends SpriteAnimationComponent
   final Player player;
   double _baseSpeed;
   int _baseHealth; // Store base health
-  int health;
   VoidCallback? onRemoveCallback;
 
   double timeSinceLastDamageNumber = 0.0;
@@ -35,11 +34,15 @@ abstract class BaseEnemy extends SpriteAnimationComponent
     required Vector2 size,
   })  : _baseSpeed = speed,
         _baseHealth = health,
-        health = health, // Will be scaled in onLoad
         super(size: size, anchor: Anchor.center);
 
   double get speed => _baseSpeed;
   set speed(double value) => _baseSpeed = value;
+
+  // Add this method to let player classes apply damage
+  void applyDamage(double amount) {
+    takeDamage(amount);
+  }
 
   @override
   Future<void> onLoad() async {
@@ -47,10 +50,10 @@ abstract class BaseEnemy extends SpriteAnimationComponent
 
     // Scale health with enemy scaling
     double enemyScaling = PlayerProgressManager.getEnemyScaling();
-    health = (_baseHealth * enemyScaling).round();
+    _baseHealth = (_baseHealth * enemyScaling).round();
 
     print('🔄 Enemy scaled with spirit level: ${enemyScaling}x');
-    print('💪 Base Health: $_baseHealth → Scaled Health: $health');
+    print('💪 Base Health: $_baseHealth → Scaled Health: $_baseHealth');
   }
 
   @override
@@ -71,11 +74,11 @@ abstract class BaseEnemy extends SpriteAnimationComponent
 
   void takeDamage(double amount,
       {bool isCritical = false, bool isEchoed = false}) {
-    if (health <= 0) return;
+    if (_baseHealth <= 0) return;
 
     // Convert damage to int for health calculation
     int damageAmount = amount.round();
-    health -= damageAmount;
+    _baseHealth -= damageAmount;
 
     // Add damage number display
     // Show damage number
@@ -90,9 +93,9 @@ abstract class BaseEnemy extends SpriteAnimationComponent
     }
 
     print(
-        '💥 Enemy took $damageAmount damage${isCritical ? " (CRIT!)" : ""}${isEchoed ? " (Echo)" : ""}. Health: $health');
+        '💥 Enemy took $damageAmount damage${isCritical ? " (CRIT!)" : ""}${isEchoed ? " (Echo)" : ""}. Health: $_baseHealth');
 
-    if (health <= 0) {
+    if (_baseHealth <= 0) {
       die();
     }
   }
@@ -113,9 +116,7 @@ abstract class BaseEnemy extends SpriteAnimationComponent
     }
 
     // ✅ Grant XP for defeating this enemy
-    int xpEarned = this is Wave2Enemy ? 160 : 80; // ✅ Green Coin = Double XP
-    PlayerProgressManager.gainSpiritExp(xpEarned.toDouble());
-    print("⚔️ Enemy Defeated! +$xpEarned XP");
+    onDefeated();
 
     // ✅ Notify SpawnController that an enemy has been removed
     if (gameRef.spawnController != null) {
@@ -123,5 +124,21 @@ abstract class BaseEnemy extends SpriteAnimationComponent
     }
 
     removeFromParent(); // ✅ Ensure the enemy is removed from the game world
+  }
+
+  void onDefeated() {
+    if (game != null) {
+      // Calculate XP earned
+      int xpEarned = this is Wave2Enemy ? 160 : 80; // ✅ Green Coin = Double XP
+
+      // Add to both systems
+      PlayerProgressManager.gainSpiritExp(
+          xpEarned.toDouble()); // For spirit/experience bar
+      PlayerProgressManager.addXp(xpEarned); // For level progression
+
+      print(
+          "⚔️ Enemy Defeated! +$xpEarned XP (Total: ${PlayerProgressManager.getXp()})");
+      print("🎮 Current Level: ${PlayerProgressManager.getLevel()}");
+    }
   }
 }

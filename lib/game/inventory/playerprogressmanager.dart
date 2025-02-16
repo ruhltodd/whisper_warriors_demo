@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:whisper_warriors/game/abilities/abilityfactory.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:math';
 
 class PlayerProgressManager {
   static const String progressBoxName =
@@ -33,7 +34,7 @@ class PlayerProgressManager {
           _progressBox = Hive.box(progressBoxName);
         }
         _isInitialized = true;
-
+        // await PlayerProgressManager.resetProgress();
         // Remove old Spirit Level & XP from Hive (only keep main XP/level)
         _progressBox.delete('spiritLevel');
         _progressBox.delete('spiritExp');
@@ -56,6 +57,32 @@ class PlayerProgressManager {
         _isInitialized = true;
       }
     }
+  }
+
+  static Future<void> resetProgress() async {
+    if (!_isInitialized) {
+      print('⚠️ Warning: Resetting before initialization.');
+      return;
+    }
+
+    print("🧹 Resetting all player progress...");
+
+    await _progressBox.clear(); // Clears all stored progress
+    _progressBox.put('xp', 0);
+    _progressBox.put('level', 1);
+
+    // Reset spirit levels
+    _progressBox.delete('spiritLevel');
+    _progressBox.delete('spiritExp');
+    _progressBox.delete('spiritExpToNextLevel');
+    _progressBox.delete('spiritItemBonus');
+
+    _sessionSpiritLevel = 1;
+    _sessionSpiritExp = 0.0;
+    _sessionSpiritExpToNextLevel = 250.0;
+    _sessionSpiritItemBonus = 0.0;
+
+    print("✅ Player progress reset to default values.");
   }
 
   // ✅ Temporary XP/Level Reset (Does NOT modify Hive)
@@ -134,15 +161,38 @@ class PlayerProgressManager {
     checkForLevelUp();
   }
 
-  // XP needed for next level
-  static int xpForNextLevel(int level) {
-    return 100 * level; // Adjust this formula as needed
+  // Calculate XP needed for next level
+  static int getXpRequiredForLevel(int level) {
+    // Exponential scaling for higher levels
+    // Base: 15000 XP for level 2
+    // Each level requires significantly more XP
+    return (15000 * pow(1.5, level - 1)).round();
   }
+
+  // XP values for different sources
+  static const Map<String, int> XP_REWARDS = {
+    'normal_enemy': 50, // Basic enemies give minimal XP
+    'elite_enemy': 120, // Elite/Wave2 enemies
+    'boss1': 5000, // First boss gives enough for almost a level
+    'boss2': 10000, // Second boss gives more
+    'boss3': 20000, // Third boss gives even more
+    // Add more boss tiers as needed
+  };
+
+  // Example XP requirements:
+  // Level 1 -> 2: 5,000 XP
+  // Level 2 -> 3: 7,500 XP
+  // Level 3 -> 4: 11,250 XP
+  // Level 4 -> 5: 16,875 XP
+  // Level 5 -> 6: 25,312 XP
+  // Level 6 -> 7: 37,968 XP
+  // Level 7 -> 8: 56,952 XP
+  // etc.
 
   static void checkForLevelUp() {
     int currentLevel = getLevel();
     int currentXp = getXp();
-    int requiredXp = xpForNextLevel(currentLevel);
+    int requiredXp = getXpRequiredForLevel(currentLevel);
 
     if (currentXp >= requiredXp) {
       setLevel(currentLevel + 1);

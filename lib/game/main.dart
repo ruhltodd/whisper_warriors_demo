@@ -279,8 +279,8 @@ class RogueShooterGame extends FlameGame
   late final AudioPlayer bgmPlayer = AudioPlayer();
   late final ValueNotifier<dynamic> gameHudNotifier =
       ValueNotifier<dynamic>(null);
-  late final ValueNotifier<double?> bossHealthNotifier =
-      ValueNotifier<double?>(null);
+  ValueNotifier<double> bossHealthNotifier =
+      ValueNotifier(1.0); // Non-nullable double
   late final ValueNotifier<double> bossStaggerNotifier =
       ValueNotifier<double>(0.0);
   late final ValueNotifier<String?> activeBossNameNotifier =
@@ -384,7 +384,7 @@ class RogueShooterGame extends FlameGame
       // Initialize notifiers
       print('📱 Initializing notifiers...');
       gameHudNotifier.value = elapsedTime;
-      bossHealthNotifier.value = null;
+      bossHealthNotifier.value = 1.0;
       bossStaggerNotifier.value = 0.0;
       activeBossNameNotifier.value = null;
       bossNameNotifier.value = null;
@@ -647,7 +647,7 @@ class RogueShooterGame extends FlameGame
       // Reset all notifiers
       print("📢 Resetting notifiers...");
       gameHudNotifier.value = null;
-      bossHealthNotifier.value = null;
+      bossHealthNotifier.value = 1.0;
       bossStaggerNotifier.value = 0;
       activeBossNameNotifier.value = null;
       bossNameNotifier.value = null;
@@ -719,7 +719,7 @@ class RogueShooterGame extends FlameGame
 
       // Reset all notifiers
       gameHudNotifier.value = 0;
-      bossHealthNotifier.value = null;
+      bossHealthNotifier.value = 1.0;
       bossStaggerNotifier.value = 0;
       activeBossNameNotifier.value = null;
       bossNameNotifier.value = null;

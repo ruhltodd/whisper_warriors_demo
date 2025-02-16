@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/bosses/staggerbar.dart';
 import 'package:whisper_warriors/game/inventory/loottable.dart';
 import 'package:whisper_warriors/game/items/lootbox.dart';
@@ -16,12 +17,15 @@ import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
 import 'staggerable.dart';
 import 'package:flame/timer.dart';
+import 'package:whisper_warriors/game/main.dart';
 
 class Boss1 extends BaseEnemy with Staggerable {
+  final ValueNotifier<double> healthNotifier;
   bool enraged = false;
   bool isFading = false;
   bool hasTriggeredX195 = false;
   bool hasTriggeredX190 = false;
+  bool hasTriggeredX165 = false;
   bool hasTriggeredX150 = false;
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
@@ -48,9 +52,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   static const double projectileCooldown = 0.5;
   bool _isExecutingTargetedAttack = false;
   late BossHealthBar healthBar;
-
-  // Get current segment from the BossHealthBar
-  int get currentSegment => healthBar.currentSegment;
+  final double segmentSize; // Store segmentSize
 
   Boss1({
     required Player player,
@@ -61,9 +63,11 @@ class Boss1 extends BaseEnemy with Staggerable {
     required this.onDeath,
     required this.onStaggerChanged,
     required this.bossStaggerNotifier,
-  }) : super(
+    this.segmentSize = 1000, // Default segmentSize
+  })  : healthNotifier = ValueNotifier(health.toDouble()),
+        super(
           player: player,
-          health: health,
+          health: health, // Remove
           speed: speed,
           size: size,
         ) {
@@ -80,18 +84,18 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     // Initialize the healthBar
     healthBar = BossHealthBar(
-      bossHealth: health.toDouble(),
+      bossHealth: healthNotifier, // Pass healthNotifier
       maxBossHealth: health.toDouble(),
+      segmentSize: segmentSize, // Pass segmentSize
     );
   }
 
   @override
   Future<void> onLoad() async {
-    // Load walk animation first to ensure it's available
     walkAnimation = await gameRef.loadSpriteAnimation(
       'boss1_walk.png',
       SpriteAnimationData.sequenced(
-        amount: 4, // Matches your sprite sheet's 4 frames
+        amount: 4,
         textureSize: Vector2(128, 128),
         stepTime: 0.3,
       ),
@@ -106,7 +110,6 @@ class Boss1 extends BaseEnemy with Staggerable {
       ),
     );
 
-    // Set initial animation
     animation = idleAnimation;
     add(RectangleHitbox());
     gameRef.add(staggerBar);
@@ -121,6 +124,11 @@ class Boss1 extends BaseEnemy with Staggerable {
   @override
   void update(double dt) {
     super.update(dt);
+
+    final currentHealth = healthNotifier.value;
+    final currentSegment = (currentHealth / segmentSize).ceil();
+
+    print('🧐 Boss Health Segment: $currentSegment');
     print(
         '🤖 Boss Update - HasLanded: $_hasLanded, IsTargeting: $_isTargetingPlayer');
 
@@ -132,8 +140,10 @@ class Boss1 extends BaseEnemy with Staggerable {
       return;
     }
 
-    // Always update animations regardless of targeting state
     _updateMovement(dt);
+    if (isFading) {
+      removeWhere((component) => component is RectangleHitbox);
+    }
 
     // Check segment thresholds and trigger mechanics
     if (currentSegment <= 195 && !hasTriggeredX195) {
@@ -146,6 +156,12 @@ class Boss1 extends BaseEnemy with Staggerable {
       triggerX190Mechanics();
     }
 
+    if (currentSegment <= 165 && !hasTriggeredX165) {
+      print('✅ TRIGGERING 165 MECHANICS!');
+      hasTriggeredX165 = true;
+      triggerX165Mechanics();
+    }
+
     if (currentSegment <= 150 && !hasTriggeredX150) {
       hasTriggeredX150 = true;
       triggerX150Mechanics();
@@ -154,7 +170,6 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (!_isExecutingTargetedAttack) {
       timeSinceLastAttack += dt;
       timeSinceLastDamageNumber += dt;
-      // Only handle movement and attacks if not targeting
       _handleAttacks(dt);
 
       final currentPlayerPos = player.position;
@@ -190,26 +205,19 @@ class Boss1 extends BaseEnemy with Staggerable {
     final Vector2 direction = (player.position - position).normalized();
     final double distanceToPlayer = (player.position - position).length;
 
-    // Debug print to check distances and states
-    print(
-        'Distance to player: $distanceToPlayer, Targeting: $_isExecutingTargetedAttack');
-
-    // Always update animation based on movement
     if (distanceToPlayer > 20) {
       animation = walkAnimation;
-      print('🚶 Setting walk animation');
-      // Only move if not targeting
       if (!_isExecutingTargetedAttack) {
         position += direction * speed * dt;
       }
     } else {
       animation = idleAnimation;
-      print('🧍 Setting idle animation');
     }
 
     if (distanceToPlayer < 10) {
+      print('💥 Boss collided with Player - dealing damage!');
       player.takeDamage(10);
-      _knockback(-direction * 40);
+      player.position += -direction * 40;
     }
   }
 
@@ -262,31 +270,31 @@ class Boss1 extends BaseEnemy with Staggerable {
   @override
   void takeDamage(double baseDamage,
       {bool isCritical = false, bool isEchoed = false}) {
+    //super.takeDamage(baseDamage, isCritical: isCritical, isEchoed: isEchoed);
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
     int finalDamage = isCritical
         ? (baseDamage * player.critMultiplier).toInt()
         : baseDamage.toInt();
-    health -= finalDamage;
-    onHealthChanged(health.toDouble());
-    applyStaggerDamage(finalDamage, isCritical: isCritical);
 
-    if (health <= maxHealth * 0.5 && !isFading) {
-      _enterFadingPhase();
+    // Apply damage to the local class
+    double currentHealth = healthNotifier.value;
+    currentHealth -= finalDamage;
+    // Update
+    healthNotifier.value = currentHealth.toDouble();
+
+    onHealthChanged(healthNotifier.value);
+    print('⚠️ Boss took damage! Health: ${healthNotifier.value}');
+
+    // Check for phase transitions
+    if (healthNotifier.value <= 165000 && !hasTriggeredX165) {
+      print('✅ TRIGGERING 165 MECHANICS!');
+      hasTriggeredX165 = true;
+      triggerX165Mechanics();
     }
-    if (health <= (maxHealth * 0.3) && !enraged) {
-      enraged = true;
-      _enterEnrageMode();
-    }
-    if (health <= 0) {
-      if (!isEchoed) {
-        die();
-      } else {
-        removeFromParent();
-        print("🔄 Boss killed by Cursed Echo - No rewards granted");
-      }
-    }
+
+    applyStaggerDamage(finalDamage, isCritical: isCritical);
   }
 
   void _enterFadingPhase() {
@@ -368,11 +376,17 @@ class Boss1 extends BaseEnemy with Staggerable {
     double projectileSpeed = 200.0;
 
     // Increase speed based on current segment
+    final currentHealth = healthNotifier.value;
+    final currentSegment = (currentHealth / segmentSize).ceil();
+
     if (currentSegment <= 195) {
       projectileSpeed = 300.0;
     }
     if (currentSegment <= 190) {
       projectileSpeed = 310.0;
+    }
+    if (currentSegment <= 165) {
+      triggerX165Mechanics();
     }
     if (currentSegment <= 150) {
       projectileSpeed = 500.0;
@@ -450,12 +464,95 @@ class Boss1 extends BaseEnemy with Staggerable {
     // Add more mechanics as needed
   }
 
+  void triggerX165Mechanics() {
+    print('⚡ Boss at X165 - Entering Final Phase Mechanics!');
+
+    if (isFading) return;
+    isFading = true;
+    print('🕶 Boss is now fading...');
+    double originalSpeed = speed;
+    double originalAttackCooldown = attackCooldown;
+
+    add(OpacityEffect.to(0.0, EffectController(duration: 1.5), onComplete: () {
+      print('🕵️‍♂️ Opacity effect finished, starting teleport phase.');
+      removeWhere((component) => component is RectangleHitbox);
+      attackCooldown = 9999;
+
+      _teleportAndShootLoop(15, originalSpeed, originalAttackCooldown);
+    }));
+  }
+
+  void _teleportAndShootLoop(int durationInSeconds, double originalSpeed,
+      double originalAttackCooldown) {
+    int remainingTime = durationInSeconds;
+    print('🚀 Teleport sequence started! Duration: $durationInSeconds seconds');
+    Timer shootingTimer = Timer(3, repeat: true, onTick: () {
+      if (remainingTime <= 0) {
+        _returnToNormalState(originalSpeed, originalAttackCooldown);
+        return;
+      }
+
+      _teleportOutsidePlayerRange();
+      _shootRandomProjectiles();
+      remainingTime -= 3;
+      print('🚀 Projectile shot! Remaining: $remainingTime seconds');
+    });
+
+    shootingTimer.start();
+  }
+
+  void _teleportOutsidePlayerRange() {
+    final Vector2 playerPos = player.position;
+    Vector2 newPosition;
+
+    do {
+      newPosition = Vector2(
+        playerPos.x + (random.nextDouble() * 800 - 400),
+        playerPos.y + (random.nextDouble() * 800 - 400),
+      );
+    } while (
+        (newPosition - playerPos).x < 256 && (newPosition - playerPos).y < 256);
+
+    position = newPosition;
+    print('🚀 Boss teleported to $position');
+  }
+
+  void _shootRandomProjectiles() {
+    int numProjectiles = 6 + random.nextInt(4);
+    for (int i = 0; i < numProjectiles; i++) {
+      double angle = random.nextDouble() * (pi * 2);
+      Vector2 velocity = Vector2(cos(angle), sin(angle)) * 600;
+
+      final bossProjectile = Projectile.bossProjectile(
+        damage: 15,
+        velocity: velocity,
+      )
+        ..position = position.clone()
+        ..size = Vector2(40, 40)
+        ..anchor = Anchor.center;
+
+      gameRef.add(bossProjectile);
+    }
+    print('💥 Boss fired projectiles');
+  }
+
+  void _returnToNormalState(
+      double originalSpeed, double originalAttackCooldown) {
+    print('⚡ Boss returning to normal!');
+
+    isFading = false;
+    attackCooldown = originalAttackCooldown;
+    speed = originalSpeed;
+
+    add(OpacityEffect.to(1.0, EffectController(duration: 1.5), onComplete: () {
+      add(RectangleHitbox());
+    }));
+  }
+
   void triggerX150Mechanics() {
     print('⚡ Boss at X150 - Final phase mechanics!');
-    // Maximum aggression
     attackCooldown *= 0.7;
     speed *= 1.5;
-    // Add more mechanics as needed
   }
 
   @override

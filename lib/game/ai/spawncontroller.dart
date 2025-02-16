@@ -84,36 +84,38 @@ class SpawnController extends Component {
 
       BaseEnemy enemy;
 
+      int baseHealth = 300; // Default health
+      double baseSpeed = 70; // Default Speed
+
       if (game.elapsedTime >= 60) {
-        // ✅ 50% chance to spawn Wave2Enemy instead of alternating
         if (Random().nextBool()) {
           enemy = Wave2Enemy(
             player: game.player,
-            speed: 90,
-            health: 500,
+            speed: baseSpeed = 90,
+            health: baseHealth = 500,
             size: Vector2(84, 84),
           );
         } else {
           enemy = Wave1Enemy(
             player: game.player,
-            speed: 70,
-            health: 300,
+            speed: baseSpeed,
+            health: baseHealth,
             size: Vector2(64, 64),
           );
         }
       } else {
         enemy = Wave1Enemy(
           player: game.player,
-          speed: 70,
-          health: 300,
+          speed: baseSpeed,
+          health: baseHealth,
           size: Vector2(64, 64),
         );
       }
 
       // ✅ **Enhance Enemies After Boss Fight**
       if (postBoss) {
-        enemy.health *= 2;
-        enemy.speed *= 0.5;
+        baseHealth *= 2;
+        baseSpeed *= 0.5;
       }
 
       // ✅ **Ensure enemies are removed from count**
@@ -197,7 +199,7 @@ class SpawnController extends Component {
   /// ✅ **After Boss 2 Dies - Stop all enemy waves**
   void onBoss2Death() {
     print("💀 Void Prism has been defeated!");
-    game.bossHealthNotifier.value = null;
+    game.bossHealthNotifier.value = 1.0;
     _bossActive = false; // ✅ Now enemies can spawn again
 
     Future.delayed(Duration(seconds: 3), () {
@@ -251,7 +253,7 @@ class SpawnController extends Component {
   /// ✅ **After Boss 1 Dies - Resume Enemy Waves**
   void onBoss1Death() {
     print("👹 Boss 1 defeated! Starting post-boss sequence");
-    game.bossHealthNotifier.value = null;
+    game.bossHealthNotifier.value = 1.0;
     _bossActive = false;
 
     // ✅ **Spawn tougher enemies before Boss 2 arrives**

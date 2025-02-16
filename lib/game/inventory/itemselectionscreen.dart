@@ -178,8 +178,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
               ),
               // XP Bar
-              XPBar(),
-              SizedBox(height: 20),
+              GlobalExperienceLevelBar(), SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _confirmSelection,
                 style: ElevatedButton.styleFrom(
