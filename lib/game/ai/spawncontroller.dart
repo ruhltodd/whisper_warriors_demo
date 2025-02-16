@@ -97,7 +97,7 @@ class SpawnController extends Component {
           enemy = Wave1Enemy(
             player: game.player,
             speed: 70,
-            health: 200,
+            health: 300,
             size: Vector2(64, 64),
           );
         }
@@ -105,7 +105,7 @@ class SpawnController extends Component {
         enemy = Wave1Enemy(
           player: game.player,
           speed: 70,
-          health: 100,
+          health: 300,
           size: Vector2(64, 64),
         );
       }
@@ -278,7 +278,7 @@ class SpawnController extends Component {
     final boss1 = Boss1(
       player: game.player,
       speed: 20,
-      health: 50000,
+      health: 211000,
       size: Vector2(128, 128),
       onHealthChanged: (double health) {
         game.bossHealthNotifier.value = health; // ✅ Ensure UI updates
@@ -295,7 +295,7 @@ class SpawnController extends Component {
     game.add(boss1);
 
     // ✅ **Set active boss in HUD**
-    game.setActiveBoss("Umbrathos, The Fading King", 50000);
+    game.setActiveBoss("Umbrathos, The Fading King", 211000);
 
     // ✅ **Delayed movement into battlefield**
     Future.delayed(Duration(milliseconds: 1500), () {
