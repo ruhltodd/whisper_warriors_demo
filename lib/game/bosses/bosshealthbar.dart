@@ -4,28 +4,29 @@ class BossHealthBar extends StatelessWidget {
   final double bossHealth;
   final double maxBossHealth;
   final double segmentSize;
-
+  final int alpha;
   const BossHealthBar({
     Key? key,
     required this.bossHealth,
     required this.maxBossHealth,
     this.segmentSize = 1000,
+    this.alpha = 128,
   }) : super(key: key);
 
   Color _getSegmentColor(int segmentNumber) {
     final colors = [
-      Colors.purple.withOpacity(0.85),
-      Colors.blue.withOpacity(0.85),
-      Colors.green.withOpacity(0.85),
-      Colors.yellow.withOpacity(0.85),
-      Colors.orange.withOpacity(0.85),
-      Colors.red.withOpacity(0.85),
-      Colors.pink.withOpacity(0.85),
-      Colors.teal.withOpacity(0.85),
-      Colors.lime.withOpacity(0.85),
-      Colors.indigo.withOpacity(0.85),
-      Colors.cyan.withOpacity(0.85),
-      Colors.amber.withOpacity(0.85),
+      Colors.purple.withAlpha(alpha),
+      Colors.blue.withAlpha(alpha),
+      Colors.green.withAlpha(alpha),
+      Colors.yellow.withAlpha(alpha),
+      Colors.orange.withAlpha(alpha),
+      Colors.red.withAlpha(alpha),
+      Colors.pink.withAlpha(alpha),
+      Colors.teal.withAlpha(alpha),
+      Colors.lime.withAlpha(alpha),
+      Colors.indigo.withAlpha(alpha),
+      Colors.cyan.withAlpha(alpha),
+      Colors.amber.withAlpha(alpha),
     ];
     return colors[segmentNumber % colors.length];
   }
@@ -33,7 +34,7 @@ class BossHealthBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int currentSegment = (bossHealth / segmentSize).ceil();
-    int totalSegments = (maxBossHealth / segmentSize).ceil();
+    (maxBossHealth / segmentSize).ceil();
     double remainingInSegment = bossHealth % segmentSize;
     double segmentPercentage = remainingInSegment / segmentSize;
 
