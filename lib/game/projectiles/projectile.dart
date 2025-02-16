@@ -169,16 +169,15 @@ class Projectile extends SpriteAnimationComponent
     required double damage,
     void Function(BaseEnemy)? onHit,
     String abilityName = 'Basic Attack',
-    bool isCritical = false,
   }) {
-    print(
-        '🚀 Creating projectile: $abilityName (Damage: $damage, Critical: $isCritical)');
+    bool isCritical = player.isCriticalHit();
+    double finalDamage = isCritical ? damage * player.critMultiplier : damage;
 
     final direction = (targetPosition - player.position).normalized();
     final velocity = direction * projectileSpeed;
 
     final projectile = Projectile.playerProjectile(
-      damage: damage,
+      damage: finalDamage,
       velocity: velocity,
       player: player,
       onHit: onHit,
@@ -199,7 +198,7 @@ class Projectile extends SpriteAnimationComponent
           if (player.isMounted) {
             print('🌟 Creating echo projectile for $abilityName');
             final echoProjectile = Projectile.playerProjectile(
-              damage: damage,
+              damage: finalDamage,
               velocity: velocity,
               player: player,
               onHit: (enemy) {

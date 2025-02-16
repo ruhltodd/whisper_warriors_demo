@@ -724,6 +724,12 @@ class Player extends PositionComponent
   int get level => PlayerProgressManager.getLevel();
   int get xp => PlayerProgressManager.getXp();
   double get health => currentHealth;
+
+  // Method to determine if an attack is critical
+  bool isCriticalHit() {
+    final randomValue = gameRef.random.nextDouble() * 100;
+    return randomValue < critChance;
+  }
 }
 
 // Update WhisperWarrior class to ensure sprite loading

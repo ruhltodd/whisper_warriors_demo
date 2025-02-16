@@ -38,7 +38,9 @@ class DamageTracker {
       // Update the log values
       log.totalDamage += damage;
       log.hits++;
-      if (isCritical) log.criticalHits++;
+      if (isCritical) {
+        log.criticalHits++;
+      }
 
       _damageBox.put(key, log);
       print(
