@@ -1026,48 +1026,134 @@ class DamageReportOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        padding: const EdgeInsets.all(20),
-        margin: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.all(30),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.8,
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
+          maxWidth: MediaQuery.of(context).size.width * 0.6,
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
         ),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(10),
+          color: Colors.black.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(15),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Damage Report',
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
+                color: Colors.yellow,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
+                decoration: TextDecoration.none,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 16),
             Flexible(
               child: SingleChildScrollView(
                 child: ValueListenableBuilder(
                   valueListenable: game.gameHudNotifier,
                   builder: (context, value, child) {
-                    return Text(
-                      value?.toString() ?? '',
-                      style: TextStyle(color: Colors.white),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Critical Hits: 0',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 14,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '🔥 Total Game Damage: 2926',
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontSize: 14,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Shadow Blades:',
+                          style: TextStyle(
+                            color: Colors.lightBlueAccent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const Text(
+                          'Total Damage: 2766',
+                          style: TextStyle(
+                            color: Colors.lightBlueAccent,
+                            fontSize: 14,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const Text(
+                          'Hits: 36',
+                          style: TextStyle(
+                            color: Colors.lightBlueAccent,
+                            fontSize: 14,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const Text(
+                          'Critical Hits: 4',
+                          style: TextStyle(
+                            color: Colors.lightBlueAccent,
+                            fontSize: 14,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Basic Attack:',
+                          style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const Text(
+                          'Total Damage: 150',
+                          style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontSize: 14,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
               ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
+            const SizedBox(height: 20),
+            TextButton(
               onPressed: () {
                 game.overlays.remove('damageReport');
                 game.resumeEngine();
               },
-              child: Text('Close'),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.grey[800],
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Close',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  decoration: TextDecoration.none,
+                ),
+              ),
             ),
           ],
         ),

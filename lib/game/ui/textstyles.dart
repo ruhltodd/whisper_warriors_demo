@@ -12,6 +12,7 @@ class GameTextStyles {
       fontWeight: FontWeight.bold,
       fontFamily: 'MyCustomFont',
       letterSpacing: letterSpacing,
+      decoration: TextDecoration.none,
       shadows: [
         Shadow(
           color: Colors.black,

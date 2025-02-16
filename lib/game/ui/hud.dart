@@ -107,6 +107,7 @@ class HUD extends StatelessWidget {
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'MyCustomFont',
+                              decoration: TextDecoration.none,
                             ),
                           ),
                           const SizedBox(height: 5),

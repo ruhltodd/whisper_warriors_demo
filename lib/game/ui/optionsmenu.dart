@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/main.dart';
+import 'package:whisper_warriors/game/ui/textstyles.dart';
 
 class OptionsMenu extends StatelessWidget {
   final RogueShooterGame game;
@@ -7,29 +8,30 @@ class OptionsMenu extends StatelessWidget {
   const OptionsMenu({Key? key, required this.game}) : super(key: key);
 
   Widget _buildButton(String text, VoidCallback onPressed) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 32,
+            vertical: 12,
           ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1E88E5), // Material Blue 600
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-          textStyle: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
           ),
-          elevation: 0,
-          foregroundColor: Colors.black, // Set default text color to black
+          child: Text(
+            text,
+            style: GameTextStyles.gameTitle(fontSize: 20).copyWith(
+              decoration: TextDecoration.none,
+            ),
+          ),
         ),
-        child: Text(text),
       ),
     );
   }
@@ -41,19 +43,12 @@ class OptionsMenu extends StatelessWidget {
         width: 300,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF2196F3).withOpacity(0.9), // Material Blue 500
-          borderRadius: BorderRadius.circular(15),
+          color: Colors.black.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFF64B5F6), // Material Blue 300
+            color: Colors.white.withOpacity(0.3),
             width: 2,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 10,
-              spreadRadius: 2,
-            ),
-          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -61,9 +56,10 @@ class OptionsMenu extends StatelessWidget {
             const Text(
               'Options',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: Colors.white,
+                decoration: TextDecoration.none,
                 shadows: [
                   Shadow(
                     offset: Offset(1, 1),

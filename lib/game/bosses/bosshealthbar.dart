@@ -72,23 +72,21 @@ class BossHealthBar extends StatelessWidget {
             ),
 
           // Segment label on the right
-          Positioned(
-            right: 5,
-            child: Center(
-              child: Text(
-                'X$currentSegment',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 2,
-                      color: Colors.black.withOpacity(0.8),
-                      offset: Offset(1, 1),
-                    ),
-                  ],
-                ),
+          Center(
+            child: Text(
+              'X$currentSegment',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.none,
+                shadows: [
+                  Shadow(
+                    blurRadius: 2,
+                    color: Colors.black.withOpacity(0.8),
+                    offset: Offset(1, 1),
+                  ),
+                ],
               ),
             ),
           ),
