@@ -124,9 +124,4 @@ abstract class BaseEnemy extends SpriteAnimationComponent
 
     removeFromParent(); // ✅ Ensure the enemy is removed from the game world
   }
-
-  @override
-  void render(Canvas canvas) {
-    renderWithShadow(canvas);
-  }
 }
