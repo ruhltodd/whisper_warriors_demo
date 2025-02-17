@@ -25,7 +25,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   final ValueNotifier<double> healthNotifier;
   bool enraged = false;
   bool isFading = false;
-  bool _startTeleportation = false;
+  // Removed _startTeleportation (it's redundant)
   bool hasTriggeredX195 = false;
   bool hasTriggeredX190 = false;
   bool hasTriggeredX165 = false;
@@ -33,7 +33,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
   double _timeSinceLastTeleportShoot = 0;
-  final double damageNumberInterval = 0.5;
+  final double damageNumberInterval = 0.5; // Unused in mock, but kept
   bool hasDroppedItem = false;
   final Function(double) onHealthChanged;
   final ValueChanged<double> onStaggerChanged;
@@ -58,11 +58,12 @@ class Boss1 extends BaseEnemy with Staggerable {
   bool _isExecutingTargetedAttack = false;
   late BossHealthBar healthBar;
   final double segmentSize; // Store segmentSize
+
   //Double Vars
   double originalSpeed = 0;
   double originalAttackCooldown = 0;
-  //ADD THIS
-  double _teleportShootRemainingTime = 0;
+
+  double _teleportShootRemainingTime = 0; // Keep this
 
   Boss1({
     required Player player,
@@ -77,12 +78,18 @@ class Boss1 extends BaseEnemy with Staggerable {
   })  : healthNotifier = ValueNotifier(health.toDouble()),
         super(
           player: player,
-          health: health, // Remove
+          health: health,
           speed: speed,
           size: size,
         ) {
     maxHealth = health.toDouble();
-    staggerBar = StaggerBar(maxStagger: 100.0, currentStagger: 0);
+    staggerBar = StaggerBar(maxStagger: 100.0, currentStagger: 0); // Mocked
+    healthBar = BossHealthBar(
+      // Mocked
+      bossHealth: healthNotifier, // Pass healthNotifier
+      maxBossHealth: health.toDouble(),
+      segmentSize: segmentSize, // Pass segmentSize
+    );
     _playerStandingTimer = Timer(
       standingThreshold,
       onTick: () {
@@ -91,17 +98,19 @@ class Boss1 extends BaseEnemy with Staggerable {
         }
       },
     );
-
-    // Initialize the healthBar
-    healthBar = BossHealthBar(
-      bossHealth: healthNotifier, // Pass healthNotifier
-      maxBossHealth: health.toDouble(),
-      segmentSize: segmentSize, // Pass segmentSize
-    );
   }
 
   @override
   Future<void> onLoad() async {
+    // Mock animations (replace with your actual loading)
+    idleAnimation = await gameRef.loadSpriteAnimation(
+      'boss1_idle.png',
+      SpriteAnimationData.sequenced(
+        amount: 2,
+        textureSize: Vector2(128, 128),
+        stepTime: 0.6,
+      ),
+    );
     walkAnimation = await gameRef.loadSpriteAnimation(
       'boss1_walk.png',
       SpriteAnimationData.sequenced(
@@ -111,26 +120,17 @@ class Boss1 extends BaseEnemy with Staggerable {
       ),
     );
 
-    idleAnimation = await gameRef.loadSpriteAnimation(
-      'boss1_idle.png',
-      SpriteAnimationData.sequenced(
-        amount: 2,
-        textureSize: Vector2(128, 128),
-        stepTime: 0.6,
-      ),
-    );
-
     originalSpeed = speed;
     originalAttackCooldown = attackCooldown;
 
     animation = idleAnimation;
     add(RectangleHitbox());
-    gameRef.add(staggerBar);
+    //gameRef.add(staggerBar); // Removed for Mocking
     setLanded(true);
   }
 
   void updateStaggerBar() {
-    staggerBar.currentStagger = staggerProgress;
+    staggerBar.currentStagger = staggerProgress; //Mocked
     bossStaggerNotifier.value = staggerProgress;
   }
 
@@ -156,21 +156,17 @@ class Boss1 extends BaseEnemy with Staggerable {
     _updateMovement(dt);
 
     if (isFading) {
-      _teleportShootRemainingTime -= dt;
-      if (_teleportShootRemainingTime > 0 && _startTeleportation == true) {
+      // Moved this BEFORE the remaining time check
+      if (_teleportShootRemainingTime > 0) {
         _teleportOutsidePlayerRange();
-        print('🚀 Projectile is being called! $_teleportShootRemainingTime');
-        _shootRandomProjectiles(dt);
-      } else if (_teleportShootRemainingTime > 0) {
+        _shootRandomProjectiles(dt); // Called every frame while time remains
       } else {
         isFading = false;
-        _teleportShootRemainingTime = 0;
+        _teleportShootRemainingTime = 0; // Ensure it's reset
         _returnToNormalState();
       }
-
-      removeWhere((component) => component is RectangleHitbox);
+      _teleportShootRemainingTime -= dt; // Decrement *after* using the value
     }
-
     // Check segment thresholds and trigger mechanics
     if (currentSegment <= 195 && !hasTriggeredX195) {
       hasTriggeredX195 = true;
@@ -185,7 +181,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (currentSegment <= 165 && !hasTriggeredX165) {
       print('✅ TRIGGERING 165 MECHANICS!');
       hasTriggeredX165 = true;
-      triggerX165Mechanics();
+      _enterFadingPhase(); // Use _enterFadingPhase directly
     }
 
     if (currentSegment <= 150 && !hasTriggeredX150) {
@@ -195,7 +191,7 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     if (!_isExecutingTargetedAttack) {
       timeSinceLastAttack += dt;
-      timeSinceLastDamageNumber += dt;
+      //timeSinceLastDamageNumber += dt; // Remove since there are no damage numbers in the mock
       _handleAttacks(dt);
 
       final currentPlayerPos = player.position;
@@ -248,15 +244,18 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _handleAttacks(double dt) {
-    timeSinceLastAttack += dt;
-
-    if (timeSinceLastAttack >= attackCooldown) {
-      _shootProjectiles();
-      timeSinceLastAttack = 0.0;
+    if (!isFading) {
+      // Only attack if NOT fading
+      timeSinceLastAttack += dt;
+      if (timeSinceLastAttack >= attackCooldown) {
+        _shootProjectiles();
+        timeSinceLastAttack = 0.0;
+      }
     }
   }
 
   void _shootProjectiles() {
+    //No changes required
     List<double> cardinalAngles = [0, 90, 180, 270];
     List<double> diagonalAngles = [45, 135, 225, 315];
 
@@ -298,6 +297,7 @@ class Boss1 extends BaseEnemy with Staggerable {
       {bool isCritical = false,
       bool isEchoed = false,
       bool isFlameDamage = false}) {
+    //No changes required
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
@@ -310,7 +310,6 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (_tripleDamaged == true) {
       newDamage = finalDamage * 3;
     }
-
     // Apply damage to the local class
     double currentHealth = healthNotifier.value;
     currentHealth -= newDamage;
@@ -324,10 +323,16 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (healthNotifier.value <= 165000 && !hasTriggeredX165) {
       print('✅ TRIGGERING 165 MECHANICS!');
       hasTriggeredX165 = true;
-      triggerX165Mechanics();
+      _enterFadingPhase(); // Use _enterFadingPhase directly
     }
 
     applyStaggerDamage(finalDamage, isCritical: isCritical);
+
+    // Check for death and call onDeath
+    if (healthNotifier.value <= 0) {
+      die();
+      onDeath();
+    }
   }
 
   @override
@@ -339,6 +344,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void targetPlayer() {
+    //No changes required
     if (_isExecutingTargetedAttack) return;
 
     _isExecutingTargetedAttack = true;
@@ -359,7 +365,7 @@ class Boss1 extends BaseEnemy with Staggerable {
       projectileSpeed = 310.0;
     }
     if (currentSegment <= 165) {
-      triggerX165Mechanics();
+      _enterFadingPhase();
     }
     if (currentSegment <= 150) {
       projectileSpeed = 500.0;
@@ -404,6 +410,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _stopTargeting() {
+    //No changes required
     _isTargetingPlayer = false;
     _isExecutingTargetedAttack = false;
     _playerStandingTimer?.reset();
@@ -414,43 +421,37 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void pauseNormalAttackPattern() {
+    //No changes required
     timeSinceLastAttack = 0;
     attackCooldown = 999999;
   }
 
   void resumeNormalAttackPattern() {
+    //No changes required
     attackCooldown = enraged ? 2.8 : 4.0;
     timeSinceLastAttack = 0;
   }
 
   void _teleportOutsidePlayerRange() {
+    //No changes required
     final Vector2 playerPos = player.position;
     Vector2 newPosition;
-    int attempts = 0; // Track the number of attempts to find an area
+    int attempts = 0;
 
     do {
-      // Calculate a random offset vector for the new position
-      double angle = random.nextDouble() * 2 * pi; // Angle in radians
-      double distance = 100 +
-          (random.nextDouble() *
-              500); // Distance between 100 and 600 pixels. This creates a random distance to move!
-
-      Vector2 offset = Vector2(cos(angle) * distance,
-          sin(angle) * distance); // Calc the position with a randomized angle
-
-      newPosition = playerPos + offset; //This will find all of the positions.
-
+      double angle = random.nextDouble() * 2 * pi;
+      double distance = 100 + (random.nextDouble() * 500);
+      Vector2 offset = Vector2(cos(angle) * distance, sin(angle) * distance);
+      newPosition = playerPos + offset;
       attempts++;
-
       if (attempts > 100) break;
     } while (newPosition.x < 0 ||
         newPosition.x > gameRef.size.x ||
         newPosition.y < 0 ||
         newPosition.y > gameRef.size.y);
 
-    //Ensure this code only calls if there is any thing on those areas
     if (attempts > 100) {
-      newPosition = Vector2(1280 / 2, 1280 / 2); //Center
+      newPosition = Vector2(1280 / 2, 720 / 2);
     }
 
     position = newPosition;
@@ -458,8 +459,10 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _shootRandomProjectiles(double dt) {
-    _timeSinceLastTeleportShoot += dt;
+    //No changes required
+    if (_teleportShootRemainingTime <= 0) return; // Don't shoot if time is up
 
+    _timeSinceLastTeleportShoot += dt;
     if (_timeSinceLastTeleportShoot >= 1.0) {
       _timeSinceLastTeleportShoot = 0;
       for (int i = 0; i < 6; i++) {
@@ -467,7 +470,7 @@ class Boss1 extends BaseEnemy with Staggerable {
         Vector2 velocity = Vector2(cos(angle), sin(angle)) * 500;
 
         final bossProjectile = Projectile.bossProjectile(
-          damage: 15,
+          damage: 15, // Example damage
           velocity: velocity,
         )
           ..position = position.clone()
@@ -481,37 +484,14 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _returnToNormalState() {
+    //No changes required
     print('⚡ Boss returning to normal!');
-
     isFading = false;
-    blocksRange = false;
     attackCooldown = originalAttackCooldown;
     speed = originalSpeed;
 
     add(OpacityEffect.to(1.0, EffectController(duration: 1.5)));
-
     add(RectangleHitbox());
-  }
-
-  void _enterFadingPhase() {
-    print('⚡ Boss at X165 - Entering Final Phase Mechanics!');
-    if (isFading) return;
-    //StoreIt
-    double originalSpeed = speed;
-    double originalAttackCooldown = attackCooldown;
-
-    isFading = true;
-    _startTeleportation = false;
-    _teleportShootRemainingTime = 15;
-    print('🕶 Boss is now fading...');
-
-    add(OpacityEffect.to(0.0, EffectController(duration: 1.5), onComplete: () {
-      print('🕵️‍♂️ Opacity effect finished, starting teleport phase.');
-      _startTeleportation = true;
-      removeWhere((component) => component is RectangleHitbox);
-      attackCooldown = 9999;
-      _tripleDamaged = true;
-    }));
   }
 
   @override
@@ -522,7 +502,23 @@ class Boss1 extends BaseEnemy with Staggerable {
     super.onRemove();
   }
 
+  // COMBINE triggerX165Mechanics and _enterFadingPhase
+  void _enterFadingPhase() {
+    if (isFading) return; // Prevent re-entry
+
+    print('🔥 Boss at X165 - Triggering Fading Phase!');
+    isFading = true;
+    _teleportShootRemainingTime = 15; // Set the duration
+
+    // Immediately start the opacity effect AND teleport/shoot
+    add(OpacityEffect.to(0.0, EffectController(duration: 1.5)));
+    pauseNormalAttackPattern(); // Add this line
+    removeWhere((component) =>
+        component is RectangleHitbox); // Immediately remove hitbox
+  }
+
   void triggerX195Mechanics() {
+    //No changes required
     print('🔥 Boss at X195 - Triggering new mechanics!');
     // Increase attack speed
     attackCooldown *= 0.8;
@@ -530,25 +526,15 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void triggerX190Mechanics() {
+    //No changes required
     print('💥 Boss at X190 - Triggering rage mechanics!');
     // Increase projectile count
     alternatePattern = true;
     // Add more mechanics as needed
   }
 
-  void triggerX165Mechanics() {
-    if (isFading) return;
-    //This variable needs to be in here, since we only run this mechanic in here
-    _teleportShootRemainingTime = 15;
-    isFading = true;
-    blocksRange = true;
-    print('🕶 Boss is now fading...');
-
-    add(OpacityEffect.to(0.0, EffectController(duration: 1.5)));
-    removeWhere((component) => component is RectangleHitbox);
-  }
-
   void triggerX150Mechanics() {
+    //No changes required
     print('⚡ Boss at X150 - Final phase mechanics!');
     attackCooldown *= 0.7;
     speed *= 1.5;

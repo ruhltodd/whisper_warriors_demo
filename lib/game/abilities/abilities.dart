@@ -1,14 +1,11 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
-import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/damage/damage_tracker.dart';
-import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
-import 'package:flame/palette.dart';
 
 /// Enum for ability types (optional, for categorization)
 enum AbilityType { passive, onHit, onKill, aura, scaling, projectile }
@@ -103,7 +100,7 @@ class WhisperingFlames extends Component
         int enemiesInRange = 0;
         for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
           double distance = (enemy.position - _player.position).length;
-          if (distance < range && !enemy.blocksRange) {
+          if (distance < range) {
             enemiesInRange++;
             bool isCritical =
                 gameRef.random.nextDouble() < (_player.critChance / 100);
@@ -113,7 +110,10 @@ class WhisperingFlames extends Component
 
             print(
                 '🔥 WhisperingFlames hitting enemy at distance $distance with $finalDamage damage (Crit: $isCritical)');
-            _dealDamageToEnemy(enemy, finalDamage, isCritical);
+            enemy.takeDamage(finalDamage.toDouble(), isCritical: isCritical);
+
+            // Use onHit to record the damage instead of direct damageReport access
+            onHit(_player, enemy, finalDamage, isCritical: isCritical);
           }
         }
         print('🔥 WhisperingFlames found $enemiesInRange enemies in range');
@@ -162,20 +162,6 @@ class WhisperingFlames extends Component
     // This is just to satisfy the Ability interface
   }
 
-  void _dealDamageToEnemy(BaseEnemy enemy, int finalDamage, bool isCritical) {
-    enemy.takeDamage(finalDamage.toDouble(), isCritical: isCritical);
-
-    // Use orange sprites for Whispering Flames
-    gameRef.add(DamageNumber(
-      finalDamage,
-      enemy.position,
-      isCritical: isCritical,
-      customColor: Colors.orange, // Use orange for Whispering Flames
-    ));
-
-    onHit(_player, enemy, finalDamage, isCritical: isCritical);
-  }
-
   double _lastDebugPrint = 0;
   bool _shouldPrintDebug() {
     double currentTime = DateTime.now().millisecondsSinceEpoch / 1000;
@@ -222,7 +208,7 @@ class ShadowBlades extends PositionComponent implements Ability {
       _timeSinceLastTick = 0;
 
       BaseEnemy? target = findClosestEnemy(player);
-      if (target != null && !target.blocksRange) {
+      if (target != null) {
         final direction = (target.position - player.position).normalized();
         final rotationAngle = direction.angleToSigned(Vector2(1, 0));
 
@@ -347,10 +333,6 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
 
     startPosition = position.clone();
     angle = rotationAngle;
-  }
-
-  void stopProjectile() {
-    maxDistance = 0;
   }
 
   @override
