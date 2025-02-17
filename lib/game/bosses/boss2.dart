@@ -291,7 +291,9 @@ class Boss2 extends BaseEnemy with Staggerable {
 
   @override
   void takeDamage(double baseDamage,
-      {bool isCritical = false, bool isEchoed = false}) {
+      {bool isCritical = false,
+      bool isEchoed = false,
+      bool isFlameDamage = false}) {
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }

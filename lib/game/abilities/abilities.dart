@@ -1,11 +1,14 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
+import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/damage/damage_tracker.dart';
+import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/main.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
+import 'package:flame/palette.dart';
 
 /// Enum for ability types (optional, for categorization)
 enum AbilityType { passive, onHit, onKill, aura, scaling, projectile }
@@ -110,10 +113,7 @@ class WhisperingFlames extends Component
 
             print(
                 '🔥 WhisperingFlames hitting enemy at distance $distance with $finalDamage damage (Crit: $isCritical)');
-            enemy.takeDamage(finalDamage.toDouble(), isCritical: isCritical);
-
-            // Use onHit to record the damage instead of direct damageReport access
-            onHit(_player, enemy, finalDamage, isCritical: isCritical);
+            _dealDamageToEnemy(enemy, finalDamage, isCritical);
           }
         }
         print('🔥 WhisperingFlames found $enemiesInRange enemies in range');
@@ -160,6 +160,20 @@ class WhisperingFlames extends Component
   void onUpdate(Player player, double dt) {
     // The actual update logic is handled in the Component's update() method
     // This is just to satisfy the Ability interface
+  }
+
+  void _dealDamageToEnemy(BaseEnemy enemy, int finalDamage, bool isCritical) {
+    enemy.takeDamage(finalDamage.toDouble(), isCritical: isCritical);
+
+    // Use orange sprites for Whispering Flames
+    gameRef.add(DamageNumber(
+      finalDamage,
+      enemy.position,
+      isCritical: isCritical,
+      customColor: Colors.orange, // Use orange for Whispering Flames
+    ));
+
+    onHit(_player, enemy, finalDamage, isCritical: isCritical);
   }
 
   double _lastDebugPrint = 0;

@@ -84,18 +84,24 @@ class Projectile extends SpriteAnimationComponent
         spriteSheet,
         SpriteAnimationData.sequenced(
           amount: 4, // ✅ Number of frames
-          stepTime: 0.3, // ✅ Adjust animation speed
+          stepTime: 0.2, // ✅ Adjust animation speed
           textureSize: Vector2(80, 80), // ✅ Each frame size
           loop: true, // ✅ Keeps looping while projectile is active
         ),
       );
     } else {
-      final normalSprite = await gameRef.loadSprite('projectile_normal.png');
+      final normalSpriteSheet =
+          await gameRef.images.load('projectile_normal.png');
 
-      // ✅ Single-frame animation for normal projectiles
-      animation = SpriteAnimation.spriteList(
-        [normalSprite],
-        stepTime: double.infinity, // ✅ Static sprite, never loops
+      // ✅ Assign animation for normal projectile
+      animation = SpriteAnimation.fromFrameData(
+        normalSpriteSheet,
+        SpriteAnimationData.sequenced(
+          amount: 4, // ✅ Adjust this based on sprite sheet
+          stepTime: 0.2, // ✅ Keep consistent with boss projectile
+          textureSize: Vector2(50, 50), // ✅ Ensure correct frame size
+          loop: true,
+        ),
       );
     }
 

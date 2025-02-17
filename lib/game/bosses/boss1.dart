@@ -6,6 +6,7 @@ import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/bosses/staggerbar.dart';
+import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/inventory/loottable.dart';
 import 'package:whisper_warriors/game/items/lootbox.dart';
 import 'package:whisper_warriors/game/items/items.dart';
@@ -17,18 +18,21 @@ import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
 import 'staggerable.dart';
 import 'package:flame/timer.dart';
-import 'package:whisper_warriors/game/main.dart';
+import 'package:whisper_warriors/game/main.dart'; //Import it here!
+import 'package:whisper_warriors/game/abilities/abilities.dart';
 
 class Boss1 extends BaseEnemy with Staggerable {
   final ValueNotifier<double> healthNotifier;
   bool enraged = false;
   bool isFading = false;
+  bool _startTeleportation = false;
   bool hasTriggeredX195 = false;
   bool hasTriggeredX190 = false;
   bool hasTriggeredX165 = false;
   bool hasTriggeredX150 = false;
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
+  double _timeSinceLastTeleportShoot = 0;
   final double damageNumberInterval = 0.5;
   bool hasDroppedItem = false;
   final Function(double) onHealthChanged;
@@ -43,6 +47,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   int attackCount = 0;
   bool alternatePattern = false;
   bool _hasLanded = false;
+  bool _tripleDamaged = false;
   Timer? _playerStandingTimer;
   Timer? _projectileTimer;
   Vector2? _lastPlayerPosition;
@@ -53,6 +58,11 @@ class Boss1 extends BaseEnemy with Staggerable {
   bool _isExecutingTargetedAttack = false;
   late BossHealthBar healthBar;
   final double segmentSize; // Store segmentSize
+  //Double Vars
+  double originalSpeed = 0;
+  double originalAttackCooldown = 0;
+  //ADD THIS
+  double _teleportShootRemainingTime = 0;
 
   Boss1({
     required Player player,
@@ -110,6 +120,9 @@ class Boss1 extends BaseEnemy with Staggerable {
       ),
     );
 
+    originalSpeed = speed;
+    originalAttackCooldown = attackCooldown;
+
     animation = idleAnimation;
     add(RectangleHitbox());
     gameRef.add(staggerBar);
@@ -141,7 +154,20 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
 
     _updateMovement(dt);
+
     if (isFading) {
+      _teleportShootRemainingTime -= dt;
+      if (_teleportShootRemainingTime > 0 && _startTeleportation == true) {
+        _teleportOutsidePlayerRange();
+        print('🚀 Projectile is being called! $_teleportShootRemainingTime');
+        _shootRandomProjectiles(dt);
+      } else if (_teleportShootRemainingTime > 0) {
+      } else {
+        isFading = false;
+        _teleportShootRemainingTime = 0;
+        _returnToNormalState();
+      }
+
       removeWhere((component) => component is RectangleHitbox);
     }
 
@@ -269,18 +295,25 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   @override
   void takeDamage(double baseDamage,
-      {bool isCritical = false, bool isEchoed = false}) {
-    //super.takeDamage(baseDamage, isCritical: isCritical, isEchoed: isEchoed);
+      {bool isCritical = false,
+      bool isEchoed = false,
+      bool isFlameDamage = false}) {
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
+
     int finalDamage = isCritical
         ? (baseDamage * player.critMultiplier).toInt()
         : baseDamage.toInt();
 
+    double newDamage = finalDamage.toDouble();
+    if (_tripleDamaged == true) {
+      newDamage = finalDamage * 3;
+    }
+
     // Apply damage to the local class
     double currentHealth = healthNotifier.value;
-    currentHealth -= finalDamage;
+    currentHealth -= newDamage;
     // Update
     healthNotifier.value = currentHealth.toDouble();
 
@@ -295,66 +328,6 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
 
     applyStaggerDamage(finalDamage, isCritical: isCritical);
-  }
-
-  void _enterFadingPhase() {
-    isFading = true;
-    add(OpacityEffect.to(0.0, EffectController(duration: 2.0)));
-  }
-
-  void _enterEnrageMode() {
-    speed *= 0.5;
-    attackCooldown *= 0.7;
-
-    add(ScaleEffect.to(Vector2.all(1.2), EffectController(duration: 0.5))
-      ..onComplete = () {
-        add(OpacityEffect.to(
-          0.7,
-          EffectController(duration: 0.5),
-        ));
-      });
-  }
-
-  void _knockback(Vector2 force) {
-    add(MoveEffect.by(force, EffectController(duration: 0.2)));
-  }
-
-  @override
-  void die() {
-    if (!hasDroppedItem) {
-      hasDroppedItem = true;
-      final dropItems = _getDropItems();
-
-      final lootBox =
-          LootBox(items: dropItems.map((dropItem) => dropItem.item).toList());
-      lootBox.position = position.clone();
-      gameRef.add(lootBox);
-
-      print("🗃️ LootBox spawned at position: ${lootBox.position}");
-    }
-
-    onDeath();
-    gameRef.add(Explosion(position));
-    removeFromParent();
-
-    if (gameRef.spawnController != null) {
-      gameRef.spawnController!.onBoss1Death();
-    } else {
-      print("⚠️ SpawnController is missing! Boss2 won't spawn.");
-    }
-  }
-
-  List<DropItem> _getDropItems() {
-    final List<DropItem> dropItems = [];
-
-    dropItems.add(DropItem(item: GoldCoin()));
-
-    final item = LootTable.getRandomLoot();
-    if (item != null) {
-      dropItems.add(DropItem(item: item));
-    }
-
-    return dropItems;
   }
 
   @override
@@ -450,6 +423,105 @@ class Boss1 extends BaseEnemy with Staggerable {
     timeSinceLastAttack = 0;
   }
 
+  void _teleportOutsidePlayerRange() {
+    final Vector2 playerPos = player.position;
+    Vector2 newPosition;
+    int attempts = 0; // Track the number of attempts to find an area
+
+    do {
+      // Calculate a random offset vector for the new position
+      double angle = random.nextDouble() * 2 * pi; // Angle in radians
+      double distance = 100 +
+          (random.nextDouble() *
+              500); // Distance between 100 and 600 pixels. This creates a random distance to move!
+
+      Vector2 offset = Vector2(cos(angle) * distance,
+          sin(angle) * distance); // Calc the position with a randomized angle
+
+      newPosition = playerPos + offset; //This will find all of the positions.
+
+      attempts++;
+
+      if (attempts > 100) break;
+    } while (newPosition.x < 0 ||
+        newPosition.x > gameRef.size.x ||
+        newPosition.y < 0 ||
+        newPosition.y > gameRef.size.y);
+
+    //Ensure this code only calls if there is any thing on those areas
+    if (attempts > 100) {
+      newPosition = Vector2(1280 / 2, 1280 / 2); //Center
+    }
+
+    position = newPosition;
+    print('🚀 Boss teleported to $position');
+  }
+
+  void _shootRandomProjectiles(double dt) {
+    _timeSinceLastTeleportShoot += dt;
+
+    if (_timeSinceLastTeleportShoot >= 1.0) {
+      _timeSinceLastTeleportShoot = 0;
+      for (int i = 0; i < 6; i++) {
+        double angle = random.nextDouble() * (pi * 2);
+        Vector2 velocity = Vector2(cos(angle), sin(angle)) * 500;
+
+        final bossProjectile = Projectile.bossProjectile(
+          damage: 15,
+          velocity: velocity,
+        )
+          ..position = position.clone()
+          ..size = Vector2(40, 40)
+          ..anchor = Anchor.center;
+
+        gameRef.add(bossProjectile);
+      }
+      print('💥 Boss fired projectiles');
+    }
+  }
+
+  void _returnToNormalState() {
+    print('⚡ Boss returning to normal!');
+
+    isFading = false;
+    blocksRange = false;
+    attackCooldown = originalAttackCooldown;
+    speed = originalSpeed;
+
+    add(OpacityEffect.to(1.0, EffectController(duration: 1.5)));
+
+    add(RectangleHitbox());
+  }
+
+  void _enterFadingPhase() {
+    print('⚡ Boss at X165 - Entering Final Phase Mechanics!');
+    if (isFading) return;
+    //StoreIt
+    double originalSpeed = speed;
+    double originalAttackCooldown = attackCooldown;
+
+    isFading = true;
+    _startTeleportation = false;
+    _teleportShootRemainingTime = 15;
+    print('🕶 Boss is now fading...');
+
+    add(OpacityEffect.to(0.0, EffectController(duration: 1.5), onComplete: () {
+      print('🕵️‍♂️ Opacity effect finished, starting teleport phase.');
+      _startTeleportation = true;
+      removeWhere((component) => component is RectangleHitbox);
+      attackCooldown = 9999;
+      _tripleDamaged = true;
+    }));
+  }
+
+  @override
+  void onRemove() {
+    _playerStandingTimer?.stop();
+    _projectileTimer?.stop();
+    _warningCircle?.removeFromParent();
+    super.onRemove();
+  }
+
   void triggerX195Mechanics() {
     print('🔥 Boss at X195 - Triggering new mechanics!');
     // Increase attack speed
@@ -465,103 +537,20 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void triggerX165Mechanics() {
-    print('⚡ Boss at X165 - Entering Final Phase Mechanics!');
-
     if (isFading) return;
+    //This variable needs to be in here, since we only run this mechanic in here
+    _teleportShootRemainingTime = 15;
     isFading = true;
     blocksRange = true;
     print('🕶 Boss is now fading...');
-    double originalSpeed = speed;
-    double originalAttackCooldown = attackCooldown;
 
-    add(OpacityEffect.to(0.0, EffectController(duration: 1.5), onComplete: () {
-      print('🕵️‍♂️ Opacity effect finished, starting teleport phase.');
-      removeWhere((component) => component is RectangleHitbox);
-      attackCooldown = 9999;
-
-      _teleportAndShootLoop(15, originalSpeed, originalAttackCooldown);
-    }));
-  }
-
-  void _teleportAndShootLoop(int durationInSeconds, double originalSpeed,
-      double originalAttackCooldown) {
-    int remainingTime = durationInSeconds;
-    print('🚀 Teleport sequence started! Duration: $durationInSeconds seconds');
-    Timer shootingTimer = Timer(3, repeat: true, onTick: () {
-      if (remainingTime <= 0) {
-        _returnToNormalState(originalSpeed, originalAttackCooldown);
-        return;
-      }
-
-      _teleportOutsidePlayerRange();
-      _shootRandomProjectiles();
-      remainingTime -= 3;
-      print('🚀 Projectile shot! Remaining: $remainingTime seconds');
-    });
-
-    shootingTimer.start();
-  }
-
-  void _teleportOutsidePlayerRange() {
-    final Vector2 playerPos = player.position;
-    Vector2 newPosition;
-
-    do {
-      newPosition = Vector2(
-        playerPos.x + (random.nextDouble() * 800 - 400),
-        playerPos.y + (random.nextDouble() * 800 - 400),
-      );
-    } while (
-        (newPosition - playerPos).x < 256 && (newPosition - playerPos).y < 256);
-
-    position = newPosition;
-    print('🚀 Boss teleported to $position');
-  }
-
-  void _shootRandomProjectiles() {
-    int numProjectiles = 6 + random.nextInt(4);
-    for (int i = 0; i < numProjectiles; i++) {
-      double angle = random.nextDouble() * (pi * 2);
-      Vector2 velocity = Vector2(cos(angle), sin(angle)) * 600;
-
-      final bossProjectile = Projectile.bossProjectile(
-        damage: 15,
-        velocity: velocity,
-      )
-        ..position = position.clone()
-        ..size = Vector2(40, 40)
-        ..anchor = Anchor.center;
-
-      gameRef.add(bossProjectile);
-    }
-    print('💥 Boss fired projectiles');
-  }
-
-  void _returnToNormalState(
-      double originalSpeed, double originalAttackCooldown) {
-    print('⚡ Boss returning to normal!');
-
-    isFading = false;
-    blocksRange = true;
-    attackCooldown = originalAttackCooldown;
-    speed = originalSpeed;
-
-    add(OpacityEffect.to(1.0, EffectController(duration: 1.5), onComplete: () {
-      add(RectangleHitbox());
-    }));
+    add(OpacityEffect.to(0.0, EffectController(duration: 1.5)));
+    removeWhere((component) => component is RectangleHitbox);
   }
 
   void triggerX150Mechanics() {
     print('⚡ Boss at X150 - Final phase mechanics!');
     attackCooldown *= 0.7;
     speed *= 1.5;
-  }
-
-  @override
-  void onRemove() {
-    _playerStandingTimer?.stop();
-    _projectileTimer?.stop();
-    _warningCircle?.removeFromParent();
-    super.onRemove();
   }
 }

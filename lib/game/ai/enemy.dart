@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart'; // Import for VoidCallback
+import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/ai/wave2Enemy.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/player/player.dart';
@@ -26,7 +27,10 @@ abstract class BaseEnemy extends SpriteAnimationComponent
 
   bool hasExploded = false;
   bool hasDroppedItem = false;
+  //New Code
   bool blocksRange = false;
+  bool isFading = false;
+  bool _isDead = false;
 
   BaseEnemy({
     required this.player,
@@ -69,27 +73,29 @@ abstract class BaseEnemy extends SpriteAnimationComponent
       double enemyScaling = PlayerProgressManager.getEnemyScaling();
       int scaledDamage = (1 * enemyScaling).round();
       player.takeDamage(scaledDamage.toDouble());
-      removeFromParent();
+      Future.delayed(const Duration(milliseconds: 100), () {
+        print('🛑 Delayed enemy removal.');
+        removeFromParent();
+      });
     }
   }
 
   void takeDamage(double amount,
-      {bool isCritical = false, bool isEchoed = false}) {
+      {bool isCritical = false,
+      bool isEchoed = false,
+      bool isFlameDamage = false}) {
     if (_baseHealth <= 0) return;
 
-    // Convert damage to int for health calculation
     int damageAmount = amount.round();
     _baseHealth -= damageAmount;
 
-    // Add damage number display
-    // Show damage number
     if (timeSinceLastDamageNumber >= damageNumberInterval) {
-      final damageNumber = DamageNumber(
+      gameRef.add(DamageNumber(
         damageAmount,
         position.clone(),
         isCritical: isCritical,
-      );
-      gameRef.add(damageNumber);
+        customColor: isFlameDamage ? const Color(0xFFFFA500) : null,
+      ));
       timeSinceLastDamageNumber = 0;
     }
 
@@ -101,7 +107,9 @@ abstract class BaseEnemy extends SpriteAnimationComponent
     }
   }
 
+  @override
   void die() {
+    _isDead = true;
     if (!hasExploded && gameRef.player.hasAbility<SoulFracture>()) {
       hasExploded = true;
       gameRef.add(Explosion(position)); // ✅ Explosion animation

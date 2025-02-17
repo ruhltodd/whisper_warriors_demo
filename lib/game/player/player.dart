@@ -80,6 +80,7 @@ class Player extends PositionComponent
   bool projectilesShouldPierce = false; // ✅ Track if projectiles should pierce
 
   bool isDead = false;
+  bool _isDead = false;
 
   // Special Player Stats
   double vampiricHealing = 0;
@@ -368,8 +369,8 @@ class Player extends PositionComponent
   }
 
   void updateMovement(double dt) {
-    if (!isMounted || isDead) {
-      return; // Don't do anything if dead or unmounted
+    if (!isMounted) {
+      return; // Don't do anything if unmounted
     }
 
     Vector2 totalMovement = movementDirection + _joystickDelta;
@@ -391,35 +392,26 @@ class Player extends PositionComponent
           Vector2(-healthBar!.size.x / 2, -size.y / 2 - healthBar!.size.y - 5);
     }
 
-    // Only update abilities and shooting if not dead
-    if (!isDead) {
-      // Update abilities
-      for (var ability in abilities) {
-        ability.onUpdate(this, dt);
-      }
+    //NEW CODE: find ALL bosses, and see if one of them is fading
+    final bosses = gameRef.children.whereType<Boss1>().toList();
+    final targetable = bosses.isEmpty || bosses.any((boss) => !boss.isFading);
 
-      //NEW CODE: find ALL bosses, and see if one of them is fading
-      final bosses = gameRef.children.whereType<Boss1>().toList();
-      final targetable =
-          bosses.isEmpty || bosses.every((boss) => !boss.isFading);
-
-      // Handle shooting
-      timeSinceLastShot += dt;
-      if (timeSinceLastShot >= (1 / attackSpeed) &&
-          closestEnemy != null &&
-          targetable) {
-        final projectile = Projectile.shootFromPlayer(
-          player: this,
-          targetPosition: closestEnemy!.position,
-          projectileSpeed: 500,
-          damage: damage.toDouble(),
-          onHit: (enemy) {
-            // Handle any specific on-hit effects if needed
-          },
-        );
-        gameRef.add(projectile);
-        timeSinceLastShot = 0.0;
-      }
+    // Handle shooting
+    timeSinceLastShot += dt;
+    if (timeSinceLastShot >= (1 / attackSpeed) &&
+        closestEnemy != null &&
+        targetable) {
+      final projectile = Projectile.shootFromPlayer(
+        player: this,
+        targetPosition: closestEnemy!.position,
+        projectileSpeed: 500,
+        damage: damage.toDouble(),
+        onHit: (enemy) {
+          // Handle any specific on-hit effects if needed
+        },
+      );
+      gameRef.add(projectile);
+      timeSinceLastShot = 0.0;
     }
   }
 
@@ -468,7 +460,7 @@ class Player extends PositionComponent
       if (fireAura != null) {
         fireAura.removeFromParent();
       }
-
+      _isDead = true;
       onDeath();
     } else {
       healthBar?.updateHealth(currentHealth.toInt(), maxHealth.toInt());

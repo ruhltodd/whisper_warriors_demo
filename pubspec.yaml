@@ -109,6 +109,16 @@ flutter:
     - assets/images/7.png
     - assets/images/8.png
     - assets/images/9.png
+    - assets/images/0-or.png
+    - assets/images/1-or.png
+    - assets/images/2-or.png
+    - assets/images/3-or.png
+    - assets/images/4-or.png
+    - assets/images/5-or.png
+    - assets/images/6-or.png
+    - assets/images/7-or.png
+    - assets/images/8-or.png
+    - assets/images/9-or.png
     - assets/audio/mystical-winds.mp3
     - assets/audio/soft_etheral.mp3
     - assets/audio/game_over.mp3
