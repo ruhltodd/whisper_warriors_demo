@@ -26,6 +26,7 @@ abstract class BaseEnemy extends SpriteAnimationComponent
 
   bool hasExploded = false;
   bool hasDroppedItem = false;
+  bool blocksRange = false;
 
   BaseEnemy({
     required this.player,

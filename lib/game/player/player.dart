@@ -398,6 +398,7 @@ class Player extends PositionComponent
         ability.onUpdate(this, dt);
       }
 
+      //NEW CODE: find ALL bosses, and see if one of them is fading
       final bosses = gameRef.children.whereType<Boss1>().toList();
       final targetable =
           bosses.isEmpty || bosses.every((boss) => !boss.isFading);

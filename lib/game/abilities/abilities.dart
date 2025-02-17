@@ -100,7 +100,7 @@ class WhisperingFlames extends Component
         int enemiesInRange = 0;
         for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
           double distance = (enemy.position - _player.position).length;
-          if (distance < range) {
+          if (distance < range && !enemy.blocksRange) {
             enemiesInRange++;
             bool isCritical =
                 gameRef.random.nextDouble() < (_player.critChance / 100);
@@ -208,7 +208,7 @@ class ShadowBlades extends PositionComponent implements Ability {
       _timeSinceLastTick = 0;
 
       BaseEnemy? target = findClosestEnemy(player);
-      if (target != null) {
+      if (target != null && !target.blocksRange) {
         final direction = (target.position - player.position).normalized();
         final rotationAngle = direction.angleToSigned(Vector2(1, 0));
 
@@ -333,6 +333,10 @@ class ShadowBladeProjectile extends SpriteAnimationComponent
 
     startPosition = position.clone();
     angle = rotationAngle;
+  }
+
+  void stopProjectile() {
+    maxDistance = 0;
   }
 
   @override

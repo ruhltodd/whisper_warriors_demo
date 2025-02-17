@@ -469,6 +469,7 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     if (isFading) return;
     isFading = true;
+    blocksRange = true;
     print('🕶 Boss is now fading...');
     double originalSpeed = speed;
     double originalAttackCooldown = attackCooldown;
@@ -541,6 +542,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     print('⚡ Boss returning to normal!');
 
     isFading = false;
+    blocksRange = true;
     attackCooldown = originalAttackCooldown;
     speed = originalSpeed;
 
