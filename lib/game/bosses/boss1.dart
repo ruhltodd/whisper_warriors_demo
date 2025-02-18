@@ -241,8 +241,8 @@ class Boss1 extends BaseEnemy with Staggerable {
     updateOrbitalProjectiles(dt);
 
     if (_isPerformingOrbitalAttack) {
-      // Keep boss centered using world size
-      position = Vector2(1280 / 2, 1280 / 2);
+      // Keep boss centered at adjusted height
+      position = Vector2(1280 / 2, (1280 / 2) - 100);
 
       // Update orbital projectiles
       if (_orbitalProjectiles.isNotEmpty) {
@@ -337,7 +337,7 @@ class Boss1 extends BaseEnemy with Staggerable {
         velocity: projectileVelocity,
       )
         ..position = spawnPosition
-        ..size = Vector2(40, 40)
+        ..size = Vector2(65, 65)
         ..anchor = Anchor.center;
 
       gameRef.add(bossProjectile);
@@ -637,8 +637,8 @@ class Boss1 extends BaseEnemy with Staggerable {
   void triggerX150Mechanics() {
     print('💫 Boss at X150 - Creating orbital trap!');
     createOrbitalAttack(
-        projectileCount: 16,
-        radius: 600.0, // Large radius to trap player
+        projectileCount: 32,
+        radius: 400.0, // Large radius to trap player
         speed: 3.0, // Rotation speed
         projectileDamage: 25.0);
 
@@ -651,7 +651,7 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   void createOrbitalAttack({
     int projectileCount = 16,
-    double radius = 600.0,
+    double radius = 400.0, // Reduced radius to ensure visibility
     double speed = 3.0,
     double projectileDamage = 25.0,
   }) {
@@ -665,8 +665,8 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
     _orbitalProjectiles.clear();
 
-    // Use world size for positioning
-    position = Vector2(1280 / 2, 1280 / 2);
+    // Position slightly higher to ensure bottom of circle is visible
+    position = Vector2(1280 / 2, (1280 / 2) - 100); // Moved up by 100 pixels
     anchor = Anchor.center;
     speed = 0;
 
@@ -689,7 +689,7 @@ class Boss1 extends BaseEnemy with Staggerable {
         velocity: Vector2.zero(),
       )
         ..position = position + offset
-        ..size = Vector2(50, 50)
+        ..size = Vector2(65, 65)
         ..anchor = Anchor.center;
 
       gameRef.add(projectile);
