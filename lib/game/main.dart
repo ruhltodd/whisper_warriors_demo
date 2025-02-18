@@ -349,7 +349,7 @@ class RogueShooterGame extends FlameGame
         selectedAbilities: selectedAbilities,
         equippedItems: equippedItems,
       )
-        ..position = Vector2(size.x / 2, size.y / 2)
+        ..position = Vector2(1280 / 2, 1280 / 2)
         ..size = Vector2(64, 64);
       add(player);
 

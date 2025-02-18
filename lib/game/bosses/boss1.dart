@@ -81,7 +81,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     required this.onDeath,
     required this.onStaggerChanged,
     required this.bossStaggerNotifier,
-    this.segmentSize = 1000, // Default segmentSize
+    this.segmentSize = 1000,
   })  : healthNotifier = ValueNotifier(health.toDouble()),
         super(
           player: player,
@@ -90,6 +90,8 @@ class Boss1 extends BaseEnemy with Staggerable {
           size: size,
         ) {
     maxHealth = health.toDouble();
+    anchor = Anchor.center; // Set anchor in constructor
+    print('🎯 Boss constructor - Setting initial position');
     staggerBar = StaggerBar(maxStagger: 100.0, currentStagger: 0); // Mocked
     healthBar = BossHealthBar(
       // Mocked
@@ -109,6 +111,15 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   @override
   Future<void> onLoad() async {
+    print('🎯 Boss onLoad - Before position set');
+    print('🎯 Screen size: ${gameRef.size}');
+    print('🎯 World size: 1280x1280');
+
+    // Use world size instead of screen size
+    position = Vector2(1280 / 2, 1280 / 2);
+    anchor = Anchor.center;
+    print('🎯 Boss onLoad - After position set: $position');
+
     // Mock animations (replace with your actual loading)
     idleAnimation = await gameRef.loadSpriteAnimation(
       'boss1_idle.png',
@@ -230,8 +241,8 @@ class Boss1 extends BaseEnemy with Staggerable {
     updateOrbitalProjectiles(dt);
 
     if (_isPerformingOrbitalAttack) {
-      // Keep boss centered
-      position = Vector2(gameRef.size.x / 2, gameRef.size.y / 2);
+      // Keep boss centered using world size
+      position = Vector2(1280 / 2, 1280 / 2);
 
       // Update orbital projectiles
       if (_orbitalProjectiles.isNotEmpty) {
@@ -646,16 +657,20 @@ class Boss1 extends BaseEnemy with Staggerable {
   }) {
     _isPerformingOrbitalAttack = true;
 
+    print('🎯 Creating orbital attack - Current position: $position');
+
     // Clear any existing orbital projectiles
     for (var proj in _orbitalProjectiles) {
       proj.removeFromParent();
     }
     _orbitalProjectiles.clear();
 
-    // Use the same position calculation as boss spawn
-    position = Vector2(gameRef.size.x / 2, gameRef.size.y / 2);
-    anchor = Anchor.center; // Ensure anchor is centered
-    speed = 0; // Stop boss movement
+    // Use world size for positioning
+    position = Vector2(1280 / 2, 1280 / 2);
+    anchor = Anchor.center;
+    speed = 0;
+
+    print('🎯 After setting orbital position: $position');
 
     _orbitalRadius = radius;
     _orbitalSpeed = speed;
