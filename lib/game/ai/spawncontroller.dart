@@ -84,8 +84,8 @@ class SpawnController extends Component {
 
       BaseEnemy enemy;
 
-      int baseHealth = 300; // Default health
-      double baseSpeed = 70; // Default Speed
+      int baseHealth = 3000; // Default health
+      double baseSpeed = 50; // Default Speed
 
       if (game.elapsedTime >= 60) {
         if (Random().nextBool()) {

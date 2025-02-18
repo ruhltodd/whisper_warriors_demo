@@ -65,6 +65,12 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   double _teleportShootRemainingTime = 0; // Keep this
 
+  // Add these properties
+  List<Projectile> _orbitalProjectiles = [];
+  double _orbitalRadius = 600.0; // Increased radius
+  double _orbitalSpeed = 3.0;
+  double _orbitalAngle = 0.0;
+
   Boss1({
     required Player player,
     required int health,
@@ -227,6 +233,9 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (_isTargetingPlayer && _projectileTimer != null) {
       _projectileTimer!.update(dt);
     }
+
+    // Add this to your existing update method
+    updateOrbitalProjectiles(dt);
   }
 
   void setLanded(bool value) {
@@ -527,17 +536,17 @@ class Boss1 extends BaseEnemy with Staggerable {
     gameRef.player.disableShooting();
     print('🎯 Boss marked as untargetable');
 
-    // Start fade effect
+    // Longer, dramatic fade out
     add(OpacityEffect.to(
       0.0,
-      EffectController(duration: 1.5),
+      EffectController(duration: 3.0), // Longer fade out
       onComplete: () {
-        print('🌟 Boss fade complete - waiting before teleport phase');
-        // Move off-screen immediately after fade
-        position = Vector2(-9999, -9999);
+        print('🌟 Boss fade complete - becoming invisible');
+        opacity = 0; // Ensure complete invisibility
+        position = Vector2(-9999, -9999); // Move off-screen
 
-        // Add delay before starting teleport phase
-        Future.delayed(Duration(seconds: 2), () {
+        // Add longer delay before starting teleport phase
+        Future.delayed(Duration(seconds: 3), () {
           if (isMounted) {
             _startTeleportAndShootPhase();
           }
@@ -548,7 +557,6 @@ class Boss1 extends BaseEnemy with Staggerable {
     pauseNormalAttackPattern();
     removeWhere((component) => component is RectangleHitbox);
 
-    // Adjust the timing to account for fade (1.5s) + delay (2s)
     Future.delayed(Duration(seconds: 15), () {
       if (isMounted) {
         isTargetable = true;
@@ -559,8 +567,20 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _startTeleportAndShootPhase() {
-    print('👻 Boss starting teleport and shoot phase after delay');
-    // Your existing teleport and shoot logic here
+    print('👻 Boss starting teleport and shoot phase');
+    // Keep boss invisible during teleports
+    opacity = 0;
+    _teleportOutsidePlayerRange();
+
+    // Only add brief fade-in at the very end of the phase
+    Future.delayed(Duration(seconds: 14), () {
+      if (isMounted) {
+        add(OpacityEffect.to(
+          1.0,
+          EffectController(duration: 1.0),
+        ));
+      }
+    });
   }
 
   void triggerX195Mechanics() {
@@ -580,9 +600,98 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void triggerX150Mechanics() {
-    //No changes required
-    print('⚡ Boss at X150 - Final phase mechanics!');
-    attackCooldown *= 0.7;
-    speed *= 1.5;
+    print('💫 Boss at X150 - Creating large orbital attack!');
+    createOrbitalAttack(
+        projectileCount: 16, // More projectiles
+        radius: 300.0, // Larger radius
+        speed: 1.5, // Slightly slower for better visibility
+        projectileDamage: 25.0 // Increased damage
+        );
+
+    // Optional: Release after a delay
+    Future.delayed(Duration(seconds: 4), () {
+      if (isMounted) {
+        releaseOrbitalProjectiles();
+      }
+    });
+  }
+
+  void createOrbitalAttack({
+    int projectileCount = 12, // Increased default count
+    double radius = 300.0, // Increased default radius
+    double speed = 2.0,
+    double projectileDamage = 20.0,
+  }) {
+    // Clear any existing orbital projectiles
+    for (var proj in _orbitalProjectiles) {
+      proj.removeFromParent();
+    }
+    _orbitalProjectiles.clear();
+
+    // Move to center of screen before creating the circle
+    position = Vector2(gameRef.size.x / 2, gameRef.size.y / 2);
+
+    _orbitalRadius = radius;
+    _orbitalSpeed = speed;
+    _orbitalAngle = 0.0;
+
+    // Create projectiles in a circle
+    for (int i = 0; i < projectileCount; i++) {
+      double angle = (i * 2 * pi) / projectileCount;
+      Vector2 offset = Vector2(
+        cos(angle) * _orbitalRadius,
+        sin(angle) * _orbitalRadius,
+      );
+
+      final projectile = Projectile.bossProjectile(
+        damage: projectileDamage,
+        velocity: Vector2.zero(),
+      )
+        ..position = position + offset
+        ..size = Vector2(50, 50) // Larger projectiles
+        ..anchor = Anchor.center;
+
+      gameRef.add(projectile);
+      _orbitalProjectiles.add(projectile);
+    }
+  }
+
+  void updateOrbitalProjectiles(double dt) {
+    if (_orbitalProjectiles.isEmpty) return;
+
+    _orbitalAngle += _orbitalSpeed * dt * 2 * pi; // Convert to radians
+
+    for (int i = 0; i < _orbitalProjectiles.length; i++) {
+      var projectile = _orbitalProjectiles[i];
+      if (!projectile.isMounted) {
+        _orbitalProjectiles.removeAt(i);
+        i--;
+        continue;
+      }
+
+      double angle = _orbitalAngle + (i * 2 * pi) / _orbitalProjectiles.length;
+      Vector2 newOffset = Vector2(
+        cos(angle) * _orbitalRadius,
+        sin(angle) * _orbitalRadius,
+      );
+
+      projectile.position = position + newOffset;
+    }
+  }
+
+  // Add this method to release the projectiles outward
+  void releaseOrbitalProjectiles() {
+    for (var projectile in _orbitalProjectiles) {
+      if (!projectile.isMounted) continue;
+
+      // Calculate direction from boss to projectile
+      Vector2 direction = (projectile.position - position).normalized();
+
+      // Set velocity in that direction
+      projectile.velocity = direction * 500; // Adjust speed as needed
+    }
+
+    _orbitalProjectiles
+        .clear(); // Clear the list since we're no longer controlling them
   }
 }
