@@ -85,7 +85,7 @@ class Projectile extends SpriteAnimationComponent
         SpriteAnimationData.sequenced(
           amount: 4, // ✅ Number of frames
           stepTime: 0.15, // ✅ Adjust animation speed
-          textureSize: Vector2(65, 65), // ✅ Each frame size
+          textureSize: Vector2(50, 50), // ✅ Each frame size
           loop: true, // ✅ Keeps looping while projectile is active
         ),
       );

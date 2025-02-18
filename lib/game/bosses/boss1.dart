@@ -337,7 +337,7 @@ class Boss1 extends BaseEnemy with Staggerable {
         velocity: projectileVelocity,
       )
         ..position = spawnPosition
-        ..size = Vector2(65, 65)
+        ..size = Vector2(50, 50)
         ..anchor = Anchor.center;
 
       gameRef.add(bossProjectile);
@@ -543,6 +543,10 @@ class Boss1 extends BaseEnemy with Staggerable {
     attackCooldown = originalAttackCooldown;
     speed = originalSpeed;
 
+    // Remove any existing color effects first
+    removeWhere((component) => component is ColorEffect);
+
+    // Add fade-in effect
     add(OpacityEffect.to(
       1.0,
       EffectController(duration: 1.5),
@@ -666,7 +670,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     _orbitalProjectiles.clear();
 
     // Position slightly higher to ensure bottom of circle is visible
-    position = Vector2(1280 / 2, (1280 / 2) - 100); // Moved up by 100 pixels
+    position = Vector2(1280 / 2, (1280 / 2) - 50); // Moved up by 100 pixels
     anchor = Anchor.center;
     speed = 0;
 
@@ -689,7 +693,7 @@ class Boss1 extends BaseEnemy with Staggerable {
         velocity: Vector2.zero(),
       )
         ..position = position + offset
-        ..size = Vector2(65, 65)
+        ..size = Vector2(50, 50)
         ..anchor = Anchor.center;
 
       gameRef.add(projectile);
