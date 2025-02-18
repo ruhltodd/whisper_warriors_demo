@@ -20,6 +20,7 @@ import 'staggerable.dart';
 import 'package:flame/timer.dart';
 import 'package:whisper_warriors/game/main.dart'; //Import it here!
 import 'package:whisper_warriors/game/abilities/abilities.dart';
+import 'dart:async'; // Add this import at the top
 
 class Boss1 extends BaseEnemy with Staggerable {
   final ValueNotifier<double> healthNotifier;
@@ -30,6 +31,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   bool hasTriggeredX190 = false;
   bool hasTriggeredX165 = false;
   bool hasTriggeredX150 = false;
+  bool hasTriggeredX100 = false;
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
   double _timeSinceLastTeleportShoot = 0;
@@ -71,6 +73,10 @@ class Boss1 extends BaseEnemy with Staggerable {
   double _orbitalSpeed = 3.0;
   double _orbitalAngle = 0.0;
   bool _isPerformingOrbitalAttack = false;
+  bool _isLockedInPlace = false; // Add this flag
+  double _storedSpeed = 0.0; // Add this to store original speed
+
+  Timer? _coneTimer; // Add timer as class property
 
   Boss1({
     required Player player,
@@ -169,28 +175,6 @@ class Boss1 extends BaseEnemy with Staggerable {
     print(
         '🤖 Boss Update - HasLanded: $_hasLanded, IsTargeting: $_isTargetingPlayer');
 
-    // Check segment thresholds and trigger mechanics
-    if (currentSegment <= 195 && !hasTriggeredX195) {
-      hasTriggeredX195 = true;
-      triggerX195Mechanics();
-    }
-
-    if (currentSegment <= 190 && !hasTriggeredX190) {
-      hasTriggeredX190 = true;
-      triggerX190Mechanics();
-    }
-
-    if (currentSegment <= 165 && !hasTriggeredX165) {
-      print('✅ TRIGGERING 165 MECHANICS!');
-      hasTriggeredX165 = true;
-      _enterFadingPhase(); // Use _enterFadingPhase directly
-    }
-
-    if (currentSegment <= 150 && !hasTriggeredX150) {
-      hasTriggeredX150 = true;
-      triggerX150Mechanics();
-    }
-
     updateStagger(dt);
     updateStaggerBar();
 
@@ -267,6 +251,39 @@ class Boss1 extends BaseEnemy with Staggerable {
         }
       }
     }
+
+    // Debug print for current segment
+    print(
+        '🔍 Current Segment: ${healthBar.currentSegment}, X100 Triggered: $hasTriggeredX100');
+
+    // Check segment thresholds and trigger mechanics
+    if (healthBar.currentSegment <= 195 && !hasTriggeredX195) {
+      hasTriggeredX195 = true;
+      triggerX195Mechanics();
+    }
+
+    if (healthBar.currentSegment <= 190 && !hasTriggeredX190) {
+      hasTriggeredX190 = true;
+      triggerX190Mechanics();
+    }
+
+    if (healthBar.currentSegment <= 165 && !hasTriggeredX165) {
+      print('✅ TRIGGERING 165 MECHANICS!');
+      hasTriggeredX165 = true;
+      _enterFadingPhase(); // Use _enterFadingPhase directly
+    }
+
+    if (healthBar.currentSegment <= 150 && !hasTriggeredX150) {
+      hasTriggeredX150 = true;
+      triggerX150Mechanics();
+    }
+
+    // Allow X100 to trigger while X150 is active
+    if (healthBar.currentSegment <= 100 && !hasTriggeredX100) {
+      print('✅ Health below 100');
+      hasTriggeredX100 = true;
+      triggerX100Mechanics();
+    }
   }
 
   void setLanded(bool value) {
@@ -274,24 +291,33 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _updateMovement(double dt) {
-    if (!_hasLanded) return;
+    // Early return if locked or not landed
+    if (!_hasLanded || _isLockedInPlace || healthBar.currentSegment <= 150) {
+      // Added segment check
+      // Still update animation even when locked
+      animation = idleAnimation;
+      return;
+    }
 
     final Vector2 direction = (player.position - position).normalized();
     final double distanceToPlayer = (player.position - position).length;
 
+    print(
+        'Distance to player: $distanceToPlayer, Targeting: $_isExecutingTargetedAttack');
+
     if (distanceToPlayer > 20) {
       animation = walkAnimation;
+      print('🚶 Setting walk animation');
       if (!_isExecutingTargetedAttack) {
         position += direction * speed * dt;
       }
     } else {
       animation = idleAnimation;
+      print('🧍 Setting idle animation');
     }
 
     if (distanceToPlayer < 10) {
-      print('💥 Boss collided with Player - dealing damage!');
       player.takeDamage(10);
-      player.position += -direction * 40;
     }
   }
 
@@ -544,7 +570,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     speed = originalSpeed;
 
     // Remove any existing color effects first
-    removeWhere((component) => component is ColorEffect);
+    removeAll(children.whereType<ColorEffect>());
 
     // Add fade-in effect
     add(OpacityEffect.to(
@@ -565,6 +591,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     _playerStandingTimer?.stop();
     _projectileTimer?.stop();
     _warningCircle?.removeFromParent();
+    _coneTimer?.stop();
     super.onRemove();
   }
 
@@ -640,24 +667,20 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   void triggerX150Mechanics() {
     print('💫 Boss at X150 - Creating orbital trap!');
-    createOrbitalAttack(
-        projectileCount: 32,
-        radius: 400.0, // Large radius to trap player
-        speed: 3.0, // Rotation speed
-        projectileDamage: 25.0);
+    _isLockedInPlace = true; // Lock the boss in place
+    position = Vector2(1280 / 2, (1280 / 2) - 100); // Center position
 
-    Future.delayed(Duration(seconds: 6), () {
-      if (isMounted) {
-        releaseOrbitalProjectiles();
-      }
-    });
+    createOrbitalAttack(
+        projectileCount: 32, radius: 400.0, speed: 3.0, projectileDamage: 25.0);
+
+    // Remove the automatic release - keep orbital attack until death
   }
 
   void createOrbitalAttack({
     int projectileCount = 16,
     double radius = 400.0, // Reduced radius to ensure visibility
     double speed = 3.0,
-    double projectileDamage = 25.0,
+    double projectileDamage = 9999.0, //one shot
   }) {
     _isPerformingOrbitalAttack = true;
 
@@ -689,7 +712,7 @@ class Boss1 extends BaseEnemy with Staggerable {
       );
 
       final projectile = Projectile.bossProjectile(
-        damage: projectileDamage,
+        damage: projectileDamage.toInt(),
         velocity: Vector2.zero(),
       )
         ..position = position + offset
@@ -737,5 +760,144 @@ class Boss1 extends BaseEnemy with Staggerable {
     _orbitalProjectiles.clear();
     _isPerformingOrbitalAttack = false;
     speed = originalSpeed; // Restore original speed
+  }
+
+  @override
+  void triggerStagger() {
+    _storedSpeed = speed; // Store current speed before super call
+    super.triggerStagger();
+
+    // If we're already in X150 phase, we should stay locked
+    if (healthBar.currentSegment <= 150) {
+      _isLockedInPlace = true;
+      position = Vector2(1280 / 2, (1280 / 2) - 100);
+      print('🔒 Locking position during stagger');
+    }
+
+    Future.delayed(Duration(seconds: staggerDuration.toInt()), () {
+      print('💫 Boss recovering from stagger');
+      isStaggered = false;
+
+      // Check segment again when recovering
+      if (healthBar.currentSegment <= 150) {
+        _isLockedInPlace = true;
+        speed = 0; // Ensure speed stays at 0
+        position = Vector2(1280 / 2, (1280 / 2) - 100);
+        print('🔒 Maintaining locked position after stagger');
+      } else {
+        _isLockedInPlace = false;
+        speed = _storedSpeed;
+        print('⚡ Restored speed to: $_storedSpeed');
+      }
+
+      attackCooldown /= 1.5;
+      staggerProgress = 0;
+      bossStaggerNotifier.value = 0;
+    });
+  }
+
+  void triggerX100Mechanics() {
+    print('🔥 Boss at X100 - Adding cone attacks!');
+    // Don't change position or lock state here - maintain X150 position
+
+    _coneTimer = Timer(
+      4,
+      onTick: () {
+        print('⏰ Cone timer tick!');
+        if (healthBar.currentSegment > 100 || !isMounted) {
+          print(
+              '❌ Stopping cone timer - health: ${healthBar.currentSegment}, mounted: $isMounted');
+          _coneTimer?.stop();
+          return;
+        }
+
+        // Random angle for the cone direction (in radians)
+        final randomAngle = Random().nextDouble() * 2 * pi;
+        print('📐 Creating cone at angle: ${randomAngle * 180 / pi}°');
+
+        // First show the warning area
+        createWarningCone(
+          projectileCount: 8,
+          radius: 100.0,
+          angleSpread: pi / 4,
+          baseAngle: randomAngle,
+        );
+
+        // After 2 seconds, create the actual damaging projectiles
+        Future.delayed(const Duration(seconds: 2), () {
+          if (isMounted) {
+            print('🎯 Creating damaging cone projectiles');
+            createConeAttack(
+              projectileCount: 8,
+              radius: 100.0,
+              angleSpread: pi / 4,
+              baseAngle: randomAngle,
+              speed: 4.0,
+              projectileDamage: 30.0,
+            );
+          }
+        });
+      },
+      repeat: true,
+    );
+
+    // Start the timer
+    print('▶️ Starting cone timer');
+    _coneTimer?.start();
+  }
+
+  void createWarningCone({
+    required int projectileCount,
+    required double radius,
+    required double angleSpread,
+    required double baseAngle,
+  }) {
+    final angleStep = angleSpread / (projectileCount - 1);
+    final startAngle = baseAngle - (angleSpread / 2);
+
+    for (var i = 0; i < projectileCount; i++) {
+      final angle = startAngle + (angleStep * i);
+      final direction = Vector2(cos(angle), sin(angle));
+
+      final warningProjectile = Projectile.warning(
+        direction: direction,
+        radius: radius,
+        duration: 2.0,
+        warningColor: Colors.red.withOpacity(0.3), // Now optional
+      )
+        ..position = position.clone()
+        ..size = Vector2.all(40)
+        ..anchor = Anchor.center;
+
+      gameRef.add(warningProjectile);
+    }
+  }
+
+  void createConeAttack({
+    required int projectileCount,
+    required double radius,
+    required double angleSpread,
+    required double baseAngle,
+    required double speed,
+    required double projectileDamage,
+  }) {
+    final angleStep = angleSpread / (projectileCount - 1);
+    final startAngle = baseAngle - (angleSpread / 2);
+
+    for (var i = 0; i < projectileCount; i++) {
+      final angle = startAngle + (angleStep * i);
+      final direction = Vector2(cos(angle), sin(angle));
+
+      final projectile = Projectile.bossProjectile(
+        damage: projectileDamage.toInt(),
+        velocity: direction * speed * 100,
+        color: Colors.red, // Changed from color to projectileColor
+      )
+        ..position = position.clone()
+        ..size = Vector2.all(40)
+        ..anchor = Anchor.center;
+
+      gameRef.add(projectile);
+    }
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
+import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/damage/damage_tracker.dart';
@@ -23,6 +25,10 @@ class Projectile extends SpriteAnimationComponent
   bool hasCollided = false;
   double _distanceTraveled = 0;
   final String abilityName; // Add this field
+  final bool isWarning;
+  final double? warningDuration;
+  final Color? warningColor;
+  double _warningTimePassed = 0;
 
   // 🔹 **General Constructor**
   Projectile({
@@ -34,6 +40,9 @@ class Projectile extends SpriteAnimationComponent
     this.player, // ✅ Include player reference if available
     this.isCritical = false, // Add this parameter with default value
     this.abilityName = 'Basic Attack', // Add default value
+    this.isWarning = false,
+    this.warningDuration,
+    this.warningColor,
   }) {
     shouldPierce = player?.hasItem("Umbral Fang") ??
         false; // ✅ Always check if Umbral Fang is equipped
@@ -56,20 +65,50 @@ class Projectile extends SpriteAnimationComponent
           player: player, // ✅ Assign player
           abilityName: abilityName,
           isCritical: isCritical,
+          isWarning: false,
+          warningDuration: null,
+          warningColor: null,
         );
 
   // 🔹 **Named Constructor for Boss**
   Projectile.bossProjectile({
-    required double damage,
+    required int damage,
     required Vector2 velocity,
+    Color color = Colors.purple, // Default color if none provided
   }) : this(
-          damage: damage,
+          damage: damage.toDouble(),
           velocity: velocity,
           maxRange: double.infinity, // ✅ Boss projectiles should go forever
           isBossProjectile: true,
           isCritical: false, // Add this parameter with default value
           abilityName: 'Basic Attack',
+          isWarning: false,
+          warningDuration: null,
+          warningColor: color,
         );
+
+  // Factory constructor for warning projectiles
+  factory Projectile.warning({
+    required Vector2 direction,
+    required double radius,
+    required double duration,
+    Color? warningColor, // Made optional with default in constructor
+  }) {
+    return Projectile(
+      velocity: direction * radius,
+      damage: 0, // No damage for warning projectiles
+      isBossProjectile: false,
+      maxRange: 800,
+      onHit: null,
+      player: null,
+      isCritical: false,
+      abilityName: 'Warning',
+      isWarning: true,
+      warningDuration: duration,
+      warningColor: warningColor ??
+          Colors.red.withOpacity(0.3), // Default color if none provided
+    );
+  }
 
   @override
   Future<void> onLoad() async {
@@ -115,6 +154,14 @@ class Projectile extends SpriteAnimationComponent
   void update(double dt) {
     super.update(dt);
     position += velocity * dt;
+
+    if (isWarning) {
+      _warningTimePassed += dt;
+      if (_warningTimePassed >= (warningDuration ?? 2.0)) {
+        removeFromParent();
+      }
+      return;
+    }
 
     // 🔹 **Remove player projectiles after max range**
     if (!isBossProjectile && (position - spawnPosition).length > maxRange) {
@@ -164,6 +211,18 @@ class Projectile extends SpriteAnimationComponent
       other.takeDamage(damage);
       removeFromParent();
       return;
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (isWarning) {
+      final paint = Paint()
+        ..color = warningColor ?? Colors.red.withOpacity(0.3)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset.zero, size.x / 2, paint);
+    } else {
+      super.render(canvas);
     }
   }
 
