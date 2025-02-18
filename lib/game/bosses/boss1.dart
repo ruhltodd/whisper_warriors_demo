@@ -67,9 +67,10 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   // Add these properties
   List<Projectile> _orbitalProjectiles = [];
-  double _orbitalRadius = 600.0; // Increased radius
+  double _orbitalRadius = 600.0; // Increased radius for trapping
   double _orbitalSpeed = 3.0;
   double _orbitalAngle = 0.0;
+  bool _isPerformingOrbitalAttack = false;
 
   Boss1({
     required Player player,
@@ -150,12 +151,6 @@ class Boss1 extends BaseEnemy with Staggerable {
       return; // Exit early if player is dead
     }
 
-    // Only proceed if not already in fading phase and exactly at X165
-    if (!isFading && position.x == 165) {
-      print('📍 Boss at exact position X165, triggering fade phase');
-      _enterFadingPhase();
-    }
-
     final currentHealth = healthNotifier.value;
     final currentSegment = (currentHealth / segmentSize).ceil();
 
@@ -163,28 +158,6 @@ class Boss1 extends BaseEnemy with Staggerable {
     print(
         '🤖 Boss Update - HasLanded: $_hasLanded, IsTargeting: $_isTargetingPlayer');
 
-    updateStagger(dt);
-    updateStaggerBar();
-
-    if (isStaggered) {
-      print('😵 Boss is Staggered');
-      return;
-    }
-
-    _updateMovement(dt);
-
-    if (isFading) {
-      // Moved this BEFORE the remaining time check
-      if (_teleportShootRemainingTime > 0) {
-        _teleportOutsidePlayerRange();
-        _shootRandomProjectiles(dt); // Called every frame while time remains
-      } else {
-        isFading = false;
-        _teleportShootRemainingTime = 0; // Ensure it's reset
-        _returnToNormalState();
-      }
-      _teleportShootRemainingTime -= dt; // Decrement *after* using the value
-    }
     // Check segment thresholds and trigger mechanics
     if (currentSegment <= 195 && !hasTriggeredX195) {
       hasTriggeredX195 = true;
@@ -205,6 +178,25 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (currentSegment <= 150 && !hasTriggeredX150) {
       hasTriggeredX150 = true;
       triggerX150Mechanics();
+    }
+
+    updateStagger(dt);
+    updateStaggerBar();
+
+    if (isStaggered) {
+      print('😵 Boss is Staggered');
+      return;
+    }
+
+    _updateMovement(dt);
+
+    if (isFading) {
+      // Only process teleport shooting if we have remaining time
+      if (_teleportShootRemainingTime > 0) {
+        _teleportOutsidePlayerRange();
+        _shootRandomProjectiles(dt);
+      }
+      _teleportShootRemainingTime -= dt;
     }
 
     if (!_isExecutingTargetedAttack) {
@@ -236,6 +228,34 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     // Add this to your existing update method
     updateOrbitalProjectiles(dt);
+
+    if (_isPerformingOrbitalAttack) {
+      // Keep boss centered
+      position = Vector2(gameRef.size.x / 2, gameRef.size.y / 2);
+
+      // Update orbital projectiles
+      if (_orbitalProjectiles.isNotEmpty) {
+        _orbitalAngle += _orbitalSpeed * dt;
+
+        for (int i = 0; i < _orbitalProjectiles.length; i++) {
+          var projectile = _orbitalProjectiles[i];
+          if (!projectile.isMounted) {
+            _orbitalProjectiles.removeAt(i);
+            i--;
+            continue;
+          }
+
+          double angle =
+              _orbitalAngle + (i * 2 * pi) / _orbitalProjectiles.length;
+          Vector2 newPosition = Vector2(
+            position.x + cos(angle) * _orbitalRadius,
+            position.y + sin(angle) * _orbitalRadius,
+          );
+
+          projectile.position = newPosition;
+        }
+      }
+    }
   }
 
   void setLanded(bool value) {
@@ -302,7 +322,7 @@ class Boss1 extends BaseEnemy with Staggerable {
       Vector2 spawnPosition = position.clone() + spawnOffset;
 
       final bossProjectile = Projectile.bossProjectile(
-        damage: 15,
+        damage: 1, //changed from 15 to 1 but change back to 15 for final
         velocity: projectileVelocity,
       )
         ..position = spawnPosition
@@ -318,7 +338,6 @@ class Boss1 extends BaseEnemy with Staggerable {
       {bool isCritical = false,
       bool isEchoed = false,
       bool isFlameDamage = false}) {
-    //No changes required
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
@@ -331,6 +350,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (_tripleDamaged == true) {
       newDamage = finalDamage * 3;
     }
+
     // Apply damage to the local class
     double currentHealth = healthNotifier.value;
     currentHealth -= newDamage;
@@ -341,10 +361,12 @@ class Boss1 extends BaseEnemy with Staggerable {
     print('⚠️ Boss took damage! Health: ${healthNotifier.value}');
 
     // Check for phase transitions
-    if (healthNotifier.value <= 165000 && !hasTriggeredX165) {
-      print('✅ TRIGGERING 165 MECHANICS!');
-      hasTriggeredX165 = true;
-      _enterFadingPhase(); // Use _enterFadingPhase directly
+    final currentSegment = (currentHealth / segmentSize).ceil();
+    print('🔄 Current Segment: $currentSegment');
+
+    if (currentSegment <= 165 && !hasTriggeredX165) {
+      print('✅ TRIGGERING 165 MECHANICS from takeDamage!');
+      _enterFadingPhase(); // Don't set hasTriggeredX165 here, let _enterFadingPhase handle it
     }
 
     applyStaggerDamage(finalDamage, isCritical: isCritical);
@@ -505,14 +527,22 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _returnToNormalState() {
-    //No changes required
     print('⚡ Boss returning to normal!');
     isFading = false;
     attackCooldown = originalAttackCooldown;
     speed = originalSpeed;
 
-    add(OpacityEffect.to(1.0, EffectController(duration: 1.5)));
-    add(RectangleHitbox());
+    add(OpacityEffect.to(
+      1.0,
+      EffectController(duration: 1.5),
+      onComplete: () {
+        // Only re-enable targeting after fade-in is complete
+        isTargetable = true;
+        gameRef.player.enableShooting();
+        print('✅ Boss targetable again after fully returning to normal');
+        add(RectangleHitbox());
+      },
+    ));
   }
 
   @override
@@ -525,60 +555,54 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   // COMBINE triggerX165Mechanics and _enterFadingPhase
   void _enterFadingPhase() {
-    if (isFading) return;
+    if (isFading || hasTriggeredX165) return; // Check both conditions
 
     print('🔥 Boss at X165 - Triggering Fading Phase!');
     isFading = true;
-    _teleportShootRemainingTime = 15;
+    hasTriggeredX165 = true; // Mark as triggered
+    _teleportShootRemainingTime = 0;
 
-    // Make boss untargetable immediately
-    isTargetable = false;
-    gameRef.player.disableShooting();
-    print('🎯 Boss marked as untargetable');
+    // First add blue glow effect
+    add(ColorEffect(const Color(0xFF00BBFF),
+        EffectController(duration: 2.0, curve: Curves.easeInOut),
+        onComplete: () {
+      // Make boss untargetable after glow, before fade
+      isTargetable = false;
+      gameRef.player.disableShooting();
+      print('🎯 Boss marked as untargetable after glow');
 
-    // Longer, dramatic fade out
-    add(OpacityEffect.to(
-      0.0,
-      EffectController(duration: 3.0), // Longer fade out
-      onComplete: () {
-        print('🌟 Boss fade complete - becoming invisible');
-        opacity = 0; // Ensure complete invisibility
-        position = Vector2(-9999, -9999); // Move off-screen
+      // Start fade out
+      add(OpacityEffect.to(
+        0.0,
+        EffectController(duration: 3.0, curve: Curves.easeIn),
+        onComplete: () {
+          print('🌟 Boss fade complete - becoming invisible');
+          opacity = 0;
+          position = Vector2(-9999, -9999);
 
-        // Add longer delay before starting teleport phase
-        Future.delayed(Duration(seconds: 3), () {
-          if (isMounted) {
-            _startTeleportAndShootPhase();
-          }
-        });
-      },
-    ));
+          Future.delayed(Duration(seconds: 4), () {
+            if (isMounted) {
+              _startTeleportAndShootPhase();
+              _teleportShootRemainingTime = 15;
+            }
+          });
+        },
+      ));
+    }));
 
     pauseNormalAttackPattern();
     removeWhere((component) => component is RectangleHitbox);
-
-    Future.delayed(Duration(seconds: 15), () {
-      if (isMounted) {
-        isTargetable = true;
-        gameRef.player.enableShooting();
-        print('✅ Boss targetable again after fading phase');
-      }
-    });
   }
 
   void _startTeleportAndShootPhase() {
     print('👻 Boss starting teleport and shoot phase');
-    // Keep boss invisible during teleports
     opacity = 0;
     _teleportOutsidePlayerRange();
 
-    // Only add brief fade-in at the very end of the phase
+    // Only fade in at the very end
     Future.delayed(Duration(seconds: 14), () {
       if (isMounted) {
-        add(OpacityEffect.to(
-          1.0,
-          EffectController(duration: 1.0),
-        ));
+        _returnToNormalState();
       }
     });
   }
@@ -600,16 +624,14 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void triggerX150Mechanics() {
-    print('💫 Boss at X150 - Creating large orbital attack!');
+    print('💫 Boss at X150 - Creating orbital trap!');
     createOrbitalAttack(
-        projectileCount: 16, // More projectiles
-        radius: 300.0, // Larger radius
-        speed: 1.5, // Slightly slower for better visibility
-        projectileDamage: 25.0 // Increased damage
-        );
+        projectileCount: 16,
+        radius: 600.0, // Large radius to trap player
+        speed: 3.0, // Rotation speed
+        projectileDamage: 25.0);
 
-    // Optional: Release after a delay
-    Future.delayed(Duration(seconds: 4), () {
+    Future.delayed(Duration(seconds: 6), () {
       if (isMounted) {
         releaseOrbitalProjectiles();
       }
@@ -617,19 +639,23 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void createOrbitalAttack({
-    int projectileCount = 12, // Increased default count
-    double radius = 300.0, // Increased default radius
-    double speed = 2.0,
-    double projectileDamage = 20.0,
+    int projectileCount = 16,
+    double radius = 600.0,
+    double speed = 3.0,
+    double projectileDamage = 25.0,
   }) {
+    _isPerformingOrbitalAttack = true;
+
     // Clear any existing orbital projectiles
     for (var proj in _orbitalProjectiles) {
       proj.removeFromParent();
     }
     _orbitalProjectiles.clear();
 
-    // Move to center of screen before creating the circle
+    // Use the same position calculation as boss spawn
     position = Vector2(gameRef.size.x / 2, gameRef.size.y / 2);
+    anchor = Anchor.center; // Ensure anchor is centered
+    speed = 0; // Stop boss movement
 
     _orbitalRadius = radius;
     _orbitalSpeed = speed;
@@ -648,7 +674,7 @@ class Boss1 extends BaseEnemy with Staggerable {
         velocity: Vector2.zero(),
       )
         ..position = position + offset
-        ..size = Vector2(50, 50) // Larger projectiles
+        ..size = Vector2(50, 50)
         ..anchor = Anchor.center;
 
       gameRef.add(projectile);
@@ -679,19 +705,18 @@ class Boss1 extends BaseEnemy with Staggerable {
     }
   }
 
-  // Add this method to release the projectiles outward
   void releaseOrbitalProjectiles() {
+    if (!_isPerformingOrbitalAttack) return;
+
     for (var projectile in _orbitalProjectiles) {
       if (!projectile.isMounted) continue;
 
-      // Calculate direction from boss to projectile
       Vector2 direction = (projectile.position - position).normalized();
-
-      // Set velocity in that direction
-      projectile.velocity = direction * 500; // Adjust speed as needed
+      projectile.velocity = direction * 500;
     }
 
-    _orbitalProjectiles
-        .clear(); // Clear the list since we're no longer controlling them
+    _orbitalProjectiles.clear();
+    _isPerformingOrbitalAttack = false;
+    speed = originalSpeed; // Restore original speed
   }
 }
