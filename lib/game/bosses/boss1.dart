@@ -138,6 +138,18 @@ class Boss1 extends BaseEnemy with Staggerable {
   void update(double dt) {
     super.update(dt);
 
+    // Add debug logs to understand the state
+    if (gameRef.player.isDead) {
+      print('🚫 Player is dead - Boss update skipped');
+      return; // Exit early if player is dead
+    }
+
+    // Only proceed if not already in fading phase and exactly at X165
+    if (!isFading && position.x == 165) {
+      print('📍 Boss at exact position X165, triggering fade phase');
+      _enterFadingPhase();
+    }
+
     final currentHealth = healthNotifier.value;
     final currentSegment = (currentHealth / segmentSize).ceil();
 
@@ -281,7 +293,7 @@ class Boss1 extends BaseEnemy with Staggerable {
       Vector2 spawnPosition = position.clone() + spawnOffset;
 
       final bossProjectile = Projectile.bossProjectile(
-        damage: 20,
+        damage: 15,
         velocity: projectileVelocity,
       )
         ..position = spawnPosition
@@ -504,17 +516,51 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   // COMBINE triggerX165Mechanics and _enterFadingPhase
   void _enterFadingPhase() {
-    if (isFading) return; // Prevent re-entry
+    if (isFading) return;
 
     print('🔥 Boss at X165 - Triggering Fading Phase!');
     isFading = true;
-    _teleportShootRemainingTime = 15; // Set the duration
+    _teleportShootRemainingTime = 15;
 
-    // Immediately start the opacity effect AND teleport/shoot
-    add(OpacityEffect.to(0.0, EffectController(duration: 1.5)));
-    pauseNormalAttackPattern(); // Add this line
-    removeWhere((component) =>
-        component is RectangleHitbox); // Immediately remove hitbox
+    // Make boss untargetable immediately
+    isTargetable = false;
+    gameRef.player.disableShooting();
+    print('🎯 Boss marked as untargetable');
+
+    // Start fade effect
+    add(OpacityEffect.to(
+      0.0,
+      EffectController(duration: 1.5),
+      onComplete: () {
+        print('🌟 Boss fade complete - waiting before teleport phase');
+        // Move off-screen immediately after fade
+        position = Vector2(-9999, -9999);
+
+        // Add delay before starting teleport phase
+        Future.delayed(Duration(seconds: 2), () {
+          if (isMounted) {
+            _startTeleportAndShootPhase();
+          }
+        });
+      },
+    ));
+
+    pauseNormalAttackPattern();
+    removeWhere((component) => component is RectangleHitbox);
+
+    // Adjust the timing to account for fade (1.5s) + delay (2s)
+    Future.delayed(Duration(seconds: 15), () {
+      if (isMounted) {
+        isTargetable = true;
+        gameRef.player.enableShooting();
+        print('✅ Boss targetable again after fading phase');
+      }
+    });
+  }
+
+  void _startTeleportAndShootPhase() {
+    print('👻 Boss starting teleport and shoot phase after delay');
+    // Your existing teleport and shoot logic here
   }
 
   void triggerX195Mechanics() {

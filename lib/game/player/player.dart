@@ -121,6 +121,9 @@ class Player extends PositionComponent
     return inventory.any((item) => item.name == itemName);
   }
 
+  // Add near the top with other flags
+  bool canShoot = true; // New flag to control shooting
+
   // Constructor for Player
   Player({
     required List<String> selectedAbilities,
@@ -398,20 +401,23 @@ class Player extends PositionComponent
         ability.onUpdate(this, dt);
       }
 
-      // Handle shooting
-      timeSinceLastShot += dt;
-      if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
-        final projectile = Projectile.shootFromPlayer(
-          player: this,
-          targetPosition: closestEnemy!.position,
-          projectileSpeed: 500,
-          damage: damage.toDouble(),
-          onHit: (enemy) {
-            // Handle any specific on-hit effects if needed
-          },
-        );
-        gameRef.add(projectile);
-        timeSinceLastShot = 0.0;
+      // Handle shooting - Add canShoot check
+      if (canShoot) {
+        // Add this check
+        timeSinceLastShot += dt;
+        if (timeSinceLastShot >= (1 / attackSpeed) && closestEnemy != null) {
+          final projectile = Projectile.shootFromPlayer(
+            player: this,
+            targetPosition: closestEnemy!.position,
+            projectileSpeed: 500,
+            damage: damage.toDouble(),
+            onHit: (enemy) {
+              // Handle any specific on-hit effects if needed
+            },
+          );
+          gameRef.add(projectile);
+          timeSinceLastShot = 0.0;
+        }
       }
     }
   }
@@ -558,39 +564,21 @@ class Player extends PositionComponent
 
   // Update the closest enemy
   void updateClosestEnemy() {
-    final enemies = gameRef.children.whereType<BaseEnemy>().toList();
-
-    if (enemies.isEmpty) {
-      closestEnemy = null;
-      print("⚠️ No enemies found in game world");
-      return;
-    }
-
-    print("🔍 Found ${enemies.length} enemies");
-
-    BaseEnemy? newClosest;
     double closestDistance = double.infinity;
+    BaseEnemy? newClosestEnemy;
 
-    for (final enemy in enemies) {
-      if (!enemy.isMounted) continue; // Skip dead/unmounted enemies
+    for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
+      // Skip non-targetable enemies
+      if (!enemy.isTargetable) continue;
 
-      final distance = (enemy.position - position).length;
+      double distance = enemy.position.distanceTo(position);
       if (distance < closestDistance) {
         closestDistance = distance;
-        newClosest = enemy;
+        newClosestEnemy = enemy;
       }
     }
 
-    if (newClosest != closestEnemy) {
-      closestEnemy = newClosest;
-      if (closestEnemy != null) {
-        print("🎯 New target acquired:");
-        print("   Distance: ${closestDistance.toStringAsFixed(1)}");
-        print("   Position: ${closestEnemy?.position}");
-      } else {
-        print("❌ Lost target - no valid enemies in range");
-      }
-    }
+    closestEnemy = newClosestEnemy;
   }
 
   // Gain health and display healing numbers
@@ -729,6 +717,17 @@ class Player extends PositionComponent
   bool isCriticalHit() {
     final randomValue = gameRef.random.nextDouble() * 100;
     return randomValue < critChance;
+  }
+
+  // Add these methods to Player class
+  void disableShooting() {
+    canShoot = false;
+    print('🚫 Player shooting disabled');
+  }
+
+  void enableShooting() {
+    canShoot = true;
+    print('✅ Player shooting enabled');
   }
 }
 

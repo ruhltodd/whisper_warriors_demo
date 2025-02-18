@@ -27,6 +27,8 @@ abstract class BaseEnemy extends SpriteAnimationComponent
   bool hasExploded = false;
   bool hasDroppedItem = false;
 
+  bool isTargetable = true; // Add this property
+
   BaseEnemy({
     required this.player,
     required int health,

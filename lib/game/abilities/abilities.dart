@@ -99,6 +99,9 @@ class WhisperingFlames extends Component
       try {
         int enemiesInRange = 0;
         for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
+          // Skip non-targetable enemies
+          if (!enemy.isTargetable) continue;
+
           double distance = (enemy.position - _player.position).length;
           if (distance < range) {
             enemiesInRange++;
@@ -116,7 +119,10 @@ class WhisperingFlames extends Component
             onHit(_player, enemy, finalDamage, isCritical: isCritical);
           }
         }
-        print('🔥 WhisperingFlames found $enemiesInRange enemies in range');
+        if (enemiesInRange > 0) {
+          print(
+              '🔥 WhisperingFlames found $enemiesInRange targetable enemies in range');
+        }
       } catch (e) {
         print("🔥 WhisperingFlames caught error during update: $e");
         return;
@@ -151,6 +157,8 @@ class WhisperingFlames extends Component
   @override
   void onHit(Player player, PositionComponent target, int damage,
       {bool isCritical = false}) {
+    if (player.hasEffect('NoAttacks')) return; // Skip if attacks are disabled
+
     print(
         '🔥 WhisperingFlames recording hit to Hive: $damage (Crit: $isCritical)');
     damageTracker.logDamage(name, damage, isCritical);
@@ -207,9 +215,10 @@ class ShadowBlades extends PositionComponent implements Ability {
     if (_timeSinceLastTick >= tickInterval) {
       _timeSinceLastTick = 0;
 
-      BaseEnemy? target = findClosestEnemy(player);
-      if (target != null) {
-        final direction = (target.position - player.position).normalized();
+      // Use player's closestEnemy instead of finding our own
+      if (player.closestEnemy != null) {
+        final direction =
+            (player.closestEnemy!.position - player.position).normalized();
         final rotationAngle = direction.angleToSigned(Vector2(1, 0));
 
         // Calculate damage with spirit multiplier
@@ -221,7 +230,7 @@ class ShadowBlades extends PositionComponent implements Ability {
           ability: this,
           velocity: direction * 500,
           rotationAngle: rotationAngle,
-          damage: scaledDamage, // Use scaled damage
+          damage: scaledDamage,
         )..position = player.position.clone();
 
         player.gameRef.add(projectile);
@@ -253,21 +262,6 @@ class ShadowBlades extends PositionComponent implements Ability {
     }
   }
 
-  BaseEnemy? findClosestEnemy(Player player) {
-    double closestDistance = double.infinity;
-    BaseEnemy? closestEnemy;
-
-    for (final enemy in player.gameRef.children.whereType<BaseEnemy>()) {
-      final distance = enemy.position.distanceTo(player.position);
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestEnemy = enemy;
-      }
-    }
-
-    return closestEnemy;
-  }
-
   @override
   void applyEffect(Player player) {
     // No permanent effects to apply
@@ -276,6 +270,8 @@ class ShadowBlades extends PositionComponent implements Ability {
   @override
   void onHit(Player player, PositionComponent target, int damage,
       {bool isCritical = false}) {
+    if (player.hasEffect('NoAttacks')) return; // Skip if attacks are disabled
+
     damageTracker.logDamage(name, damage, isCritical);
   }
 
@@ -406,6 +402,8 @@ class CursedEcho extends Ability {
   @override
   void onHit(Player player, PositionComponent target, int damage,
       {bool isCritical = false}) {
+    if (player.hasEffect('NoAttacks')) return; // Skip if attacks are disabled
+
     double currentTime = player.gameRef.currentTime();
     double timeSinceLastProc = currentTime - _lastProcTime;
 
