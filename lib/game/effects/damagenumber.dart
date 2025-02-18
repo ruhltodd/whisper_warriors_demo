@@ -10,15 +10,22 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
   final int damage;
   final bool isCritical;
   final bool isPlayer; // ✅ Flag to differentiate player damage
+  final bool isWhisperingFlames; // Add this property
+  final Vector2? customSize; // Add this property
   double timer = 1.0;
   late List<SpriteComponent> digitSprites = [];
   final Random _random = Random();
 
   static final Map<int, Sprite> numberSprites = {}; // ✅ Store loaded sprites
   static Sprite? minusSprite; // ✅ Cache minus sign sprite
+  static final Map<int, Sprite> orangeNumberSprites =
+      {}; // Add cache for orange sprites
 
   DamageNumber(this.damage, this.initialPosition,
-      {this.isCritical = false, this.isPlayer = false}) {
+      {this.isCritical = false,
+      this.isPlayer = false,
+      this.isWhisperingFlames = false,
+      this.customSize}) {
     position = initialPosition + _getRandomOffset();
   }
 
@@ -59,9 +66,17 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
 
   /// Loads number sprites & minus sign if not already loaded
   Future<void> _loadSpritesIfNeeded() async {
+    // Load regular number sprites
     if (numberSprites.isEmpty) {
       for (int i = 0; i <= 9; i++) {
         numberSprites[i] = await gameRef.loadSprite('$i.png');
+      }
+    }
+
+    // Load orange number sprites
+    if (orangeNumberSprites.isEmpty) {
+      for (int i = 0; i <= 9; i++) {
+        orangeNumberSprites[i] = await gameRef.loadSprite('$i-or.png');
       }
     }
 
@@ -76,41 +91,52 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
         damage.abs().toString(); // ✅ Convert to absolute value
     double offsetX = 0;
 
+    // Default sizes if no custom size is provided
+    final Vector2 playerSize = customSize ?? Vector2(10, 10);
+    final Vector2 enemySize = customSize ?? Vector2(16, 16);
+    final double playerSpacing = customSize != null ? customSize!.x * 0.8 : 8;
+    final double enemySpacing = customSize != null ? customSize!.x * 0.875 : 14;
+
     if (isPlayer) {
       // ✅ Add a minus sign only for player damage
       if (minusSprite != null) {
         SpriteComponent minus = SpriteComponent(
           sprite: minusSprite,
-          size: Vector2(10, 10), // ✅ Smaller minus sign
+          size: playerSize,
           position: Vector2(offsetX, 0),
           anchor: Anchor.center,
         );
         digitSprites.add(minus);
         add(minus);
-        offsetX += 8; // ✅ Adjust spacing
+        offsetX += playerSpacing; // ✅ Adjust spacing
       }
     }
 
     for (int i = 0; i < damageString.length; i++) {
       int digit = int.parse(damageString[i]);
 
-      SpriteComponent digitSprite = SpriteComponent(
-        sprite: numberSprites[digit],
-        size: isPlayer
-            ? Vector2(10, 10)
-            : Vector2(16, 16), // ✅ Smaller for player
+      // Use orange sprites for WhisperingFlames damage
+      Sprite digitSprite = isWhisperingFlames
+          ? orangeNumberSprites[digit]!
+          : numberSprites[digit]!;
+
+      SpriteComponent digitComponent = SpriteComponent(
+        sprite: digitSprite,
+        size: isPlayer ? playerSize : enemySize,
         position: Vector2(offsetX, 0),
         anchor: Anchor.center,
       );
 
-      digitSprites.add(digitSprite);
-      add(digitSprite);
+      digitSprites.add(digitComponent);
+      add(digitComponent);
 
-      offsetX += isPlayer ? 8 : 14; // ✅ Smaller spacing for player damage
+      offsetX += isPlayer
+          ? playerSpacing
+          : enemySpacing; // ✅ Smaller spacing for player damage
     }
 
-    // ✅ Tint player damage numbers red (enemy numbers remain unchanged)
-    if (isPlayer) {
+    // Only apply red tint for player damage if it's not WhisperingFlames
+    if (isPlayer && !isWhisperingFlames) {
       for (var sprite in digitSprites) {
         sprite.add(
           ColorEffect(

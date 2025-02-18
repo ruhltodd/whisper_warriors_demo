@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:whisper_warriors/game/damage/damage_tracker.dart';
+import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
@@ -115,7 +116,16 @@ class WhisperingFlames extends Component
                 '🔥 WhisperingFlames hitting enemy at distance $distance with $finalDamage damage (Crit: $isCritical)');
             enemy.takeDamage(finalDamage.toDouble(), isCritical: isCritical);
 
-            // Use onHit to record the damage instead of direct damageReport access
+            // Add damage number with orange numbers
+            gameRef.add(DamageNumber(
+              finalDamage,
+              enemy.position,
+              isCritical: isCritical,
+              isWhisperingFlames: true,
+              customSize: Vector2(10, 11), // This will use orange numbers
+            ));
+
+            // Use onHit to record the damage
             onHit(_player, enemy, finalDamage, isCritical: isCritical);
           }
         }
