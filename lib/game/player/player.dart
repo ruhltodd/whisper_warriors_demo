@@ -124,6 +124,8 @@ class Player extends PositionComponent
   // Add near the top with other flags
   bool canShoot = true; // New flag to control shooting
 
+  WhisperingFlamesAura? _fireAura; // Add this property
+
   // Constructor for Player
   Player({
     required List<String> selectedAbilities,
@@ -522,7 +524,7 @@ class Player extends PositionComponent
     }
   }
 
-  // Update addAbility to be more robust
+  // Modify addAbility to check selected abilities properly
   void addAbility(Ability ability) {
     if (!selectedAbilities.contains(ability.name)) {
       print(
@@ -530,6 +532,17 @@ class Player extends PositionComponent
       return;
     }
 
+    // Check if we're at max abilities (3)
+    if (abilities.length >= 3) {
+      print("⚠️ Max abilities reached, removing oldest ability");
+      Ability removedAbility = abilities.removeAt(0);
+      // If we're removing WhisperingFlames, deactivate the aura
+      if (removedAbility is WhisperingFlames) {
+        deactivateFireAura();
+      }
+    }
+
+    // Check for existing ability
     if (abilities.any((a) => a.name == ability.name)) {
       print("⚠️ Ability ${ability.name} already exists, skipping...");
       return;
@@ -538,7 +551,23 @@ class Player extends PositionComponent
     abilities.add(ability);
     abilityNotifier.value = List.from(abilities);
     ability.applyEffect(this);
+
+    // Check for WhisperingFlames and activate aura
+    if (ability is WhisperingFlames) {
+      activateFireAura();
+    }
+
     print("🔥 Added Ability: ${ability.name}");
+  }
+
+  // Add this method to handle ability removal
+  void removeAbility(Ability ability) {
+    abilities.remove(ability);
+    abilityNotifier.value = List.from(abilities);
+
+    if (ability is WhisperingFlames) {
+      deactivateFireAura();
+    }
   }
 
   // Check if the player has a specific ability
@@ -629,12 +658,7 @@ class Player extends PositionComponent
   @override
   void onRemove() {
     abilityNotifier.dispose();
-
-    final fireAura = gameRef.children.whereType<WhisperingFlames>().firstOrNull;
-    if (fireAura != null) {
-      fireAura.removeFromParent();
-    }
-
+    deactivateFireAura();
     super.onRemove();
   }
 
@@ -729,6 +753,22 @@ class Player extends PositionComponent
     canShoot = true;
     print('✅ Player shooting enabled');
   }
+
+  // Add this method
+  void activateFireAura() {
+    if (_fireAura == null) {
+      _fireAura = WhisperingFlamesAura(this);
+      gameRef.add(_fireAura!);
+      print('🔥 Fire aura activated');
+    }
+  }
+
+  // Add this method
+  void deactivateFireAura() {
+    _fireAura?.removeFromParent();
+    _fireAura = null;
+    print('❄️ Fire aura deactivated');
+  }
 }
 
 // Update WhisperWarrior class to ensure sprite loading
@@ -821,5 +861,37 @@ class PlayerStatsOverlay extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class WhisperingFlamesAura extends SpriteAnimationComponent with HasGameRef {
+  final Player player;
+
+  WhisperingFlamesAura(this.player) : super(size: Vector2(84, 84)) {
+    anchor = Anchor.center;
+  }
+
+  @override
+  Future<void> onLoad() async {
+    final spriteSheet = await gameRef.images.load('fire_aura.png');
+    final animation = SpriteAnimation.fromFrameData(
+      spriteSheet,
+      SpriteAnimationData.sequenced(
+        amount: 3, // 3 frames
+        stepTime: 0.3, // 300ms per frame
+        textureSize: Vector2(
+            32, 32), // adjust this to match your sprite sheet dimensions
+        loop: true,
+      ),
+    );
+
+    this.animation = animation;
+    position = player.position;
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    position = player.position;
   }
 }
