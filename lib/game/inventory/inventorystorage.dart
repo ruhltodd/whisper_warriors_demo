@@ -4,25 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/items/items.dart';
 
-// Only import `dart:io` and `path_provider` when NOT on web
-import 'dart:io' if (dart.library.html) 'dart:html';
-import 'package:path_provider/path_provider.dart' if (dart.library.html) '';
+// Only import file-based storage on non-web platforms
+import 'dart:io' if (dart.library.html) 'fake_io.dart';
+import 'package:path_provider/path_provider.dart'
+    if (dart.library.html) 'fake_path_provider.dart';
 
 class InventoryStorage {
   static const String fileName = 'inventory.json';
   static const int maxSlots = 20; // ✅ Define max inventory slots
-
-  // ✅ Use different storage methods for Web vs Mobile/Desktop
-  static Future<String> get _localPath async {
-    if (kIsWeb) return ''; // Web doesn't need a path
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path;
-  }
-
-  static Future<File> get _localFile async {
-    final path = await _localPath;
-    return File('$path/$fileName');
-  }
 
   static Future<List<InventoryItem>> loadInventory() async {
     try {
@@ -31,11 +20,13 @@ class InventoryStorage {
       String contents;
 
       if (kIsWeb) {
+        // ✅ Web: Use SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         contents = prefs.getString(fileName) ?? '[]';
       } else {
+        // ✅ Mobile/Desktop: Use file storage
         final file = await _localFile;
-        if (!await file.exists()) {
+        if (file == null || !file.existsSync()) {
           print('⚠️ No inventory file found, returning empty list');
           return [];
         }
@@ -47,12 +38,10 @@ class InventoryStorage {
       final List<dynamic> jsonList = json.decode(contents);
       List<InventoryItem> items = [];
 
-      // ✅ Keep item initialization logic intact
       for (var itemData in jsonList) {
         final Item? item = Item.createByName(itemData['name'] as String);
         if (item != null) {
           print('✅ Loading item: ${item.name}');
-          // Initialize the item with its default stats
           switch (item.name.toLowerCase()) {
             case 'umbral fang':
               item.stats = {
@@ -120,7 +109,7 @@ class InventoryStorage {
       await prefs.setString(fileName, jsonString);
     } else {
       final file = await _localFile;
-      await file.writeAsString(jsonString);
+      if (file != null) await file.writeAsString(jsonString);
     }
 
     print('💾 Saved ${deduplicatedItems.length} unique items to inventory');
@@ -145,7 +134,7 @@ class InventoryStorage {
         contents = prefs.getString(fileName) ?? '[]';
       } else {
         final file = await _localFile;
-        if (!await file.exists()) {
+        if (file == null || !file.existsSync()) {
           print('\n📦 No inventory file exists yet');
           return;
         }
@@ -157,5 +146,16 @@ class InventoryStorage {
     } catch (e) {
       print('⚠️ Error debugging inventory: $e');
     }
+  }
+
+// Only use this function on Mobile/Desktop
+  static Future<File?> get _localFile async {
+    if (kIsWeb) return null; // Web doesn't use file storage
+
+    // Get the directory only on mobile/desktop, so avoid trying
+    // to call .path on web's fake string implementation
+    final directory = await getApplicationDocumentsDirectory();
+    return File(
+        '${directory}/$fileName'); // Removed `.path` to use the string path
   }
 }
