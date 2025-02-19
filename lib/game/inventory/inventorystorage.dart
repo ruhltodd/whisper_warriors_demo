@@ -1,14 +1,18 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/items/items.dart';
 
 class InventoryStorage {
   static const String fileName = 'inventory.json';
-  static const int maxSlots = 20; // ✅ Define maximum inventory slots
+  static const int maxSlots = 20; // ✅ Define max inventory slots
 
+  // ✅ Use different storage methods for Web vs Mobile/Desktop
   static Future<String> get _localPath async {
+    if (kIsWeb) return ''; // Web doesn't need a path
     final directory = await getApplicationDocumentsDirectory();
     return directory.path;
   }
@@ -21,19 +25,27 @@ class InventoryStorage {
   static Future<List<InventoryItem>> loadInventory() async {
     try {
       print('📂 Loading inventory...');
-      final file = await _localFile;
 
-      if (!await file.exists()) {
-        print('⚠️ No inventory file found, returning empty list');
-        return [];
+      String contents;
+
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        contents = prefs.getString(fileName) ?? '[]';
+      } else {
+        final file = await _localFile;
+        if (!await file.exists()) {
+          print('⚠️ No inventory file found, returning empty list');
+          return [];
+        }
+        contents = await file.readAsString();
       }
 
-      final String contents = await file.readAsString();
       print('📄 Raw inventory contents: $contents');
 
       final List<dynamic> jsonList = json.decode(contents);
       List<InventoryItem> items = [];
 
+      // ✅ Keep item initialization logic intact
       for (var itemData in jsonList) {
         final Item? item = Item.createByName(itemData['name'] as String);
         if (item != null) {
@@ -78,24 +90,18 @@ class InventoryStorage {
   }
 
   static Future<void> saveInventory(List<InventoryItem> items) async {
-    // ✅ Remove duplicates by keeping only one copy of each item
     final Map<String, InventoryItem> uniqueItems = {};
-
     for (var item in items) {
-      uniqueItems[item.item.name] =
-          item; // Overwrites duplicates, keeping the latest one
+      uniqueItems[item.item.name] = item; // ✅ Remove duplicates
     }
 
-    // Convert map values to a list and enforce maxSlots limit
     final List<InventoryItem> deduplicatedItems = uniqueItems.values.toList();
-
     if (deduplicatedItems.length > maxSlots) {
       print(
           '⚠️ Inventory exceeds max slots ($maxSlots). Some items may be lost!');
       deduplicatedItems.removeRange(maxSlots, deduplicatedItems.length);
     }
 
-    final file = await _localFile;
     final List<Map<String, dynamic>> jsonList = deduplicatedItems
         .map((item) => {
               'name': item.item.name,
@@ -105,7 +111,16 @@ class InventoryStorage {
             })
         .toList();
 
-    await file.writeAsString(json.encode(jsonList));
+    final jsonString = json.encode(jsonList);
+
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(fileName, jsonString);
+    } else {
+      final file = await _localFile;
+      await file.writeAsString(jsonString);
+    }
+
     print('💾 Saved ${deduplicatedItems.length} unique items to inventory');
   }
 
@@ -121,14 +136,22 @@ class InventoryStorage {
 
   static Future<void> debugInventory() async {
     try {
-      final file = await _localFile;
-      if (await file.exists()) {
-        final contents = await file.readAsString();
-        print('\n📦 Current Inventory File Contents:');
-        print(const JsonEncoder.withIndent('  ').convert(jsonDecode(contents)));
+      String contents;
+
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        contents = prefs.getString(fileName) ?? '[]';
       } else {
-        print('\n📦 No inventory file exists yet');
+        final file = await _localFile;
+        if (!await file.exists()) {
+          print('\n📦 No inventory file exists yet');
+          return;
+        }
+        contents = await file.readAsString();
       }
+
+      print('\n📦 Current Inventory File Contents:');
+      print(const JsonEncoder.withIndent('  ').convert(jsonDecode(contents)));
     } catch (e) {
       print('⚠️ Error debugging inventory: $e');
     }
