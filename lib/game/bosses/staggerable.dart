@@ -14,7 +14,7 @@ mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
   double _damageReceived = 0;
   double _staggerTimer = 0;
   double _staggerCooldownTimer = 0;
-  static const double _staggerFillRate = 0.5 / 20000;
+  static const double _staggerFillRate = 0.01 / 20000;
   double _damageTickTime = 0.0;
   double _originalSpeed = 0.0;
 

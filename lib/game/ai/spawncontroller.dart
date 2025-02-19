@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
+import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/ai/wave1Enemy.dart';
 import 'package:whisper_warriors/game/ai/wave2Enemy.dart';
@@ -182,8 +184,8 @@ class SpawnController extends Component {
   }
 
   void _triggerBossImpactEffect(Vector2 position) {
-    print("💥 Boss slammed into the ground!");
-    add(Explosion(position)); // ✅ Explosion at impact location
+    print("💥 Creating boss impact effect");
+    game.add(Explosion(position));
   }
 
   void checkAndTriggerEvents(int currentTime) {
@@ -276,14 +278,18 @@ class SpawnController extends Component {
     _stopEnemySpawns();
     _clearEnemyWaves();
 
-    // ✅ Create boss instance **off-screen**
+    final int bossMaxHealth = 211000;
+    game.bossHealthNotifier.value = bossMaxHealth.toDouble();
+    game.setActiveBoss("Umbrathos, The Fading King", bossMaxHealth.toDouble());
+
     final boss1 = Boss1(
       player: game.player,
       speed: 20,
-      health: 211000,
+      health: bossMaxHealth,
       size: Vector2(128, 128),
       onHealthChanged: (double health) {
-        game.bossHealthNotifier.value = health; // ✅ Ensure UI updates
+        game.bossHealthNotifier.value = health;
+        print('🏥 Boss health changed to: $health');
       },
       onDeath: () => onBoss1Death(),
       onStaggerChanged: (double stagger) =>
@@ -291,28 +297,6 @@ class SpawnController extends Component {
       bossStaggerNotifier: game.bossStaggerNotifier,
     );
 
-    // ✅ **Spawn boss off-screen (above map)**
-    boss1.position = Vector2(game.size.x / 2, -300);
-    boss1.anchor = Anchor.center;
     game.add(boss1);
-
-    // ✅ **Set active boss in HUD**
-    game.setActiveBoss("Umbrathos, The Fading King", 211000);
-
-    // ✅ **Delayed movement into battlefield**
-    Future.delayed(Duration(milliseconds: 1500), () {
-      print(
-          "Before moving: ${boss1.position}"); // ✅ Debugging Position Before Moving
-
-      boss1.position = Vector2(1280 / 2, 1280 / 2);
-      boss1.anchor = Anchor.center; // ✅ Ensure anchor is centered
-
-      print(
-          "After moving: ${boss1.position}"); // ✅ Debugging Position After Moving
-
-      // ✅ Apply screen shake
-      game.shakeScreen(game.customCamera);
-      _triggerBossImpactEffect(boss1.position);
-    });
   }
 }

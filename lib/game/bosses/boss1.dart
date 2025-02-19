@@ -7,19 +7,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/bosses/staggerbar.dart';
 import 'package:whisper_warriors/game/effects/damagenumber.dart';
-import 'package:whisper_warriors/game/inventory/loottable.dart';
-import 'package:whisper_warriors/game/items/lootbox.dart';
-import 'package:whisper_warriors/game/items/items.dart';
+import 'package:whisper_warriors/game/effects/explosion.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/projectiles/projectile.dart';
-import 'package:whisper_warriors/game/effects/explosion.dart';
-import 'package:whisper_warriors/game/utils/dropitem.dart';
 import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
 import 'staggerable.dart';
 import 'package:flame/timer.dart';
-import 'package:whisper_warriors/game/main.dart'; //Import it here!
-import 'package:whisper_warriors/game/abilities/abilities.dart';
 import 'dart:async'; // Add this import at the top
 
 class Boss1 extends BaseEnemy with Staggerable {
@@ -78,6 +72,8 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   Timer? _coneTimer; // Add timer as class property
 
+  bool _isUpdatingHealth = false; // Add flag to prevent recursive updates
+
   Boss1({
     required Player player,
     required int health,
@@ -96,6 +92,8 @@ class Boss1 extends BaseEnemy with Staggerable {
           size: size,
         ) {
     maxHealth = health.toDouble();
+    print(
+        '🏗️ Boss1 Constructor - Initial Health: $health, Max Health: $maxHealth');
     anchor = Anchor.center; // Set anchor in constructor
     print('🎯 Boss constructor - Setting initial position');
     staggerBar = StaggerBar(maxStagger: 100.0, currentStagger: 0); // Mocked
@@ -118,15 +116,41 @@ class Boss1 extends BaseEnemy with Staggerable {
   @override
   Future<void> onLoad() async {
     print('🎯 Boss onLoad - Before position set');
-    print('🎯 Screen size: ${gameRef.size}');
-    print('🎯 World size: 1280x1280');
-
-    // Use world size instead of screen size
-    position = Vector2(1280 / 2, 1280 / 2);
     anchor = Anchor.center;
-    print('🎯 Boss onLoad - After position set: $position');
+    _hasLanded = false;
+    position = Vector2(1280 / 2, -300); // Start above screen
 
-    // Mock animations (replace with your actual loading)
+    print('💫 Boss initialization starting');
+
+    // Add entrance animation
+    Future.delayed(Duration(milliseconds: 500), () {
+      if (!isMounted) return;
+
+      print('🎬 Starting entrance animation');
+      add(
+        MoveToEffect(
+          Vector2(1280 / 2, 1280 / 2),
+          EffectController(
+            duration: 1.0,
+            curve: Curves.easeIn,
+          ),
+          onComplete: () {
+            print('💥 Entrance animation complete');
+            _hasLanded = true;
+            if (gameRef != null) {
+              gameRef.shakeScreen(gameRef.customCamera);
+              // Add explosion effect
+              gameRef.add(Explosion(position));
+            }
+            print('🛬 Has Landed set to: $_hasLanded');
+          },
+        ),
+      );
+    });
+
+    await super.onLoad();
+
+    // Load animations
     idleAnimation = await gameRef.loadSpriteAnimation(
       'boss1_idle.png',
       SpriteAnimationData.sequenced(
@@ -135,6 +159,7 @@ class Boss1 extends BaseEnemy with Staggerable {
         stepTime: 0.6,
       ),
     );
+
     walkAnimation = await gameRef.loadSpriteAnimation(
       'boss1_walk.png',
       SpriteAnimationData.sequenced(
@@ -144,13 +169,20 @@ class Boss1 extends BaseEnemy with Staggerable {
       ),
     );
 
+    animation = idleAnimation;
+    add(RectangleHitbox());
+
+    // Now trigger initial health update
+    if (!_isUpdatingHealth) {
+      _isUpdatingHealth = true;
+      onHealthChanged(maxHealth);
+      _isUpdatingHealth = false;
+    }
+
     originalSpeed = speed;
     originalAttackCooldown = attackCooldown;
 
-    animation = idleAnimation;
-    add(RectangleHitbox());
-    //gameRef.add(staggerBar); // Removed for Mocking
-    setLanded(true);
+    return super.onLoad();
   }
 
   void updateStaggerBar() {
@@ -160,38 +192,73 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   @override
   void update(double dt) {
+    if (_isUpdatingHealth) return;
     super.update(dt);
 
-    // Add debug logs to understand the state
-    if (gameRef.player.isDead) {
-      print('🚫 Player is dead - Boss update skipped');
-      return; // Exit early if player is dead
+    // Skip updates if staggered
+    if (isStaggered) {
+      print('😵 Boss is Staggered - Skipping update');
+      return;
     }
 
+    // Skip movement and animations during fading phase
+    if (isFading) {
+      if (_teleportShootRemainingTime > 0) {
+        _timeSinceLastTeleportShoot += dt;
+        if (_timeSinceLastTeleportShoot >= 1.0) {
+          _teleportOutsidePlayerRange();
+          _shootRandomProjectiles(dt);
+          _timeSinceLastTeleportShoot = 0;
+        }
+      }
+      _teleportShootRemainingTime -= dt;
+      return;
+    }
+
+    // Regular update logic
     final currentHealth = healthNotifier.value;
     final currentSegment = (currentHealth / segmentSize).ceil();
 
-    print('🧐 Boss Health Segment: $currentSegment');
+    // Debug health and segment info
+    print('🔢 Health: $currentHealth, Segment: $currentSegment');
     print(
-        '🤖 Boss Update - HasLanded: $_hasLanded, IsTargeting: $_isTargetingPlayer');
+        '🎯 Mechanics Status - X195: $hasTriggeredX195, X190: $hasTriggeredX190, X165: $hasTriggeredX165, X150: $hasTriggeredX150');
+
+    // Ensure mechanics trigger in sequence
+    if (!hasTriggeredX195 && currentSegment <= 195) {
+      print('✨ Triggering X195');
+      hasTriggeredX195 = true;
+      triggerX195Mechanics();
+    }
+
+    if (hasTriggeredX195 && !hasTriggeredX190 && currentSegment <= 190) {
+      print('✨ Triggering X190');
+      hasTriggeredX190 = true;
+      triggerX190Mechanics();
+    }
+
+    if (hasTriggeredX190 &&
+        !hasTriggeredX165 &&
+        !isFading &&
+        currentSegment <= 165) {
+      print('✨ Attempting X165');
+      _enterFadingPhase();
+    }
+
+    if (hasTriggeredX165 &&
+        !hasTriggeredX150 &&
+        !isFading &&
+        currentSegment <= 150) {
+      print('✨ Triggering X150');
+      hasTriggeredX150 = true;
+      triggerX150Mechanics();
+    }
 
     updateStagger(dt);
     updateStaggerBar();
 
-    if (isStaggered) {
-      print('😵 Boss is Staggered');
-      return;
-    }
-
-    _updateMovement(dt);
-
-    if (isFading) {
-      // Only process teleport shooting if we have remaining time
-      if (_teleportShootRemainingTime > 0) {
-        _teleportOutsidePlayerRange();
-        _shootRandomProjectiles(dt);
-      }
-      _teleportShootRemainingTime -= dt;
+    if (!isFading) {
+      _updateMovement(dt);
     }
 
     if (!_isExecutingTargetedAttack) {
@@ -225,8 +292,9 @@ class Boss1 extends BaseEnemy with Staggerable {
     updateOrbitalProjectiles(dt);
 
     if (_isPerformingOrbitalAttack) {
-      // Keep boss centered at adjusted height
+      // Force position and prevent movement during orbital attack
       position = Vector2(1280 / 2, (1280 / 2) - 100);
+      speed = 0;
 
       // Update orbital projectiles
       if (_orbitalProjectiles.isNotEmpty) {
@@ -256,30 +324,8 @@ class Boss1 extends BaseEnemy with Staggerable {
     print(
         '🔍 Current Segment: ${healthBar.currentSegment}, X100 Triggered: $hasTriggeredX100');
 
-    // Check segment thresholds and trigger mechanics
-    if (healthBar.currentSegment <= 195 && !hasTriggeredX195) {
-      hasTriggeredX195 = true;
-      triggerX195Mechanics();
-    }
-
-    if (healthBar.currentSegment <= 190 && !hasTriggeredX190) {
-      hasTriggeredX190 = true;
-      triggerX190Mechanics();
-    }
-
-    if (healthBar.currentSegment <= 165 && !hasTriggeredX165) {
-      print('✅ TRIGGERING 165 MECHANICS!');
-      hasTriggeredX165 = true;
-      _enterFadingPhase(); // Use _enterFadingPhase directly
-    }
-
-    if (healthBar.currentSegment <= 150 && !hasTriggeredX150) {
-      hasTriggeredX150 = true;
-      triggerX150Mechanics();
-    }
-
     // Allow X100 to trigger while X150 is active
-    if (healthBar.currentSegment <= 100 && !hasTriggeredX100) {
+    if (currentSegment <= 100 && !hasTriggeredX100) {
       print('✅ Health below 100');
       hasTriggeredX100 = true;
       triggerX100Mechanics();
@@ -288,13 +334,21 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   void setLanded(bool value) {
     _hasLanded = value;
+    print('🛬 Boss landed state changed to: $_hasLanded');
   }
 
   void _updateMovement(double dt) {
+    if (!isMounted) return;
+
+    // Debug current state
+    print(
+        '🔄 Movement Update - Landed: $_hasLanded, Locked: $_isLockedInPlace, Fading: $isFading');
+
     // Early return if locked or not landed
-    if (!_hasLanded || _isLockedInPlace || healthBar.currentSegment <= 150) {
-      // Added segment check
-      // Still update animation even when locked
+    if (!_hasLanded || _isLockedInPlace) {
+      // Removed healthBar.currentSegment check
+      print(
+          '🚫 Movement blocked - Landed: $_hasLanded, Locked: $_isLockedInPlace');
       animation = idleAnimation;
       return;
     }
@@ -302,18 +356,20 @@ class Boss1 extends BaseEnemy with Staggerable {
     final Vector2 direction = (player.position - position).normalized();
     final double distanceToPlayer = (player.position - position).length;
 
-    print(
-        'Distance to player: $distanceToPlayer, Targeting: $_isExecutingTargetedAttack');
-
     if (distanceToPlayer > 20) {
+      if (animation != walkAnimation) {
+        print('🚶 Switching to walk animation');
+      }
       animation = walkAnimation;
-      print('🚶 Setting walk animation');
+
       if (!_isExecutingTargetedAttack) {
         position += direction * speed * dt;
       }
     } else {
+      if (animation != idleAnimation) {
+        print('🧍 Switching to idle animation');
+      }
       animation = idleAnimation;
-      print('🧍 Setting idle animation');
     }
 
     if (distanceToPlayer < 10) {
@@ -375,52 +431,94 @@ class Boss1 extends BaseEnemy with Staggerable {
       {bool isCritical = false,
       bool isEchoed = false,
       bool isFlameDamage = false}) {
-    if (!isCritical) {
-      isCritical = gameRef.random.nextDouble() < player.critChance / 100;
+    if (!isMounted || healthNotifier.value <= 0 || _isUpdatingHealth) {
+      print('⚠️ Damage blocked - Boss not mounted, dead, or updating');
+      return;
     }
 
-    int finalDamage = isCritical
-        ? (baseDamage * player.critMultiplier).toInt()
-        : baseDamage.toInt();
+    _isUpdatingHealth = true;
 
-    double newDamage = finalDamage.toDouble();
-    if (_tripleDamaged == true) {
-      newDamage = finalDamage * 3;
+    try {
+      double actualDamage = getStaggeredDamage(baseDamage.toInt());
+      double currentHealth = healthNotifier.value;
+      double newHealth = (currentHealth - actualDamage).clamp(0.0, maxHealth);
+
+      print(
+          '💉 Taking damage: $actualDamage, Current Health: $currentHealth -> New Health: $newHealth');
+
+      // Show damage number
+      final damageNumber = DamageNumber(
+        actualDamage.toInt(),
+        position.clone() + Vector2(0, -20),
+        isCritical: isCritical,
+      );
+      gameRef.add(damageNumber);
+
+      // Update health notifiers in a single batch
+      healthNotifier.value = newHealth;
+
+      // Only call onHealthChanged if the value actually changed
+      if (currentHealth != newHealth) {
+        onHealthChanged(newHealth);
+      }
+
+      if (newHealth > 0) {
+        applyStaggerDamage(actualDamage.toInt(), isCritical: isCritical);
+      }
+
+      if (newHealth <= 0) {
+        die();
+        onDeath();
+      }
+    } finally {
+      _isUpdatingHealth = false;
     }
+  }
 
-    // Apply damage to the local class
-    double currentHealth = healthNotifier.value;
-    currentHealth -= newDamage;
-    // Update
-    healthNotifier.value = currentHealth.toDouble();
+  // Add this method to handle health updates from external sources
+  void updateHealth(double newHealth) {
+    if (_isUpdatingHealth) return;
 
-    onHealthChanged(healthNotifier.value);
-    print('⚠️ Boss took damage! Health: ${healthNotifier.value}');
-
-    // Check for phase transitions
-    final currentSegment = (currentHealth / segmentSize).ceil();
-    print('🔄 Current Segment: $currentSegment');
-
-    if (currentSegment <= 165 && !hasTriggeredX165) {
-      print('✅ TRIGGERING 165 MECHANICS from takeDamage!');
-      _enterFadingPhase(); // Don't set hasTriggeredX165 here, let _enterFadingPhase handle it
-    }
-
-    applyStaggerDamage(finalDamage, isCritical: isCritical);
-
-    // Check for death and call onDeath
-    if (healthNotifier.value <= 0) {
-      die();
-      onDeath();
+    _isUpdatingHealth = true;
+    try {
+      double clampedHealth = newHealth.clamp(0.0, maxHealth);
+      healthNotifier.value = clampedHealth;
+      onHealthChanged(clampedHealth);
+    } finally {
+      _isUpdatingHealth = false;
     }
   }
 
   @override
+  void onMount() {
+    super.onMount();
+    // Ensure initial health is set
+    onHealthChanged(healthNotifier.value);
+    print('🎯 Boss mounted - Initial health: ${healthNotifier.value}');
+  }
+
+  @override
   void applyStaggerVisuals() {
-    add(ColorEffect(
-      const Color(0xFFFF0000),
-      EffectController(duration: 5.0, reverseDuration: 5.0),
-    ));
+    // Load and play stagger animation
+    gameRef
+        .loadSpriteAnimation(
+      'boss1_stagger.png',
+      SpriteAnimationData.sequenced(
+        amount: 2, // 2 frame animation
+        textureSize: Vector2(128, 128), // Adjust to match your sprite size
+        stepTime: 0.2, // Fast blinking effect
+        loop: true,
+      ),
+    )
+        .then((staggerAnimation) {
+      animation = staggerAnimation;
+
+      // Also add red tint
+      add(ColorEffect(
+        const Color(0xFFFF0000),
+        EffectController(duration: 5.0, reverseDuration: 5.0),
+      ));
+    });
   }
 
   void targetPlayer() {
@@ -564,23 +662,22 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void _returnToNormalState() {
-    print('⚡ Boss returning to normal!');
+    print('🔄 Beginning return to normal sequence');
     isFading = false;
     attackCooldown = originalAttackCooldown;
     speed = originalSpeed;
 
-    // Remove any existing color effects first
+    // Remove existing effects
     removeAll(children.whereType<ColorEffect>());
 
-    // Add fade-in effect
+    // Fade back in slowly
     add(OpacityEffect.to(
       1.0,
-      EffectController(duration: 1.5),
+      EffectController(duration: 2.0, curve: Curves.easeIn),
       onComplete: () {
-        // Only re-enable targeting after fade-in is complete
         isTargetable = true;
         gameRef.player.enableShooting();
-        print('✅ Boss targetable again after fully returning to normal');
+        print('✅ Boss fully returned to normal state');
         add(RectangleHitbox());
       },
     ));
@@ -597,53 +694,98 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   // COMBINE triggerX165Mechanics and _enterFadingPhase
   void _enterFadingPhase() {
-    if (isFading || hasTriggeredX165) return; // Check both conditions
+    print('🔥 _enterFadingPhase called');
 
-    print('🔥 Boss at X165 - Triggering Fading Phase!');
+    if (hasTriggeredX165) {
+      print('⛔ _enterFadingPhase: Already triggered, returning');
+      return;
+    }
+
+    hasTriggeredX165 = true; // Set this FIRST to prevent re-entry
     isFading = true;
-    hasTriggeredX165 = true; // Mark as triggered
-    _teleportShootRemainingTime = 0;
 
-    // First add blue glow effect
-    add(ColorEffect(const Color(0xFF00BBFF),
-        EffectController(duration: 2.0, curve: Curves.easeInOut),
-        onComplete: () {
-      // Make boss untargetable after glow, before fade
-      isTargetable = false;
-      gameRef.player.disableShooting();
-      print('🎯 Boss marked as untargetable after glow');
+    if (isStaggered) {
+      print('⛔ _enterFadingPhase: Is staggered, delaying');
+      Future.delayed(Duration(milliseconds: 500), () {
+        if (isMounted && !isStaggered && !isFading) {
+          print('🔄 _enterFadingPhase: Retrying after stagger');
+          _enterFadingPhase(); // Recursive call
+        }
+      });
+      return;
+    }
 
-      // Start fade out
-      add(OpacityEffect.to(
-        0.0,
-        EffectController(duration: 3.0, curve: Curves.easeIn),
-        onComplete: () {
-          print('🌟 Boss fade complete - becoming invisible');
-          opacity = 0;
-          position = Vector2(-9999, -9999);
-
-          Future.delayed(Duration(seconds: 4), () {
-            if (isMounted) {
-              _startTeleportAndShootPhase();
-              _teleportShootRemainingTime = 15;
-            }
-          });
-        },
-      ));
-    }));
-
+    print('🔥 X165 PHASE START');
     pauseNormalAttackPattern();
     removeWhere((component) => component is RectangleHitbox);
+
+    // Step 1: Blue Glow
+    add(ColorEffect(
+      const Color(0xFF00BBFF),
+      EffectController(duration: 3.0),
+      onComplete: () {
+        print('💫 Blue glow complete');
+        if (!isMounted) {
+          print('❌ _enterFadingPhase: Not mounted after glow, returning');
+          return;
+        }
+
+        // Step 2: Fade Out
+        isTargetable = false;
+        gameRef.player.disableShooting();
+
+        add(OpacityEffect.to(
+          0.0,
+          EffectController(duration: 2.0),
+          onComplete: () {
+            print('�️ Fade out complete');
+            if (!isMounted) {
+              print('❌ _enterFadingPhase: Not mounted after fade, returning');
+              return;
+            }
+
+            opacity = 0;
+            position = Vector2(-9999, -9999);
+
+            // Step 3: Wait 4 seconds
+            print('⌛ Starting 4s delay');
+            Future.delayed(const Duration(seconds: 4), () {
+              if (!isMounted) {
+                print(
+                    '❌ _enterFadingPhase: Not mounted after delay, returning');
+                return;
+              }
+
+              // Step 4: Begin Teleport Phase
+              print('🎯 Starting teleport phase');
+              _teleportShootRemainingTime = 15;
+              _startTeleportAndShootPhase();
+            });
+          },
+        ));
+      },
+    ));
   }
 
   void _startTeleportAndShootPhase() {
-    print('👻 Boss starting teleport and shoot phase');
-    opacity = 0;
-    _teleportOutsidePlayerRange();
+    if (isStaggered) {
+      print('⏳ Delaying teleport phase - Boss is staggered');
+      Future.delayed(Duration(seconds: 1), () {
+        if (isMounted && !isStaggered) {
+          _startTeleportAndShootPhase();
+        }
+      });
+      return;
+    }
 
-    // Only fade in at the very end
-    Future.delayed(Duration(seconds: 14), () {
-      if (isMounted) {
+    print('👻 Starting teleport and shoot phase');
+    _teleportOutsidePlayerRange();
+    _teleportShootRemainingTime = 15;
+    _timeSinceLastTeleportShoot = 0;
+
+    Future.delayed(Duration(seconds: 15), () {
+      if (isMounted && !isStaggered) {
+        print('⚡ Teleport phase complete, returning to normal');
         _returnToNormalState();
       }
     });
@@ -669,18 +811,18 @@ class Boss1 extends BaseEnemy with Staggerable {
     print('💫 Boss at X150 - Creating orbital trap!');
     _isLockedInPlace = true; // Lock the boss in place
     position = Vector2(1280 / 2, (1280 / 2) - 100); // Center position
-
     createOrbitalAttack(
         projectileCount: 32, radius: 400.0, speed: 3.0, projectileDamage: 25.0);
-
+    pauseNormalAttackPattern();
+    applyStaggerVisuals();
     // Remove the automatic release - keep orbital attack until death
   }
 
   void createOrbitalAttack({
     int projectileCount = 16,
-    double radius = 400.0, // Reduced radius to ensure visibility
+    double radius = 400.0,
     double speed = 3.0,
-    double projectileDamage = 9999.0, //one shot
+    double projectileDamage = 25.0,
   }) {
     _isPerformingOrbitalAttack = true;
 
@@ -693,9 +835,10 @@ class Boss1 extends BaseEnemy with Staggerable {
     _orbitalProjectiles.clear();
 
     // Position slightly higher to ensure bottom of circle is visible
-    position = Vector2(1280 / 2, (1280 / 2) - 50); // Moved up by 100 pixels
+    position = Vector2(1280 / 2, (1280 / 2) - 100);
     anchor = Anchor.center;
-    speed = 0;
+    _storedSpeed = speed; // Store original speed
+    speed = 0; // Stop movement
 
     print('🎯 After setting orbital position: $position');
 
@@ -759,46 +902,41 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     _orbitalProjectiles.clear();
     _isPerformingOrbitalAttack = false;
-    speed = originalSpeed; // Restore original speed
+    speed = _storedSpeed; // Restore original speed
+  }
+
+  @override
+  void applyStaggerDamage(int damage, {bool isCritical = false}) {
+    // Apply stagger damage normally without X150 check
+    takeDamage(damage.toDouble(), isCritical: isCritical);
+
+    // Apply normal stagger effects
+    super.applyStaggerDamage(damage, isCritical: isCritical);
   }
 
   @override
   void triggerStagger() {
-    _storedSpeed = speed; // Store current speed before super call
-    super.triggerStagger();
-
-    // If we're already in X150 phase, we should stay locked
+    // Double check X150 immunity
     if (healthBar.currentSegment <= 150) {
-      _isLockedInPlace = true;
-      position = Vector2(1280 / 2, (1280 / 2) - 100);
-      print('🔒 Locking position during stagger');
+      print('🛡️ Boss immune to stagger trigger at X150');
+      return;
     }
 
+    super.triggerStagger();
+
+    // Reset animation after stagger duration
     Future.delayed(Duration(seconds: staggerDuration.toInt()), () {
-      print('💫 Boss recovering from stagger');
-      isStaggered = false;
-
-      // Check segment again when recovering
-      if (healthBar.currentSegment <= 150) {
-        _isLockedInPlace = true;
-        speed = 0; // Ensure speed stays at 0
-        position = Vector2(1280 / 2, (1280 / 2) - 100);
-        print('🔒 Maintaining locked position after stagger');
-      } else {
-        _isLockedInPlace = false;
-        speed = _storedSpeed;
-        print('⚡ Restored speed to: $_storedSpeed');
+      if (isMounted) {
+        print('🔄 Resetting to idle animation after stagger');
+        animation = idleAnimation;
       }
-
-      attackCooldown /= 1.5;
-      staggerProgress = 0;
-      bossStaggerNotifier.value = 0;
     });
   }
 
   void triggerX100Mechanics() {
     print('🔥 Boss at X100 - Adding cone attacks!');
     // Don't change position or lock state here - maintain X150 position
+    pauseNormalAttackPattern();
 
     _coneTimer = Timer(
       4,
