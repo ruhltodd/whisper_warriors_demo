@@ -3,11 +3,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whisper_warriors/game/inventory/inventoryitem.dart';
 import 'package:whisper_warriors/game/items/items.dart';
-
-// Only import file-based storage on non-web platforms
-import 'dart:io' if (dart.library.html) 'fake_io.dart';
-import 'package:path_provider/path_provider.dart'
-    if (dart.library.html) 'fake_path_provider.dart';
+import 'dart:io'; // Keep this import
+import 'package:path_provider/path_provider.dart'; // Keep this import
 
 class InventoryStorage {
   static const String fileName = 'inventory.json';
@@ -148,14 +145,21 @@ class InventoryStorage {
     }
   }
 
-// Only use this function on Mobile/Desktop
+  // Only use this function on Mobile/Desktop
   static Future<File?> get _localFile async {
-    if (kIsWeb) return null; // Web doesn't use file storage
+    if (kIsWeb) {
+      print("⚠️  Not using file storage on Web.");
+      return null; // Web doesn't use file storage
+    }
 
-    // Get the directory only on mobile/desktop, so avoid trying
-    // to call .path on web's fake string implementation
-    final directory = await getApplicationDocumentsDirectory();
-    return File(
-        '${directory}/$fileName'); // Removed `.path` to use the string path
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final path = directory.path; // Access path here
+      return File(
+          '$path/$fileName'); // Use string interpolation to create the file path
+    } catch (e) {
+      print('❌ Error getting local file: $e');
+      return null;
+    }
   }
 }
