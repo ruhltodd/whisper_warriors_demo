@@ -38,9 +38,9 @@ class WhisperingFlames extends Component
     implements Ability {
   final DamageTracker damageTracker;
   double _elapsedTime = 0.0;
-  final double baseDamagePerSecond = 250;
-  final double range = 600;
-  final double tickRate = 0.3;
+  final double baseDamagePerSecond = 225;
+  final double range = 450;
+  final double tickRate = 0.5;
 
   @override
   final String name = "Whispering Flames";

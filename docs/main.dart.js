@@ -73146,11 +73146,11 @@ aq(a,a0){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b=this
 if((b.a&4)===0||b.e==null){A.j("\ud83d\udd25 WhisperingFlames not mounted or no parent")
 return}b.iw(0,a0)
 l=b.ax+=a0
-if(l>=0.3){b.ax=0
+if(l>=0.5){b.ax=0
 k=A.f1()
-s=250*k
+s=225*k
 if(b.a6T()){A.j("\ud83d\udd25 WhisperingFlames tick")
-A.j("\ud83d\udd25 Base damage: 250 \xd7 "+B.c.R(k,2)+" = "+A.i(s))}try{r=0
+A.j("\ud83d\udd25 Base damage: 225 \xd7 "+B.c.R(k,2)+" = "+A.i(s))}try{r=0
 for(l=J.aC(b.ga6().gbV(0).ek(0,t.e3)),j=A.k(b).h("aQ.T");l.p();){q=l.gD(l)
 if(!q.bu)continue
 i=q.at
@@ -73163,7 +73163,7 @@ g[1]=e[1]
 g[0]=e[0]
 f.hd(0,h.at.d)
 p=Math.sqrt(f.gcH())
-if(p<600){++r
+if(p<450){++r
 i=b.aJ$
 if(i==null){d=b.bF()
 d.toString
