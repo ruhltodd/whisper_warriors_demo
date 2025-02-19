@@ -126,6 +126,9 @@ class Player extends PositionComponent
 
   WhisperingFlamesAura? _fireAura; // Add this property
 
+  // Add near the top with other properties
+  bool testMode = false; // Test mode flag
+
   // Constructor for Player
   Player({
     required List<String> selectedAbilities,
@@ -431,7 +434,7 @@ class Player extends PositionComponent
 
   // Take damage and handle death
   void takeDamage(double amount) {
-    if (currentHealth <= 0) return; // Prevent damage when dead
+    if (currentHealth <= 0 || testMode) return; // Skip damage if in test mode
 
     currentHealth -= amount;
     print('💥 Player took $amount damage. Health: $currentHealth/$maxHealth');
@@ -768,6 +771,12 @@ class Player extends PositionComponent
     _fireAura?.removeFromParent();
     _fireAura = null;
     print('❄️ Fire aura deactivated');
+  }
+
+  // Add a method to toggle test mode
+  void toggleTestMode() {
+    testMode = !testMode;
+    print('🧪 Test Mode: ${testMode ? 'Enabled' : 'Disabled'}');
   }
 }
 

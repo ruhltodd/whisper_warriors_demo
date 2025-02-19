@@ -926,6 +926,12 @@ class RogueShooterGame extends FlameGame
   }
 
   bool get isRunning => _isRunning;
+
+  void victory() {
+    print('🏆 Victory!');
+    pauseEngine();
+    overlays.add('damageReport');
+  }
 }
 
 class RetryOverlay extends StatelessWidget {

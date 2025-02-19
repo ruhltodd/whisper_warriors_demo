@@ -199,6 +199,36 @@ class _InventoryScreenState extends State<InventoryScreen> {
               SizedBox(height: 20),
             ],
           ),
+          // Back button in bottom left
+          Positioned(
+            bottom: 20,
+            left: 20,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 123, 123, 123),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.arrow_back, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Back',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (_hoveredItem != null) _buildHoverStats(),
         ],
       ),

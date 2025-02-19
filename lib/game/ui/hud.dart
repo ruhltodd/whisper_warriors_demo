@@ -88,32 +88,29 @@ class HUD extends StatelessWidget {
         // 👑 Boss UI (Health Bar + Stagger Bar)
         Positioned(
           top: safeTop + 40,
-          left: MediaQuery.of(context).size.width / 2 - 100, // ✅ Centered UI
+          left: MediaQuery.of(context).size.width / 2 - 100,
           child: ValueListenableBuilder<String?>(
-            valueListenable:
-                game.activeBossNameNotifier, // ✅ Listen for changes
+            valueListenable: game.activeBossNameNotifier,
             builder: (context, bossName, _) {
               return ValueListenableBuilder<double?>(
                 valueListenable: bossHealthNotifier,
                 builder: (context, bossHealth, _) {
                   return ValueListenableBuilder<double?>(
-                    valueListenable:
-                        game.bossStaggerNotifier, // ✅ Stagger Notifier
+                    valueListenable: game.bossStaggerNotifier,
                     builder: (context, bossStagger, _) {
-                      if (bossHealth == null || bossName == null) {
+                      if (bossHealth == null ||
+                          bossHealth <= 0 ||
+                          bossName == null) {
                         return const SizedBox.shrink();
                       }
 
-                      // Assuming maxStagger is a constant or can be retrieved
-                      double maxStagger =
-                          100.0; // You can replace this with the actual value if needed
+                      double maxStagger = 100.0;
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // 👑 Dynamic Boss Name
                           Text(
-                            bossName, // ✅ Uses dynamic boss name
+                            bossName,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white,
@@ -124,8 +121,6 @@ class HUD extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 5),
-
-                          // 🔴 **Boss Health Bar**
                           SizedBox(
                             width: 200,
                             child: BossHealthBar(
@@ -135,12 +130,8 @@ class HUD extends StatelessWidget {
                               segmentSize: 1000,
                             ),
                           ),
-
                           const SizedBox(height: 5), // ✅ Space between bars
-
-                          // ⚡ **Stagger Bar (Now Re-Added)**
-                          if (bossStagger !=
-                              null) // ✅ Only show if stagger exists
+                          if (bossStagger != null)
                             SizedBox(
                               width: 200,
                               child: CustomPaint(

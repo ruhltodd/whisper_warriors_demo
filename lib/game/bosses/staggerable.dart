@@ -6,10 +6,10 @@ import 'package:whisper_warriors/game/main.dart'; // Adjust the path as necessar
 mixin Staggerable on PositionComponent, HasGameRef<RogueShooterGame> {
   double staggerProgress = 0.0;
   bool isStaggered = false;
-  double staggerWindow = 5.0;
-  double staggerDuration = 5.0;
+  double staggerWindow = 10.0;
+  double staggerDuration = 10.0;
   double staggerCooldown = 5.0;
-  double staggerDamageMultiplier = 5.0;
+  double staggerDamageMultiplier = 6.0;
 
   double _damageReceived = 0;
   double _staggerTimer = 0;

@@ -30,14 +30,29 @@ class DamageNumber extends PositionComponent with HasGameRef<RogueShooterGame> {
   }
 
   Vector2 _getRandomOffset() {
+    // Wider spread for critical hits
+    if (isCritical && !isPlayer) {
+      return Vector2(
+        _random.nextDouble() * 60 - 30, // -30 to +30 range
+        _random.nextDouble() * 60 - 30,
+      );
+    }
+
+    // Normal spread for non-critical hits
     return Vector2(
-      _random.nextDouble() * 20 - 10,
+      _random.nextDouble() * 20 - 10, // -10 to +10 range
       _random.nextDouble() * 20 - 10,
     );
   }
 
   double _getRandomHorizontalMove() {
-    return _random.nextDouble() * 40 - 20;
+    // Wider movement for critical hits
+    if (isCritical && !isPlayer) {
+      return _random.nextDouble() * 80 - 40; // -40 to +40 range
+    }
+
+    // Normal movement for non-critical hits
+    return _random.nextDouble() * 40 - 20; // -20 to +20 range
   }
 
   @override

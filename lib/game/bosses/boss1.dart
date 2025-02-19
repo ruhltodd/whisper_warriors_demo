@@ -5,9 +5,11 @@ import 'package:flame/effects.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:whisper_warriors/game/bosses/staggerbar.dart';
 import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/effects/explosion.dart';
+import 'package:whisper_warriors/game/items/lootbox.dart';
 import 'package:whisper_warriors/game/player/player.dart';
 import 'package:whisper_warriors/game/ai/enemy.dart';
 import 'package:whisper_warriors/game/projectiles/projectile.dart';
@@ -15,8 +17,14 @@ import 'package:whisper_warriors/game/bosses/bosshealthbar.dart';
 import 'staggerable.dart';
 import 'package:flame/timer.dart';
 import 'dart:async'; // Add this import at the top
+import 'package:flame/input.dart';
+import 'package:whisper_warriors/game/inventory/loottable.dart';
+import 'package:whisper_warriors/game/ai/spawncontroller.dart';
+import 'package:whisper_warriors/game/ai/wave2enemy.dart'; // Add this import
 
-class Boss1 extends BaseEnemy with Staggerable {
+enum OrbitalPattern { NORMAL, EXPAND_CONTRACT, FIGURE_EIGHT, SPIRAL }
+
+class Boss1 extends BaseEnemy with Staggerable, KeyboardHandler {
   final ValueNotifier<double> healthNotifier;
   bool enraged = false;
   bool isFading = false;
@@ -25,7 +33,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   bool hasTriggeredX190 = false;
   bool hasTriggeredX165 = false;
   bool hasTriggeredX150 = false;
-  bool hasTriggeredX100 = false;
+  bool hasTriggeredX120 = false;
   double attackCooldown = 4.0;
   double timeSinceLastAttack = 0.0;
   double _timeSinceLastTeleportShoot = 0;
@@ -67,12 +75,33 @@ class Boss1 extends BaseEnemy with Staggerable {
   double _orbitalSpeed = 3.0;
   double _orbitalAngle = 0.0;
   bool _isPerformingOrbitalAttack = false;
-  bool _isLockedInPlace = false; // Add this flag
   double _storedSpeed = 0.0; // Add this to store original speed
 
   Timer? _coneTimer; // Add timer as class property
 
   bool _isUpdatingHealth = false; // Add flag to prevent recursive updates
+
+  OrbitalPattern _currentPattern = OrbitalPattern.NORMAL;
+  double _baseRadius = 400.0;
+  double _patternTimer = 0;
+
+  // Add these properties
+  List<int> _availableProjectileIndices = [];
+  Timer? _pullbackTimer;
+  double _pullbackSpeed = 800.0;
+  final Set<Projectile> _pullingProjectiles =
+      {}; // Track which projectiles are being pulled
+
+  // Add property
+  bool hasTriggeredX80 = false;
+
+  bool _lastTKeyState = false; // Track previous T key state
+
+  // Add timer property
+  bool _hasSpawnedDemo = false; // Flag to ensure we only spawn once
+
+  // Add property
+  bool _hasTriggeredX5 = false;
 
   Boss1({
     required Player player,
@@ -192,8 +221,65 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   @override
   void update(double dt) {
-    if (_isUpdatingHealth) return;
     super.update(dt);
+
+    if (_isUpdatingHealth) return;
+
+    // Check for death at X1 first
+    if (healthBar.currentSegment <= 1) {
+      print('💀 Boss health at X1 - Triggering death sequence');
+      onBossDefeated();
+      _spawnLootBox();
+      removeAll(children.whereType<ColorEffect>());
+
+      Future.delayed(const Duration(seconds: 4), () {
+        if (gameRef.isMounted) {
+          gameRef.victory();
+        }
+      });
+
+      removeFromParent();
+      return;
+    }
+
+    // Check for X5 orbital release
+    if (healthBar.currentSegment <= 5 && !_hasTriggeredX5) {
+      print('🌟 X5 threshold reached - Preparing orbital release!');
+      _hasTriggeredX5 = true;
+
+      // Ensure boss is in a state to release orbitals
+      isStaggered = false;
+      isFading = false;
+      isTargetable = true;
+
+      // Remove any effects that might interfere
+      removeAll(children.whereType<ColorEffect>());
+
+      // Release the orbitals
+      print('🚀 Releasing orbital projectiles!');
+      releaseOrbitalProjectiles();
+      return;
+    }
+
+    // Check T key state using RawKeyboard
+    final tKeyPressed =
+        RawKeyboard.instance.keysPressed.contains(LogicalKeyboardKey.keyT);
+
+    // Toggle test mode only on key press (not hold)
+    if (tKeyPressed && !_lastTKeyState) {
+      gameRef.player.toggleTestMode();
+    }
+    _lastTKeyState = tKeyPressed;
+
+    // Update orbital projectiles if active and above X140
+    if (_isPerformingOrbitalAttack) {
+      if (healthBar.currentSegment <= 140) {
+        print('💫 Boss reaching X140 - Ending orbital phase');
+        _endOrbitalAttack();
+      } else {
+        updateOrbitalProjectiles(dt);
+      }
+    }
 
     // Skip updates if staggered
     if (isStaggered) {
@@ -218,6 +304,13 @@ class Boss1 extends BaseEnemy with Staggerable {
     // Regular update logic
     final currentHealth = healthNotifier.value;
     final currentSegment = (currentHealth / segmentSize).ceil();
+
+    // Add X80 speed increase check
+    if (!hasTriggeredX80 && currentSegment <= 80) {
+      print('⚡ Boss reaching X80 - Increasing attack speed');
+      hasTriggeredX80 = true;
+      triggerX80Mechanics();
+    }
 
     // Debug health and segment info
     print('🔢 Health: $currentHealth, Segment: $currentSegment');
@@ -252,6 +345,13 @@ class Boss1 extends BaseEnemy with Staggerable {
       print('✨ Triggering X150');
       hasTriggeredX150 = true;
       triggerX150Mechanics();
+    }
+
+    // Add X120 check here
+    if (hasTriggeredX150 && !hasTriggeredX120 && currentSegment <= 120) {
+      print('✨ Triggering X120');
+      hasTriggeredX120 = true;
+      triggerX120Mechanics();
     }
 
     updateStagger(dt);
@@ -322,13 +422,24 @@ class Boss1 extends BaseEnemy with Staggerable {
 
     // Debug print for current segment
     print(
-        '🔍 Current Segment: ${healthBar.currentSegment}, X100 Triggered: $hasTriggeredX100');
+        '🔍 Current Segment: ${healthBar.currentSegment}, X120 Triggered: $hasTriggeredX120');
 
-    // Allow X100 to trigger while X150 is active
-    if (currentSegment <= 100 && !hasTriggeredX100) {
-      print('✅ Health below 100');
-      hasTriggeredX100 = true;
-      triggerX100Mechanics();
+    // Allow X120 to trigger while X150 is active
+    if (currentSegment <= 120 && !hasTriggeredX120) {
+      print('✅ Health below 120');
+      hasTriggeredX120 = true;
+      triggerX120Mechanics();
+    }
+
+    // Add attack pattern update
+    if (alternatePattern && !isStaggered && !isFading) {
+      timeSinceLastAttack += dt;
+
+      if (timeSinceLastAttack >= attackCooldown) {
+        _startAlternateAttackPattern(); // Choose random pattern each time
+        timeSinceLastAttack = 0;
+        attackCount++;
+      }
     }
   }
 
@@ -341,17 +452,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     if (!isMounted) return;
 
     // Debug current state
-    print(
-        '🔄 Movement Update - Landed: $_hasLanded, Locked: $_isLockedInPlace, Fading: $isFading');
-
-    // Early return if locked or not landed
-    if (!_hasLanded || _isLockedInPlace) {
-      // Removed healthBar.currentSegment check
-      print(
-          '🚫 Movement blocked - Landed: $_hasLanded, Locked: $_isLockedInPlace');
-      animation = idleAnimation;
-      return;
-    }
+    print('🔄 Movement Update - Landed: $_hasLanded, Fading: $isFading');
 
     final Vector2 direction = (player.position - position).normalized();
     final double distanceToPlayer = (player.position - position).length;
@@ -415,7 +516,7 @@ class Boss1 extends BaseEnemy with Staggerable {
       Vector2 spawnPosition = position.clone() + spawnOffset;
 
       final bossProjectile = Projectile.bossProjectile(
-        damage: 1, //changed from 15 to 1 but change back to 15 for final
+        damage: 3, //changed from 15 to 1 but change back to 15 for final
         velocity: projectileVelocity,
       )
         ..position = spawnPosition
@@ -424,6 +525,42 @@ class Boss1 extends BaseEnemy with Staggerable {
 
       gameRef.add(bossProjectile);
     }
+  }
+
+  void onBossDefeated() {
+    print("💀 Boss defeated! Removing HUD elements...");
+
+    // Remove boss health and stagger bars from the UI
+    gameRef.overlays.remove('bossHealthBar');
+    gameRef.overlays.remove('bossStaggerBar');
+
+    // Remove any reference to boss-related UI elements
+    gameRef.activeBossNameNotifier.value = null;
+    gameRef.bossHealthNotifier.value = 0.0;
+    gameRef.bossStaggerNotifier.value = 0.0;
+
+    // Clean up orbital projectiles
+    print('🗑️ Cleaning up ${_orbitalProjectiles.length} orbital projectiles');
+    for (var projectile in [..._orbitalProjectiles]) {
+      if (projectile != null && projectile.isMounted) {
+        projectile.removeFromParent();
+      }
+    }
+    _orbitalProjectiles.clear();
+    _isPerformingOrbitalAttack = false;
+
+    // Remove other projectiles
+    gameRef.children.whereType<Projectile>().forEach((projectile) {
+      if (projectile.isMounted) {
+        print('🗑️ Removing projectile');
+        projectile.removeFromParent();
+      }
+    });
+  }
+
+  void _endOrbitalAttack() {
+    print('🌟 Releasing orbital projectiles');
+    releaseOrbitalProjectiles();
   }
 
   @override
@@ -468,6 +605,7 @@ class Boss1 extends BaseEnemy with Staggerable {
 
       if (newHealth <= 0) {
         die();
+        onBossDefeated(); // ✅ Call cleanup function
         onDeath();
       }
     } finally {
@@ -556,7 +694,7 @@ class Boss1 extends BaseEnemy with Staggerable {
           final Vector2 direction = (player.position - position).normalized();
           if (direction.length > 0) {
             final bossProjectile = Projectile.bossProjectile(
-              damage: 15,
+              damage: 10,
               velocity:
                   direction * projectileSpeed, // Use the phase-based speed
             )
@@ -645,10 +783,10 @@ class Boss1 extends BaseEnemy with Staggerable {
       _timeSinceLastTeleportShoot = 0;
       for (int i = 0; i < 6; i++) {
         double angle = random.nextDouble() * (pi * 2);
-        Vector2 velocity = Vector2(cos(angle), sin(angle)) * 500;
+        Vector2 velocity = Vector2(cos(angle), sin(angle)) * 400;
 
         final bossProjectile = Projectile.bossProjectile(
-          damage: 15, // Example damage
+          damage: 10, // Example damage
           velocity: velocity,
         )
           ..position = position.clone()
@@ -666,9 +804,6 @@ class Boss1 extends BaseEnemy with Staggerable {
     isFading = false;
     attackCooldown = originalAttackCooldown;
     speed = originalSpeed;
-
-    // Remove existing effects
-    removeAll(children.whereType<ColorEffect>());
 
     // Fade back in slowly
     add(OpacityEffect.to(
@@ -689,6 +824,8 @@ class Boss1 extends BaseEnemy with Staggerable {
     _projectileTimer?.stop();
     _warningCircle?.removeFromParent();
     _coneTimer?.stop();
+    _pullbackTimer?.stop();
+    _pullingProjectiles.clear();
     super.onRemove();
   }
 
@@ -719,50 +856,36 @@ class Boss1 extends BaseEnemy with Staggerable {
     pauseNormalAttackPattern();
     removeWhere((component) => component is RectangleHitbox);
 
-    // Step 1: Blue Glow
-    add(ColorEffect(
-      const Color(0xFF00BBFF),
-      EffectController(duration: 3.0),
+    // Step 1: Fade Out
+    isTargetable = false;
+    gameRef.player.disableShooting();
+
+    add(OpacityEffect.to(
+      0.0,
+      EffectController(duration: 2.0),
       onComplete: () {
-        print('💫 Blue glow complete');
+        print('🔄 Fade out complete');
         if (!isMounted) {
-          print('❌ _enterFadingPhase: Not mounted after glow, returning');
+          print('❌ _enterFadingPhase: Not mounted after fade, returning');
           return;
         }
 
-        // Step 2: Fade Out
-        isTargetable = false;
-        gameRef.player.disableShooting();
+        opacity = 0;
+        position = Vector2(-9999, -9999);
 
-        add(OpacityEffect.to(
-          0.0,
-          EffectController(duration: 2.0),
-          onComplete: () {
-            print('�️ Fade out complete');
-            if (!isMounted) {
-              print('❌ _enterFadingPhase: Not mounted after fade, returning');
-              return;
-            }
+        // Step 2: Wait 4 seconds
+        print('⌛ Starting 4s delay');
+        Future.delayed(const Duration(seconds: 4), () {
+          if (!isMounted) {
+            print('❌ _enterFadingPhase: Not mounted after delay, returning');
+            return;
+          }
 
-            opacity = 0;
-            position = Vector2(-9999, -9999);
-
-            // Step 3: Wait 4 seconds
-            print('⌛ Starting 4s delay');
-            Future.delayed(const Duration(seconds: 4), () {
-              if (!isMounted) {
-                print(
-                    '❌ _enterFadingPhase: Not mounted after delay, returning');
-                return;
-              }
-
-              // Step 4: Begin Teleport Phase
-              print('🎯 Starting teleport phase');
-              _teleportShootRemainingTime = 15;
-              _startTeleportAndShootPhase();
-            });
-          },
-        ));
+          // Step 4: Begin Teleport Phase
+          print('🎯 Starting teleport phase');
+          _teleportShootRemainingTime = 15;
+          _startTeleportAndShootPhase();
+        });
       },
     ));
   }
@@ -800,21 +923,115 @@ class Boss1 extends BaseEnemy with Staggerable {
   }
 
   void triggerX190Mechanics() {
-    //No changes required
-    print('💥 Boss at X190 - Triggering rage mechanics!');
-    // Increase projectile count
+    print('🔥 Boss at X190 - Starting alternate attack pattern');
     alternatePattern = true;
-    // Add more mechanics as needed
+
+    // Increase attack speed
+    attackCooldown = originalAttackCooldown * 0.7; // 30% faster attacks
+
+    // Start shooting in alternating patterns
+    _startAlternateAttackPattern();
+  }
+
+  void _startAlternateAttackPattern() {
+    print('⚔️ Starting alternate attack pattern');
+    _isExecutingTargetedAttack = false;
+
+    // Reset attack timers
+    timeSinceLastAttack = 0;
+    attackCount = 0;
+
+    // Randomly choose an attack pattern
+    int patternChoice = Random().nextInt(3); // 0-2
+    print('🎲 Chose attack pattern: $patternChoice');
+
+    switch (patternChoice) {
+      case 0:
+        _shootBurstPattern();
+        break;
+      case 1:
+        _shootSpiralPattern();
+        break;
+      case 2:
+        _shootCrossPattern();
+        break;
+    }
+  }
+
+  void _shootBurstPattern() {
+    if (!isMounted || isStaggered) return;
+
+    // Shoot in a circular burst pattern
+    for (int i = 0; i < 8; i++) {
+      double angle = (i * 2 * pi) / 8;
+      Vector2 direction = Vector2(cos(angle), sin(angle));
+
+      final projectile = Projectile.bossProjectile(
+        damage: 15,
+        velocity: direction * 400,
+        color: Colors.red,
+      )
+        ..position = position.clone()
+        ..size = Vector2.all(40)
+        ..anchor = Anchor.center;
+
+      gameRef.add(projectile);
+    }
+  }
+
+  void _shootSpiralPattern() {
+    if (!isMounted || isStaggered) return;
+
+    // Shoot in a spiral pattern
+    for (int i = 0; i < 6; i++) {
+      double angle = (attackCount * pi / 8) + (i * 2 * pi / 6);
+      Vector2 direction = Vector2(cos(angle), sin(angle));
+
+      final projectile = Projectile.bossProjectile(
+        damage: 15,
+        velocity: direction * 350,
+        color: Colors.orange,
+      )
+        ..position = position.clone()
+        ..size = Vector2.all(40)
+        ..anchor = Anchor.center;
+
+      gameRef.add(projectile);
+    }
+  }
+
+  void _shootCrossPattern() {
+    if (!isMounted || isStaggered) return;
+
+    // Shoot in a cross pattern
+    for (int i = 0; i < 4; i++) {
+      double angle = (i * pi / 2) + (attackCount * pi / 8);
+      Vector2 direction = Vector2(cos(angle), sin(angle));
+
+      // Shoot two projectiles in each direction
+      for (double speed in [300.0, 450.0]) {
+        final projectile = Projectile.bossProjectile(
+          damage: 15,
+          velocity: direction * speed,
+          color: Colors.purple,
+        )
+          ..position = position.clone()
+          ..size = Vector2.all(40)
+          ..anchor = Anchor.center;
+
+        gameRef.add(projectile);
+      }
+    }
   }
 
   void triggerX150Mechanics() {
     print('💫 Boss at X150 - Creating orbital trap!');
-    _isLockedInPlace = true; // Lock the boss in place
     position = Vector2(1280 / 2, (1280 / 2) - 100); // Center position
     createOrbitalAttack(
-        projectileCount: 32, radius: 400.0, speed: 3.0, projectileDamage: 25.0);
-    pauseNormalAttackPattern();
-    applyStaggerVisuals();
+        projectileCount: 32,
+        radius: 400.0,
+        speed: 3.0,
+        projectileDamage: 9999.0);
     // Remove the automatic release - keep orbital attack until death
   }
 
@@ -822,9 +1039,11 @@ class Boss1 extends BaseEnemy with Staggerable {
     int projectileCount = 16,
     double radius = 400.0,
     double speed = 3.0,
-    double projectileDamage = 25.0,
+    double projectileDamage = 9999.0,
   }) {
     _isPerformingOrbitalAttack = true;
+    _baseRadius = radius; // Store base radius
+    _orbitalRadius = radius;
 
     print('🎯 Creating orbital attack - Current position: $position');
 
@@ -837,29 +1056,29 @@ class Boss1 extends BaseEnemy with Staggerable {
     // Position slightly higher to ensure bottom of circle is visible
     position = Vector2(1280 / 2, (1280 / 2) - 100);
     anchor = Anchor.center;
-    _storedSpeed = speed; // Store original speed
-    speed = 0; // Stop movement
+    _storedSpeed = this.speed;
+    this.speed = 0;
 
-    print('🎯 After setting orbital position: $position');
-
-    _orbitalRadius = radius;
     _orbitalSpeed = speed;
     _orbitalAngle = 0.0;
+    _patternTimer = 0;
+    _currentPattern = OrbitalPattern.NORMAL;
 
-    // Create projectiles in a circle
+    // Create orbital projectiles
     for (int i = 0; i < projectileCount; i++) {
       double angle = (i * 2 * pi) / projectileCount;
       Vector2 offset = Vector2(
-        cos(angle) * _orbitalRadius,
-        sin(angle) * _orbitalRadius,
+        cos(angle) * radius,
+        sin(angle) * radius,
       );
 
       final projectile = Projectile.bossProjectile(
         damage: projectileDamage.toInt(),
         velocity: Vector2.zero(),
+        color: Colors.purple,
       )
         ..position = position + offset
-        ..size = Vector2(50, 50)
+        ..size = Vector2.all(40)
         ..anchor = Anchor.center;
 
       gameRef.add(projectile);
@@ -870,7 +1089,7 @@ class Boss1 extends BaseEnemy with Staggerable {
   void updateOrbitalProjectiles(double dt) {
     if (_orbitalProjectiles.isEmpty) return;
 
-    _orbitalAngle += _orbitalSpeed * dt * 2 * pi; // Convert to radians
+    _orbitalAngle += _orbitalSpeed * dt * 2 * pi;
 
     for (int i = 0; i < _orbitalProjectiles.length; i++) {
       var projectile = _orbitalProjectiles[i];
@@ -880,12 +1099,12 @@ class Boss1 extends BaseEnemy with Staggerable {
         continue;
       }
 
+      // Normal orbital movement
       double angle = _orbitalAngle + (i * 2 * pi) / _orbitalProjectiles.length;
       Vector2 newOffset = Vector2(
         cos(angle) * _orbitalRadius,
         sin(angle) * _orbitalRadius,
       );
-
       projectile.position = position + newOffset;
     }
   }
@@ -916,12 +1135,7 @@ class Boss1 extends BaseEnemy with Staggerable {
 
   @override
   void triggerStagger() {
-    // Double check X150 immunity
-    if (healthBar.currentSegment <= 150) {
-      print('🛡️ Boss immune to stagger trigger at X150');
-      return;
-    }
-
+    // Remove X150 immunity check
     super.triggerStagger();
 
     // Reset animation after stagger duration
@@ -933,13 +1147,14 @@ class Boss1 extends BaseEnemy with Staggerable {
     });
   }
 
-  void triggerX100Mechanics() {
-    print('🔥 Boss at X100 - Adding cone attacks!');
-    // Don't change position or lock state here - maintain X150 position
-    pauseNormalAttackPattern();
+  void triggerX120Mechanics() {
+    print('🔥 Boss at X120 - Adding cone attacks!');
+    // Remove this line since we want to allow attacks during orbital phase
+    // pauseNormalAttackPattern();
+    applyStaggerVisuals();
 
     _coneTimer = Timer(
-      4,
+      4, // Every 4 seconds
       onTick: () {
         print('⏰ Cone timer tick!');
         if (healthBar.currentSegment > 100 || !isMounted) {
@@ -948,6 +1163,12 @@ class Boss1 extends BaseEnemy with Staggerable {
           _coneTimer?.stop();
           return;
         }
+
+        // Use the orbital attack position for cone attacks
+        Vector2 attackPosition = _isPerformingOrbitalAttack
+            ? Vector2(1280 / 2, (1280 / 2) - 100)
+            : // Use orbital position
+            position; // Use current position
 
         // Random angle for the cone direction (in radians)
         final randomAngle = Random().nextDouble() * 2 * pi;
@@ -959,6 +1180,7 @@ class Boss1 extends BaseEnemy with Staggerable {
           radius: 100.0,
           angleSpread: pi / 4,
           baseAngle: randomAngle,
+          position: attackPosition, // Pass position
         );
 
         // After 2 seconds, create the actual damaging projectiles
@@ -971,7 +1193,8 @@ class Boss1 extends BaseEnemy with Staggerable {
               angleSpread: pi / 4,
               baseAngle: randomAngle,
               speed: 4.0,
-              projectileDamage: 30.0,
+              projectileDamage: 20.0,
+              position: attackPosition, // Pass position
             );
           }
         });
@@ -989,6 +1212,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     required double radius,
     required double angleSpread,
     required double baseAngle,
+    required Vector2 position, // Add position parameter
   }) {
     final angleStep = angleSpread / (projectileCount - 1);
     final startAngle = baseAngle - (angleSpread / 2);
@@ -1001,9 +1225,9 @@ class Boss1 extends BaseEnemy with Staggerable {
         direction: direction,
         radius: radius,
         duration: 2.0,
-        warningColor: Colors.red.withOpacity(0.3), // Now optional
+        warningColor: Colors.red.withOpacity(0.3),
       )
-        ..position = position.clone()
+        ..position = position.clone() // Use passed position
         ..size = Vector2.all(40)
         ..anchor = Anchor.center;
 
@@ -1018,6 +1242,7 @@ class Boss1 extends BaseEnemy with Staggerable {
     required double baseAngle,
     required double speed,
     required double projectileDamage,
+    required Vector2 position, // Add position parameter
   }) {
     final angleStep = angleSpread / (projectileCount - 1);
     final startAngle = baseAngle - (angleSpread / 2);
@@ -1029,13 +1254,97 @@ class Boss1 extends BaseEnemy with Staggerable {
       final projectile = Projectile.bossProjectile(
         damage: projectileDamage.toInt(),
         velocity: direction * speed * 100,
-        color: Colors.red, // Changed from color to projectileColor
+        color: Colors.red,
       )
-        ..position = position.clone()
+        ..position = position.clone() // Use passed position
         ..size = Vector2.all(40)
         ..anchor = Anchor.center;
 
       gameRef.add(projectile);
     }
+  }
+
+  void triggerX80Mechanics() {
+    // Increase projectile speed and reduce cooldown
+    attackCooldown *= 0.7; // 30% faster attacks
+    _orbitalSpeed *= 5.3; // 30% faster projectiles
+    print(
+        '🚀 Attack speed increased - Cooldown: $attackCooldown, Projectile Speed: $_orbitalSpeed');
+  }
+
+  void _dropBossLoot() {
+    print('💎 Rolling for Umbrathos loot');
+
+    final droppedItem = LootTable.getRandomLoot();
+    if (droppedItem != null) {
+      print('🎁 Umbrathos dropped: ${droppedItem.name}!');
+      gameRef.player.collectItem(droppedItem);
+
+      gameRef.lootNotificationBar.showNotification(
+          'Obtained: ${droppedItem.name}', droppedItem.rarity);
+    } else {
+      print('😢 No item dropped this time.');
+    }
+  }
+
+  void _spawnLootBox() {
+    print('💎 Rolling for boss loot');
+    final loot = LootTable.getRandomLoot();
+    if (loot != null) {
+      print('🎁 Creating loot box with: ${loot.name}');
+      final lootBox = LootBox(items: [loot]);
+      lootBox.position = position.clone();
+      gameRef.add(lootBox);
+      print('✨ Loot box spawned at: ${lootBox.position}');
+    } else {
+      print('❌ No loot generated for boss');
+    }
+  }
+
+  @override
+  void die() {
+    print('💀 Umbrathos is dying...');
+
+    // Stop any active attacks
+    _endOrbitalAttack();
+
+    // Remove boss from the game
+    if (isMounted) {
+      print('🗑️ Removing Umbrathos...');
+      removeFromParent();
+    }
+
+    // ✅ Remove health bar
+    if (gameRef.isMounted) {
+      print('🗑️ Removing health bar...');
+      gameRef.overlays.remove('bossHealthBar');
+    }
+
+    // ✅ Remove stagger bar if it exists
+    if (staggerBar.isMounted) {
+      print('🗑️ Removing stagger bar...');
+      staggerBar.removeFromParent();
+    }
+
+    // ✅ Clear all boss projectiles
+    for (var projectile in gameRef.children.whereType<Projectile>()) {
+      if (projectile.isBossProjectile) {
+        print('🗑️ Removing boss projectile...');
+        projectile.removeFromParent();
+      }
+    }
+
+    // ✅ Drop loot box after delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _spawnLootBox();
+    });
+
+    // ✅ Victory after delay
+    Future.delayed(const Duration(seconds: 4), () {
+      if (gameRef.isMounted) {
+        print('🏆 Victory sequence triggered...');
+        gameRef.victory();
+      }
+    });
   }
 }
