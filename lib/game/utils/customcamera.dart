@@ -15,20 +15,25 @@ class CustomCamera {
   });
 
   void follow(Vector2 playerPosition, double dt) {
-    // Calculate center position
-    final targetX = playerPosition.x - (gameSize.x / 2);
-    final targetY = playerPosition.y - (gameSize.y / 2);
+    // Center the camera by offsetting from the player position
+    Vector2 centerOffset = gameSize / 2;
+    Vector2 targetPosition = playerPosition - centerOffset;
 
-    // Smoothly move towards target position
-    position.x += (targetX - position.x) * followSpeed * dt;
-    position.y += (targetY - position.y) * followSpeed * dt;
+    // Add a horizontal offset to center the character (adjust 100 as needed)
+    targetPosition.x += 100; // Adjust this value to shift camera right/left
+
+    // Smooth follow
+    position.x += (targetPosition.x - position.x) * followSpeed * dt;
+    position.y += (targetPosition.y - position.y) * followSpeed * dt;
 
     // Clamp to world bounds
     position.x = position.x.clamp(0, worldSize.x - gameSize.x);
     position.y = position.y.clamp(0, worldSize.y - gameSize.y);
 
-    // Debug print for camera position
-    print('📸 Camera Position: $position, Player Position: $playerPosition');
+    // Debug print
+    print(
+      '📸 Camera Target: $targetPosition, Current: $position, Player: $playerPosition',
+    );
   }
 
   void applyTransform(Canvas canvas) {
@@ -38,6 +43,7 @@ class CustomCamera {
     canvas.translate(-position.x, -position.y);
   }
 }
+
 /*class CustomCamera {
   final Vector2 screenSize;
   final Vector2 worldSize;
