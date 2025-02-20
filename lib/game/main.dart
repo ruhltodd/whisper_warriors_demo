@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flame/flame.dart';
 import 'package:flutter/foundation.dart';
 import 'package:web/web.dart' as web;
 import 'package:flutter/scheduler.dart';
@@ -82,10 +83,71 @@ class _MyAppState extends State<MyApp> {
     super.initState();
   }
 
-  void startGame(BuildContext context) {
+  void startGame(BuildContext context) async {
     // Clear damage logs
     Hive.box<AbilityDamageLog>('ability_damage_logs').clear();
-    Navigator.pushNamed(context, '/ability_selection');
+
+    if (kIsWeb) {
+      print('🌐 Web build detected, initializing...');
+      try {
+        // Force a complete initialization for Safari
+        await Flame.device.fullScreen();
+        await Flame.device.setOrientation(DeviceOrientation.portraitUp);
+
+        // Preload all game assets
+        await Future.wait([
+          // Map and backgrounds
+          Flame.images.load('grass_map.png'),
+          Flame.images.load('main_menu_background.png'),
+
+          // Player assets
+          Flame.images.load('whisper_warrior_idle.png'),
+          Flame.images.load('whisper_warrior_attack.png'),
+          Flame.images.load('whisper_warrior_hit.png'),
+          Flame.images.load('whisper_warrior_death.png'),
+
+          // Core ability images
+          Flame.images.load('shadowblades.png'),
+          Flame.images.load('whispering_flames.png'),
+          Flame.images.load('soul_fracture.png'),
+          Flame.images.load('cursed_echo.png'),
+
+          // Enemy assets
+          Flame.images.load('mob1.png'),
+          Flame.images.load('mob2.png'),
+          Flame.images.load('boss1_idle.png'),
+          Flame.images.load('boss1_walk.png'),
+          Flame.images.load('boss1_stagger.png'),
+
+          // Effect assets
+          Flame.images.load('explosion.png'),
+          Flame.images.load('projectile_normal.png'),
+          Flame.images.load('fire_aura.png'),
+
+          // Numbers for damage display
+          ...List.generate(10, (i) => Flame.images.load('$i.png')),
+          ...List.generate(10, (i) => Flame.images.load('$i-or.png')),
+        ]);
+
+        // Preload audio using AudioManager
+        final audioManager = AudioManager();
+        await audioManager.preloadAudio();
+
+        // Force garbage collection and wait for stability
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        print('✅ Game initialization complete');
+      } catch (e, stackTrace) {
+        print('❌ Error during initialization:');
+        print(e);
+        print('Stack trace:');
+        print(stackTrace);
+      }
+    }
+
+    if (context.mounted) {
+      Navigator.pushNamed(context, '/ability_selection');
+    }
   }
 
   @override
