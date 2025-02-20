@@ -10,13 +10,18 @@ class GameViewport extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return Center(
       child: SingleChildScrollView(
-        child: SizedBox(
-          width: 820,
-          height: 820,
-          child: child,
+        scrollDirection: Axis.horizontal,
+        child: SingleChildScrollView(
+          child: Container(
+            width: 820,
+            height: 820,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.purple.withOpacity(0.3)),
+            ),
+            child: child,
+          ),
         ),
       ),
     );
