@@ -16,20 +16,27 @@ class CustomCamera {
     required Vector2 rawScreenSize, // Keep parameter but ignore it
     required this.worldSize,
   }) {
-    // Initialize camera at the correct position to center the viewport
-    // For 1280x1280 world, this would be [230,230] (640 - 410)
+    // Initialize camera position to center on world center
     position = Vector2((worldSize.x / 2) - (gameSize.x / 2),
         (worldSize.y / 2) - (gameSize.y / 2));
   }
 
   void follow(Vector2 playerPosition, double dt) {
-    // Calculate target position to keep player centered
+    // Calculate target camera position to center on player
     Vector2 targetPosition = Vector2(playerPosition.x - (gameSize.x / 2),
         playerPosition.y - (gameSize.y / 2));
 
-    // Smooth follow
-    position.x += (targetPosition.x - position.x) * followSpeed * dt;
-    position.y += (targetPosition.y - position.y) * followSpeed * dt;
+    // Calculate difference between current and target position
+    Vector2 diff = targetPosition - position;
+
+    if (diff.length < 1) {
+      // Snap directly to target if we're very close
+      position = targetPosition;
+    } else {
+      // Smoothly interpolate towards target
+      position.x += diff.x * followSpeed * dt;
+      position.y += diff.y * followSpeed * dt;
+    }
 
     // Clamp to world bounds
     position.x = position.x.clamp(0, worldSize.x - gameSize.x);
@@ -37,7 +44,7 @@ class CustomCamera {
 
     // Debug print
     print(
-        '📸 Target: $targetPosition, Camera: $position, Player: $playerPosition');
+        '📸 Player: $playerPosition, Camera: $position, Diff: ${diff.length}');
   }
 
   void applyTransform(Canvas canvas) {
