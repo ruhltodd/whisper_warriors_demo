@@ -5,7 +5,6 @@ import 'package:whisper_warriors/game/items/itemrarity.dart';
 import 'package:whisper_warriors/game/ui/globalexperiencelevelbar.dart';
 import 'package:whisper_warriors/game/ui/itemframe.dart';
 import 'package:whisper_warriors/game/ui/textstyles.dart';
-import 'package:whisper_warriors/game/ui/game_viewport.dart';
 
 const String INVENTORY_BOX_NAME = 'inventory_items';
 
@@ -84,158 +83,154 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget build(BuildContext context) {
     final int totalGridSpaces = 16;
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: GameViewport(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Image.asset(
-                'assets/images/main_menu_background.png',
-                fit: BoxFit.cover,
+    return Container(
+      color: Colors.black,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/main_menu_background.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Add "Inventory" text to top right
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Text(
+              "Inventory",
+              style: GameTextStyles.gameTitle(
+                fontSize: 22,
+                letterSpacing: 1.2,
               ),
             ),
-            // Add "Inventory" text to top right
-            Positioned(
-              top: 20,
-              right: 20,
-              child: Text(
-                "Inventory",
-                style: GameTextStyles.gameTitle(
-                  fontSize: 22,
-                  letterSpacing: 1.2,
+          ),
+          Column(
+            children: [
+              SizedBox(height: 100),
+              Expanded(
+                child: GridView.builder(
+                  padding: EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 8,
+                    crossAxisSpacing: 4,
+                    mainAxisSpacing: 4,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: totalGridSpaces,
+                  itemBuilder: (context, index) {
+                    if (index < widget.availableItems.length) {
+                      return _buildItemTile(widget.availableItems[index]);
+                    } else {
+                      return _buildLockedItemTile();
+                    }
+                  },
                 ),
               ),
-            ),
-            Column(
-              children: [
-                SizedBox(height: 100), // Space for hover stats
-                // Available items grid
-                Expanded(
-                  child: GridView.builder(
-                    padding: EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 8,
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
-                      childAspectRatio: 1,
-                    ),
-                    itemCount: totalGridSpaces,
-                    itemBuilder: (context, index) {
-                      if (index < widget.availableItems.length) {
-                        return _buildItemTile(widget.availableItems[index]);
-                      } else {
-                        return _buildLockedItemTile();
-                      }
-                    },
-                  ),
-                ),
-                // Selected items slots (3 slots)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 24.0, top: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(3, (index) {
-                      if (index < selectedItems.length) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                          child: Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: Colors.blueGrey,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(6.0),
-                              child: Image.asset(
-                                'assets/images/${selectedItems[index].item.name.toLowerCase().replaceAll(" ", "_")}.png',
-                                fit: BoxFit.contain,
-                              ),
+              // Selected items slots (3 slots)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24.0, top: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    if (index < selectedItems.length) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
                             ),
                           ),
-                        );
-                      } else {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                          child: Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: Colors.black38,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: Colors.grey.shade600,
-                                width: 2,
-                              ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: Image.asset(
+                              'assets/images/${selectedItems[index].item.name.toLowerCase().replaceAll(" ", "_")}.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
-                        );
-                      }
-                    }),
+                        ),
+                      );
+                    } else {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.black38,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.grey.shade600,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  }),
+                ),
+              ),
+              GlobalExperienceLevelBar(),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _confirmSelection,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 123, 123, 123),
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  minimumSize: Size(200, 50),
+                ),
+                child: const Text(
+                  "Confirm Selection",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                // XP Bar
-                GlobalExperienceLevelBar(),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _confirmSelection,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 123, 123, 123),
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    "Confirm Selection",
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
+          // Back button in bottom left
+          Positioned(
+            bottom: 20,
+            left: 20,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 123, 123, 123),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.arrow_back, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Back',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                SizedBox(height: 20),
-              ],
-            ),
-            // Back button in bottom left
-            Positioned(
-              bottom: 20,
-              left: 20,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 123, 123, 123),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.arrow_back, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text(
-                      'Back',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
-            if (_hoveredItem != null) _buildHoverStats(),
-          ],
-        ),
+          ),
+          if (_hoveredItem != null) _buildHoverStats(),
+        ],
       ),
     );
   }

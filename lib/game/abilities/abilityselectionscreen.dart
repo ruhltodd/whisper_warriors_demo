@@ -3,7 +3,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/ui/globalexperiencelevelbar.dart'; // ✅ Added for ability unlocks
 import 'package:whisper_warriors/game/ui/textstyles.dart';
-import 'package:whisper_warriors/game/ui/game_viewport.dart';
 
 class AbilitySelectionScreen extends StatefulWidget {
   final Function(List<String>) onAbilitiesSelected;
@@ -62,124 +61,115 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: GameViewport(
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black,
-            image: DecorationImage(
-              image: AssetImage('assets/images/main_menu_background.png'),
+    return Container(
+      color: Colors.black,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/main_menu_background.png',
               fit: BoxFit.cover,
             ),
           ),
-          child: Stack(
+          Column(
             children: [
-              Column(
-                children: [
-                  SizedBox(height: 100),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: EdgeInsets.all(16),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 8,
-                        crossAxisSpacing: 4,
-                        mainAxisSpacing: 4,
-                        childAspectRatio: 1,
-                      ),
-                      itemCount: 16,
-                      itemBuilder: (context, index) {
-                        if (index < unlockedAbilities.length) {
-                          return _buildAbilityTile(unlockedAbilities[index]);
-                        } else {
-                          return _buildLockedAbilityTile();
-                        }
-                      },
-                    ),
+              SizedBox(height: 100),
+              Expanded(
+                child: GridView.builder(
+                  padding: EdgeInsets.all(16),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 8,
+                    crossAxisSpacing: 4,
+                    mainAxisSpacing: 4,
+                    childAspectRatio: 1,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 24.0, top: 8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(3, (index) {
-                        if (index < selectedAbilities.length) {
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 6.0),
-                            child: Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                color: Colors.blueGrey,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 2,
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(6.0),
-                                child: Image.asset(
-                                  'assets/images/${selectedAbilities[index].toLowerCase().replaceAll(" ", "_")}.png',
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          );
-                        } else {
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 6.0),
-                            child: Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                color: Colors.black38,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: Colors.grey.shade600,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                      }),
-                    ),
-                  ),
-                  GlobalExperienceLevelBar(),
-                  SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: ElevatedButton(
-                      onPressed:
-                          selectedAbilities.isEmpty ? null : _confirmSelection,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromARGB(255, 123, 123, 123),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        minimumSize: Size(200, 50),
-                      ),
-                      child: const Text(
-                        "Confirm Selection",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                ],
+                  itemCount: 16,
+                  itemBuilder: (context, index) {
+                    if (index < unlockedAbilities.length) {
+                      return _buildAbilityTile(unlockedAbilities[index]);
+                    } else {
+                      return _buildLockedAbilityTile();
+                    }
+                  },
+                ),
               ),
-              if (_hoveredAbility != null) _buildHoverStats(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24.0, top: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    if (index < selectedAbilities.length) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: Image.asset(
+                              'assets/images/${selectedAbilities[index].toLowerCase().replaceAll(" ", "_")}.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      );
+                    } else {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.black38,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.grey.shade600,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  }),
+                ),
+              ),
+              GlobalExperienceLevelBar(),
+              SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: ElevatedButton(
+                  onPressed:
+                      selectedAbilities.isEmpty ? null : _confirmSelection,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 123, 123, 123),
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    minimumSize: Size(200, 50),
+                  ),
+                  child: const Text(
+                    "Confirm Selection",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
             ],
           ),
-        ),
+          if (_hoveredAbility != null) _buildHoverStats(),
+        ],
       ),
     );
   }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/utils/audiomanager.dart';
 import 'package:whisper_warriors/game/ui/optionscreen.dart';
 import 'package:whisper_warriors/game/ui/screentransition.dart';
-import 'package:whisper_warriors/game/ui/game_viewport.dart';
 
 class MainMenu extends StatefulWidget {
   final VoidCallback startGame;
@@ -44,71 +43,79 @@ class _MainMenuState extends State<MainMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: GameViewport(
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.black,
-            image: DecorationImage(
-              image: AssetImage('assets/images/main_menu_background.png'),
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 200),
-
-              // 🎮 Start Button
-              _buildAnimatedButton(
-                image: 'assets/images/start_button.png',
-                onTap: () {
-                  _stopMusic();
-                  widget.startGame();
-                },
-              ),
-
-              const SizedBox(height: 30),
-
-              // ⚙️ Options Button
-              _buildAnimatedButton(
-                image: 'assets/images/options_button.png',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    GamePageTransition(
-                      builder: (context) => OptionsScreen(
-                        onBack: () => Navigator.pop(context),
-                      ),
-                      transitionType: TransitionType.fade,
-                      duration: const Duration(milliseconds: 300),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        image: DecorationImage(
+          image: AssetImage('assets/images/main_menu_background.png'),
+          fit: BoxFit.cover,
         ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 200),
+          // 🎮 Start Button
+          _buildAnimatedButton(
+            image: 'assets/images/start_button.png',
+            onTap: () {
+              _stopMusic();
+              widget.startGame();
+            },
+            opacity: startButtonOpacity,
+            onHover: (value) =>
+                setState(() => startButtonOpacity = value ? 0.8 : 1.0),
+            onTapDown: () => setState(() => startButtonOpacity = 0.6),
+            onTapUp: () => setState(() => startButtonOpacity = 1.0),
+          ),
+          const SizedBox(height: 30),
+          // ⚙️ Options Button
+          _buildAnimatedButton(
+            image: 'assets/images/options_button.png',
+            onTap: () {
+              Navigator.push(
+                context,
+                GamePageTransition(
+                  builder: (context) => OptionsScreen(
+                    onBack: () => Navigator.pop(context),
+                  ),
+                  transitionType: TransitionType.fade,
+                  duration: const Duration(milliseconds: 300),
+                ),
+              );
+            },
+            opacity: optionsButtonOpacity,
+            onHover: (value) =>
+                setState(() => optionsButtonOpacity = value ? 0.8 : 1.0),
+            onTapDown: () => setState(() => optionsButtonOpacity = 0.6),
+            onTapUp: () => setState(() => optionsButtonOpacity = 1.0),
+          ),
+        ],
       ),
     );
   }
 
-  // 🔄 Helper function for buttons
-  Widget _buildAnimatedButton(
-      {required String image, required VoidCallback onTap}) {
+  Widget _buildAnimatedButton({
+    required String image,
+    required VoidCallback onTap,
+    required double opacity,
+    required Function(bool) onHover,
+    required VoidCallback onTapDown,
+    required VoidCallback onTapUp,
+  }) {
     return MouseRegion(
-      onEnter: (_) => setState(() => startButtonOpacity = 0.8),
-      onExit: (_) => setState(() => startButtonOpacity = 1.0),
+      onEnter: (_) => onHover(true),
+      onExit: (_) => onHover(false),
       child: GestureDetector(
-        onTapDown: (_) => setState(() => startButtonOpacity = 0.6),
+        onTapDown: (_) => onTapDown(),
         onTapUp: (_) {
-          setState(() => startButtonOpacity = 1.0);
+          onTapUp();
           onTap();
         },
+        onTapCancel: onTapUp,
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 150),
-          opacity: startButtonOpacity,
+          opacity: opacity,
           child: Image.asset(image, width: 250),
         ),
       ),
