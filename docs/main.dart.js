@@ -75465,7 +75465,7 @@ aA(){return new A.Pu(A.b([],t.s),A.b([],t.wX))}}
 A.Pu.prototype={
 aH(){this.b1()},
 a1(a){var s=null
-return new A.xB(A.a8u(s,A.i7(A.eG(new A.i6(new A.ai1(this),s),720,1280),s,s)),!1,s)}}
+return new A.xB(A.a8u(s,A.i7(A.eG(new A.i6(new A.ai1(this),s),820,820),s,s)),!1,s)}}
 A.ai1.prototype={
 $1(a){return new A.m7(new A.ai0(this.a,a),null)},
 $S:167}

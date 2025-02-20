@@ -175,8 +175,8 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         body: Center(
           child: SizedBox(
-            width: 1280, // ✅ Fixed width
-            height: 720, // ✅ Fixed height
+            width: 820, // ✅ Fixed width
+            height: 820, // ✅ Fixed height
             child: Builder(
               builder: (context) => MainMenu(
                 startGame: () {
