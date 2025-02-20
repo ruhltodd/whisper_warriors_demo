@@ -274,7 +274,8 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
     if (_hoveredAbility == null) return const SizedBox.shrink();
 
     return Positioned(
-      left: MediaQuery.of(context).size.width / 2 - 120,
+      left: 410 -
+          120, // Half of 820px (constrained width) - half of hover box width
       top: 20,
       child: Container(
         width: 240,

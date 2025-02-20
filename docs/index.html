@@ -20,34 +20,76 @@
   <link rel="manifest" href="manifest.json">
 
   <style>
-    html, body {
+    /* Reset default margins and ensure full coverage */
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Force black background on all parent elements */
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: black;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background-color: black; /* Optional: Set background color */
       overflow: hidden;
     }
 
+    /* Container styling */
     #game-container {
-  width: 820px;
-  height: 820px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: black; /* ✅ Forces black background */
-  overflow: hidden; /* ✅ Prevents unwanted stretching */
-  position: relative; /* ✅ Ensures correct stacking */
-}
+      width: 820px;
+      height: 820px;
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
 
-flutter-view {
-  width: 100%;
-  height: 100%;
-  display: block;
-  position: absolute; /* ✅ Prevents it from overflowing */
-}
+    /* Flutter view styling */
+    flutter-view {
+      width: 100%;
+      height: 100%;
+      display: block;
+      position: absolute;
+      background-color: black;
+    }
+
+    /* Flutter-specific elements */
+    flutter-view flt-scene-host {
+      background-color: black;
+    }
+
+    flutter-view flt-glass-pane {
+      background-color: black;
+    }
+
+    /* Style all Flutter canvas elements */
+    flutter-view canvas {
+      background-color: black;
+    }
+
+    /* Ensure semantic elements inherit black background */
+    flutter-view flt-semantics {
+      background-color: black;
+    }
+
+    /* Remove focus outlines */
+    flutter-view:focus,
+    flutter-view *:focus {
+      outline: none;
+    }
+
+    /* Ensure text elements have black background */
+    flutter-view flt-text-editing {
+      background-color: black;
+    }
   </style>
 </head>
 <body>

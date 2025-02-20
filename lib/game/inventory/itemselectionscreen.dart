@@ -301,15 +301,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget _buildHoverStats() {
     if (_hoveredItem == null) return const SizedBox.shrink();
 
-    // Debug prints
-    print('🔍 Hovered item: ${_hoveredItem!.item.name}');
-    print('📊 Raw stats: ${_hoveredItem!.item.stats}');
-    print('🔢 Stats entries count: ${_hoveredItem!.item.stats.entries.length}');
-    print('📝 Stats display: ${_hoveredItem!.getStatsDisplay()}');
-
     return Positioned(
-      left: MediaQuery.of(context).size.width / 2 - 120,
-      top: MediaQuery.of(context).size.height / 2 - 160,
+      left: 410 -
+          120, // Half of 820px (constrained width) - half of hover box width
+      top: 20,
       child: Container(
         width: 240,
         padding: EdgeInsets.all(10),
@@ -324,7 +319,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             Text(
               _hoveredItem!.item.name,
               style: TextStyle(
-                color: _getRarityColor(_hoveredItem!.item.rarity),
+                color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -340,25 +335,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            // Stats section with explicit check
             if (_hoveredItem!.item.stats.isNotEmpty) ...[
-              ..._hoveredItem!.item.stats.entries.map((stat) {
-                String displayValue = (stat.value * 100).toStringAsFixed(0);
-                String prefix = stat.value >= 0 ? "+" : "";
-                print('🎯 Adding stat: ${stat.key} = $prefix$displayValue%');
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text(
-                    "$prefix$displayValue% ${stat.key}",
-                    style: TextStyle(
-                      color: Colors.lightBlueAccent,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                );
-              }).toList(),
+              const SizedBox(height: 6),
+              Text(
+                _hoveredItem!.item.stats.toString(),
+                style: TextStyle(
+                  color: Colors.blue[300],
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ],
           ],
         ),
