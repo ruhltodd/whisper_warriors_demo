@@ -32,6 +32,7 @@ import 'package:whisper_warriors/game/inventory/playerprogressmanager.dart';
 import 'package:whisper_warriors/game/ui/textstyles.dart';
 import 'package:whisper_warriors/game/utils/audiomanager.dart';
 import 'package:whisper_warriors/game/ui/screentransition.dart';
+import 'package:whisper_warriors/game/ui/game_viewport.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -101,111 +102,106 @@ class _MyAppState extends State<MyApp> {
       routes: {
         '/': (context) => Scaffold(
               backgroundColor: Colors.black,
-              body: Center(
-                child: Container(
-                  width: 820,
-                  height: 820,
-                  clipBehavior: Clip.hardEdge,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    border: Border.all(color: Colors.purple.withOpacity(0.3)),
-                  ),
-                  child: ClipRect(
-                    child: gameInstance == null
-                        ? MainMenu(
-                            startGame: () => startGame(context),
-                          )
-                        : SizedBox(
-                            width: 820,
-                            height: 820,
-                            child: GameWidget.controlled(
-                              gameFactory: () => gameInstance!,
-                              loadingBuilder: (context) => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                              backgroundBuilder: (context) => Container(
-                                color: Colors.black,
-                              ),
-                              overlayBuilderMap: {
-                                'hud': (_, game) => HUD(
-                                      onJoystickMove: (delta) =>
-                                          (game).player.updateJoystick(delta),
-                                      experienceBar: (game as RogueShooterGame)
-                                          .experienceBar,
-                                      game: game,
-                                      bossHealthNotifier:
-                                          (game).bossHealthNotifier,
-                                      bossStaggerNotifier:
-                                          (game).bossStaggerNotifier,
-                                    ),
-                                'retryOverlay': (_, game) => RetryOverlay(
-                                      game: game as RogueShooterGame,
-                                    ),
-                                'optionsMenu': (_, game) => OptionsMenu(
-                                      game: game as RogueShooterGame?,
-                                    ),
-                                'damageReport': (_, game) =>
-                                    DamageReportOverlay(
-                                      game: game as RogueShooterGame,
-                                    ),
-                                'playerStatsOverlay': (_, game) =>
-                                    PlayerStatsOverlay(
-                                      player: gameInstance!.player,
-                                      game: gameInstance!,
-                                    ),
-                              },
-                            ),
+              body: GameViewport(
+                child: ClipRect(
+                  child: gameInstance == null
+                      ? MainMenu(
+                          startGame: () => startGame(context),
+                        )
+                      : GameWidget.controlled(
+                          gameFactory: () => gameInstance!,
+                          loadingBuilder: (context) => const Center(
+                            child: CircularProgressIndicator(),
                           ),
-                  ),
+                          backgroundBuilder: (context) => Container(
+                            color: Colors.black,
+                          ),
+                          overlayBuilderMap: {
+                            'hud': (_, game) => HUD(
+                                  onJoystickMove: (delta) =>
+                                      (game).player.updateJoystick(delta),
+                                  experienceBar:
+                                      (game as RogueShooterGame).experienceBar,
+                                  game: game,
+                                  bossHealthNotifier: (game).bossHealthNotifier,
+                                  bossStaggerNotifier:
+                                      (game).bossStaggerNotifier,
+                                ),
+                            'retryOverlay': (_, game) => RetryOverlay(
+                                  game: game as RogueShooterGame,
+                                ),
+                            'optionsMenu': (_, game) => OptionsMenu(
+                                  game: game as RogueShooterGame?,
+                                ),
+                            'damageReport': (_, game) => DamageReportOverlay(
+                                  game: game as RogueShooterGame,
+                                ),
+                            'playerStatsOverlay': (_, game) =>
+                                PlayerStatsOverlay(
+                                  player: gameInstance!.player,
+                                  game: gameInstance!,
+                                ),
+                          },
+                        ),
                 ),
               ),
             ),
-        '/ability_selection': (context) => AbilitySelectionScreen(
-              onAbilitiesSelected: (abilities) async {
-                final availableItems = await InventoryStorage.loadInventory();
+        '/ability_selection': (context) => Scaffold(
+              backgroundColor: Colors.black,
+              body: GameViewport(
+                child: AbilitySelectionScreen(
+                  onAbilitiesSelected: (abilities) async {
+                    final availableItems =
+                        await InventoryStorage.loadInventory();
 
-                if (context.mounted) {
-                  Navigator.pushNamed(
-                    // Use pushNamed for consistent navigation
-                    context,
-                    '/item_selection',
-                    arguments: {
-                      'abilities': abilities,
-                      'availableItems': availableItems,
-                    },
-                  );
-                }
-              },
+                    if (context.mounted) {
+                      Navigator.pushNamed(
+                        context,
+                        '/item_selection',
+                        arguments: {
+                          'abilities': abilities,
+                          'availableItems': availableItems,
+                        },
+                      );
+                    }
+                  },
+                ),
+              ),
             ),
         '/item_selection': (context) {
           final args = ModalRoute.of(context)?.settings.arguments
               as Map<String, dynamic>;
-          return InventoryScreen(
-            availableItems: args['availableItems'],
-            onConfirm: (selectedItems) async {
-              print(
-                  "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: GameViewport(
+              child: InventoryScreen(
+                availableItems: args['availableItems'],
+                onConfirm: (selectedItems) async {
+                  print(
+                      "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
 
-              // Update equipped status
-              final items = await InventoryStorage.loadInventory();
-              for (var item in items) {
-                item.isEquipped =
-                    selectedItems.any((selected) => selected.name == item.name);
-              }
-              await InventoryStorage.saveInventory(items);
+                  // Update equipped status
+                  final items = await InventoryStorage.loadInventory();
+                  for (var item in items) {
+                    item.isEquipped = selectedItems
+                        .any((selected) => selected.name == item.name);
+                  }
+                  await InventoryStorage.saveInventory(items);
 
-              if (context.mounted) {
-                setState(() {
-                  gameInstance = RogueShooterGame(
-                    selectedAbilities: args['abilities'],
-                    equippedItems: selectedItems,
-                  );
-                });
+                  if (context.mounted) {
+                    setState(() {
+                      gameInstance = RogueShooterGame(
+                        selectedAbilities: args['abilities'],
+                        equippedItems: selectedItems,
+                      );
+                    });
 
-                // Pop back to root
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              }
-            },
+                    // Pop back to root
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  }
+                },
+              ),
+            ),
           );
         },
       },
