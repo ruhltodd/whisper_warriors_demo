@@ -84,8 +84,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final int totalGridSpaces = 16;
 
     return Container(
-      color: Colors.black,
+      decoration: BoxDecoration(
+        color: Colors.black,
+      ),
+      clipBehavior: Clip.hardEdge,
       child: Stack(
+        clipBehavior: Clip.hardEdge,
         children: [
           Positioned.fill(
             child: Image.asset(
