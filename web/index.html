@@ -66,6 +66,16 @@
       position: relative;
     }
 
+    /* Force Flutter Canvas to match exactly 820x820 */
+    flutter-view canvas {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 820px;
+      max-height: 820px;
+      background-color: black !important;
+      display: block;
+    }
+
     /* Flutter-specific elements */
     flutter-view flt-scene-host {
       background-color: black;

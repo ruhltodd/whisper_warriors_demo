@@ -89,88 +89,8 @@ class _MyAppState extends State<MyApp> {
     // Clear damage logs
     Hive.box<AbilityDamageLog>('ability_damage_logs').clear();
 
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            AbilitySelectionScreen(
-          onAbilitiesSelected: (abilities) async {
-            final availableItems = await InventoryStorage.loadInventory();
-
-            Navigator.pushReplacement(
-              context,
-              GamePageTransition(
-                builder: (context) => InventoryScreen(
-                  availableItems: availableItems,
-                  onConfirm: (selectedItems) async {
-                    print(
-                        "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
-
-                    // Update equipped status
-                    final items = await InventoryStorage.loadInventory();
-                    for (var item in items) {
-                      item.isEquipped = selectedItems
-                          .any((selected) => selected.name == item.name);
-                    }
-                    await InventoryStorage.saveInventory(items);
-
-                    gameInstance = RogueShooterGame(
-                      selectedAbilities: abilities,
-                      equippedItems: selectedItems,
-                    );
-
-                    Navigator.pushReplacement(
-                      context,
-                      GamePageTransition(
-                        builder: (context) => GameWidget(
-                          game: gameInstance!,
-                          overlayBuilderMap: {
-                            'hud': (_, game) => HUD(
-                                  onJoystickMove: (delta) =>
-                                      (game).player.updateJoystick(delta),
-                                  experienceBar:
-                                      (game as RogueShooterGame).experienceBar,
-                                  game: game,
-                                  bossHealthNotifier: (game).bossHealthNotifier,
-                                  bossStaggerNotifier:
-                                      (game).bossStaggerNotifier,
-                                ),
-                            'retryOverlay': (_, game) =>
-                                RetryOverlay(game: game as RogueShooterGame),
-                            'optionsMenu': (_, game) => OptionsMenu(
-                                  game: game as RogueShooterGame?,
-                                ),
-                            'damageReport': (_, game) => DamageReportOverlay(
-                                game: game as RogueShooterGame),
-                            'playerStatsOverlay': (_, game) =>
-                                PlayerStatsOverlay(
-                                    player: gameInstance!.player,
-                                    game: gameInstance!),
-                          },
-                        ),
-                        transitionType: TransitionType.fade,
-                        duration: Duration(milliseconds: 400),
-                      ),
-                    );
-
-                    Future.delayed(Duration(milliseconds: 500), () {
-                      gameInstance!.player.applyEquippedItems();
-                    });
-                  },
-                ),
-                transitionType: TransitionType.slideUp,
-                duration: Duration(milliseconds: 300),
-              ),
-            );
-          },
-        ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-      ),
-    );
+    // Use named route navigation
+    Navigator.pushNamed(context, '/ability_selection');
   }
 
   @override
@@ -181,56 +101,138 @@ class _MyAppState extends State<MyApp> {
         scaffoldBackgroundColor: Colors.black,
         canvasColor: Colors.black,
       ),
-      home: Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: Container(
-            width: 820,
-            height: 820,
-            clipBehavior: Clip.hardEdge, // Add clipping
-            decoration: BoxDecoration(
-              color: Colors.black,
-              border: Border.all(
-                  color: Colors.purple
-                      .withOpacity(0.3)), // Optional: visible boundary
+      // Add a Navigator key
+      navigatorKey: GlobalKey<NavigatorState>(),
+      // Add routes
+      initialRoute: '/',
+      routes: {
+        '/': (context) => Scaffold(
+              backgroundColor: Colors.black,
+              body: Center(
+                child: Container(
+                  width: 820,
+                  height: 820,
+                  clipBehavior: Clip.hardEdge,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                  ),
+                  child: ClipRect(
+                    child: gameInstance == null
+                        ? MainMenu(
+                            startGame: () => startGame(context),
+                          )
+                        : GameWidget.controlled(
+                            gameFactory: () => gameInstance!,
+                            loadingBuilder: (context) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            backgroundBuilder: (context) => Container(
+                              color: Colors.black,
+                            ),
+                            overlayBuilderMap: {
+                              'hud': (_, game) => HUD(
+                                    onJoystickMove: (delta) =>
+                                        (game).player.updateJoystick(delta),
+                                    experienceBar: (game as RogueShooterGame)
+                                        .experienceBar,
+                                    game: game,
+                                    bossHealthNotifier:
+                                        (game).bossHealthNotifier,
+                                    bossStaggerNotifier:
+                                        (game).bossStaggerNotifier,
+                                  ),
+                              'retryOverlay': (_, game) =>
+                                  RetryOverlay(game: game as RogueShooterGame),
+                              'optionsMenu': (_, game) => OptionsMenu(
+                                    game: game as RogueShooterGame?,
+                                  ),
+                              'damageReport': (_, game) => DamageReportOverlay(
+                                  game: game as RogueShooterGame),
+                              'playerStatsOverlay': (_, game) =>
+                                  PlayerStatsOverlay(
+                                      player: gameInstance!.player,
+                                      game: gameInstance!),
+                            },
+                          ),
+                  ),
+                ),
+              ),
             ),
-            child: ClipRect(
-              // Force clipping of game content
-              child: gameInstance == null
-                  ? MainMenu(startGame: () => startGame(context))
-                  : GameWidget.controlled(
-                      gameFactory: () => gameInstance!,
-                      loadingBuilder: (context) => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      backgroundBuilder: (context) => Container(
-                        color: Colors.black,
-                      ),
-                      overlayBuilderMap: {
-                        'hud': (_, game) => HUD(
-                              onJoystickMove: (delta) =>
-                                  (game).player.updateJoystick(delta),
-                              experienceBar:
-                                  (game as RogueShooterGame).experienceBar,
-                              game: game,
-                              bossHealthNotifier: (game).bossHealthNotifier,
-                              bossStaggerNotifier: (game).bossStaggerNotifier,
+        '/ability_selection': (context) => AbilitySelectionScreen(
+              onAbilitiesSelected: (abilities) async {
+                final availableItems = await InventoryStorage.loadInventory();
+
+                Navigator.pushReplacement(
+                  context,
+                  GamePageTransition(
+                    builder: (context) => InventoryScreen(
+                      availableItems: availableItems,
+                      onConfirm: (selectedItems) async {
+                        print(
+                            "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
+
+                        // Update equipped status
+                        final items = await InventoryStorage.loadInventory();
+                        for (var item in items) {
+                          item.isEquipped = selectedItems
+                              .any((selected) => selected.name == item.name);
+                        }
+                        await InventoryStorage.saveInventory(items);
+
+                        gameInstance = RogueShooterGame(
+                          selectedAbilities: abilities,
+                          equippedItems: selectedItems,
+                        );
+
+                        Navigator.pushReplacement(
+                          context,
+                          GamePageTransition(
+                            builder: (context) => GameWidget(
+                              game: gameInstance!,
+                              overlayBuilderMap: {
+                                'hud': (_, game) => HUD(
+                                      onJoystickMove: (delta) =>
+                                          (game).player.updateJoystick(delta),
+                                      experienceBar: (game as RogueShooterGame)
+                                          .experienceBar,
+                                      game: game,
+                                      bossHealthNotifier:
+                                          (game).bossHealthNotifier,
+                                      bossStaggerNotifier:
+                                          (game).bossStaggerNotifier,
+                                    ),
+                                'retryOverlay': (_, game) => RetryOverlay(
+                                    game: game as RogueShooterGame),
+                                'optionsMenu': (_, game) => OptionsMenu(
+                                      game: game as RogueShooterGame?,
+                                    ),
+                                'damageReport': (_, game) =>
+                                    DamageReportOverlay(
+                                        game: game as RogueShooterGame),
+                                'playerStatsOverlay': (_, game) =>
+                                    PlayerStatsOverlay(
+                                        player: gameInstance!.player,
+                                        game: gameInstance!),
+                              },
                             ),
-                        'retryOverlay': (_, game) =>
-                            RetryOverlay(game: game as RogueShooterGame),
-                        'optionsMenu': (_, game) => OptionsMenu(
-                              game: game as RogueShooterGame?,
-                            ),
-                        'damageReport': (_, game) =>
-                            DamageReportOverlay(game: game as RogueShooterGame),
-                        'playerStatsOverlay': (_, game) => PlayerStatsOverlay(
-                            player: gameInstance!.player, game: gameInstance!),
+                            transitionType: TransitionType.fade,
+                            duration: Duration(milliseconds: 400),
+                          ),
+                        );
+
+                        Future.delayed(Duration(milliseconds: 500), () {
+                          gameInstance!.player.applyEquippedItems();
+                        });
                       },
                     ),
+                    transitionType: TransitionType.slideUp,
+                    duration: Duration(milliseconds: 300),
+                  ),
+                );
+              },
             ),
-          ),
-        ),
-      ),
+      },
     );
   }
 }
@@ -286,7 +288,7 @@ class RogueShooterGame extends FlameGame
   });
   @override
   void onGameResize(Vector2 screenSize) {
-    super.onGameResize(screenSize); // ✅ Lock resolution
+    super.onGameResize(Vector2(820, 820)); // ✅ Lock resolution
   }
 
   @override
@@ -349,7 +351,7 @@ class RogueShooterGame extends FlameGame
       add(lootNotificationBar);
 
       // Initialize audio
-      print('🎵 Initializing audio...');
+      print('�� Initializing audio...');
       final audioManager = AudioManager();
       await audioManager.preloadAudio();
       await audioManager.playBackgroundMusic('audio/soft_etheral.mp3');
