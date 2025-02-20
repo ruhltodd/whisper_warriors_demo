@@ -16,163 +16,135 @@ class HUD extends StatelessWidget {
   final SpiritBar experienceBar;
   final RogueShooterGame game;
   final ValueNotifier<double?> bossHealthNotifier;
-  final ValueNotifier<double?> bossStaggerNotifier; // ✅ Track stagger progress
+  final ValueNotifier<double?> bossStaggerNotifier;
 
   HUD({
     required this.onJoystickMove,
     required this.experienceBar,
     required this.game,
     required this.bossHealthNotifier,
-    required this.bossStaggerNotifier, // ✅ Track stagger bar
+    required this.bossStaggerNotifier,
   });
 
   bool get _shouldShowJoystick {
-    if (kIsWeb) return false; // Don't show on web
+    if (kIsWeb) return false;
     try {
-      return Platform.isAndroid || Platform.isIOS; // Only show on mobile
+      return Platform.isAndroid || Platform.isIOS;
     } catch (e) {
-      return false; // Default to not showing if platform check fails
+      return false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final double safeTop = MediaQuery.of(context).padding.top;
-    print(
-        "👜 Current Inventory: ${game.player.inventory.map((item) => item.name).toList()}");
-    return Stack(
-      children: [
-        // ⏳ Game Timer (Top Right)
-        Positioned(
-          top: safeTop + 10,
-          right: 20,
-          child: ValueListenableBuilder<dynamic>(
-            valueListenable: game.gameHudNotifier,
-            builder: (context, value, _) {
-              if (value is int) {
-                return Text(
-                  game.formatTime(value),
-                  style: GameTextStyles.gameTitle(
-                    fontSize: 18,
-                    letterSpacing: 1.5, // Slightly more spread for timer
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
+    return SizedBox(
+      width: 820,
+      height: 820,
+      child: Stack(
+        children: [
+          // 📈 XP Bar (Top Center)
+          Positioned(
+            top: 2,
+            left: 410 - 75, // Centered: 820/2 - width/2
+            child: GlobalExperienceLevelBar(smallSize: true),
           ),
-        ),
 
-        // 📈 XP Bar (Above Spirit Level)
-        Positioned(
-          top: safeTop + 2,
-          left: MediaQuery.of(context).size.width / 2 - 75,
-          child: GlobalExperienceLevelBar(
-              smallSize:
-                  true), // Changed from XPBar to GlobalExperienceLevelBar
-        ),
-        // ⚡ Spirit Bar (Top Center)
-        Positioned(
-          top: safeTop + 10,
-          left: MediaQuery.of(context).size.width / 2 - 100, // ✅ Centered
-          child: SizedBox(
-            width: 200,
-            height: 20,
-            child: CustomPaint(
-              painter: SpiritBarPainter(experienceBar),
+          // ⚡ Spirit Bar
+          Positioned(
+            top: 10,
+            left: 410 - 100, // Centered: 820/2 - width/2
+            child: SizedBox(
+              width: 200,
+              height: 20,
+              child: CustomPaint(
+                painter: SpiritBarPainter(experienceBar),
+              ),
             ),
           ),
-        ),
 
-        // 👑 Boss UI
-        // 👑 Boss UI (Health Bar + Stagger Bar)
-        Positioned(
-          top: safeTop + 40,
-          left: MediaQuery.of(context).size.width / 2 - 100,
-          child: ValueListenableBuilder<String?>(
-            valueListenable: game.activeBossNameNotifier,
-            builder: (context, bossName, _) {
-              return ValueListenableBuilder<double?>(
-                valueListenable: bossHealthNotifier,
-                builder: (context, bossHealth, _) {
-                  return ValueListenableBuilder<double?>(
-                    valueListenable: game.bossStaggerNotifier,
-                    builder: (context, bossStagger, _) {
-                      if (bossHealth == null ||
-                          bossHealth <= 0 ||
-                          bossName == null) {
-                        return const SizedBox.shrink();
-                      }
-
-                      double maxStagger = 100.0;
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            bossName,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'MyCustomFont',
-                              decoration: TextDecoration.none,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          SizedBox(
-                            width: 200,
-                            child: BossHealthBar(
-                              bossHealth: game
-                                  .bossHealthNotifier, // Pass the ValueNotifier itself
-                              maxBossHealth: game.maxBossHealth,
-                              segmentSize: 1000,
-                            ),
-                          ),
-                          const SizedBox(height: 5), // ✅ Space between bars
-                          if (bossStagger != null)
-                            SizedBox(
-                              width: 200,
-                              child: CustomPaint(
-                                size: Size(200, 8), // Size of the stagger bar
-                                painter: StaggerBarPainter(
-                                  bossStagger, // current stagger value
-                                  maxStagger, // max stagger value
-                                ),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
+          // ⏳ Game Timer
+          Positioned(
+            top: 10,
+            right: 20,
+            child: ValueListenableBuilder<dynamic>(
+              valueListenable: game.gameHudNotifier,
+              builder: (context, value, _) {
+                if (value is int) {
+                  return Text(
+                    game.formatTime(value),
+                    style: GameTextStyles.gameTitle(
+                      fontSize: 18,
+                      letterSpacing: 1.5,
+                    ),
                   );
-                },
-              );
-            },
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ),
-        ),
-        // 🔥 Ability Bar (Top Left)
-        Positioned(
-          top: safeTop + 10,
-          left: 10,
-          child: AbilityBar(player: game.player),
-        ),
 
-        // 🛡 Inventory Bar (Below the Ability Bar)
-        if (game.player.inventory.isNotEmpty)
+          // 👑 Boss UI
           Positioned(
-            top: safeTop + 70, // Adjust if needed
+            top: 40,
+            left: 410 - 100, // Centered: 820/2 - width/2
+            child: ValueListenableBuilder<String?>(
+              valueListenable: game.activeBossNameNotifier,
+              builder: (context, bossName, _) {
+                return ValueListenableBuilder<double?>(
+                  valueListenable: bossHealthNotifier,
+                  builder: (context, bossHealth, _) {
+                    if (bossHealth == null ||
+                        bossHealth <= 0 ||
+                        bossName == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      children: [
+                        Text(
+                          bossName,
+                          style: GameTextStyles.gameTitle(fontSize: 20),
+                        ),
+                        const SizedBox(height: 5),
+                        SizedBox(
+                          width: 200,
+                          child: BossHealthBar(
+                            bossHealth: game.bossHealthNotifier,
+                            maxBossHealth: game.maxBossHealth,
+                            segmentSize: 1000,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+
+          // 🔥 Ability Bar
+          Positioned(
+            top: 10,
             left: 10,
-            child: InventoryBar(player: game.player),
+            child: AbilityBar(player: game.player),
           ),
-        // Conditionally show joystick
-        if (_shouldShowJoystick)
-          Positioned(
-            left: 30,
-            bottom: 30,
-            child: JoystickOverlay(onMove: onJoystickMove),
-          ),
-      ],
+
+          // 🛡️ Inventory Bar
+          if (game.player.inventory.isNotEmpty)
+            Positioned(
+              top: 70,
+              left: 10,
+              child: InventoryBar(player: game.player),
+            ),
+
+          // 🎮 Joystick
+          if (_shouldShowJoystick)
+            Positioned(
+              left: 30,
+              bottom: 30,
+              child: JoystickOverlay(onMove: onJoystickMove),
+            ),
+        ],
+      ),
     );
   }
 }
