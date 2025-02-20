@@ -174,9 +174,11 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Center(
-          child: SizedBox(
-            width: 820, // ✅ Fixed width
-            height: 820, // ✅ Fixed height
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 820,
+              maxHeight: 820,
+            ),
             child: Builder(
               builder: (context) => MainMenu(
                 startGame: () {
@@ -312,6 +314,7 @@ class RogueShooterGame extends FlameGame
   final List<String> selectedAbilities;
   final List<InventoryItem> equippedItems;
   final Random random = Random();
+  final Vector2 screenSize = Vector2(820, 820);
 
   SpawnController? spawnController;
   bool isPaused = false;
@@ -329,6 +332,10 @@ class RogueShooterGame extends FlameGame
     required this.selectedAbilities,
     required this.equippedItems,
   });
+  @override
+  void onGameResize(Vector2 screenSize) {
+    super.onGameResize(screenSize); // ✅ Lock resolution
+  }
 
   @override
   Future<void> onLoad() async {
@@ -344,7 +351,7 @@ class RogueShooterGame extends FlameGame
       // ✅ Initialize camera inside onLoad
       print('🎥 Initializing camera...');
       customCamera = CustomCamera(
-        rawScreenSize: size, // ✅ Now size is ready
+        rawScreenSize: screenSize, // ✅ Now size is ready
         worldSize: Vector2(1280, 1280),
       );
 

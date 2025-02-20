@@ -43,73 +43,80 @@ class _MainMenuState extends State<MainMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/main_menu_background.png'),
-          fit: BoxFit.cover,
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 820,
+            maxHeight: 820,
+          ),
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              color: Colors.black,
+              image: DecorationImage(
+                image: AssetImage('assets/images/main_menu_background.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 200),
+
+                // 🎮 Start Button
+                _buildAnimatedButton(
+                  image: 'assets/images/start_button.png',
+                  onTap: () {
+                    _stopMusic();
+                    widget.startGame();
+                  },
+                ),
+
+                const SizedBox(height: 30),
+
+                // ⚙️ Options Button
+                _buildAnimatedButton(
+                  image: 'assets/images/options_button.png',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      GamePageTransition(
+                        builder: (context) => OptionsScreen(
+                          onBack: () => Navigator.pop(context),
+                        ),
+                        transitionType: TransitionType.fade,
+                        duration: const Duration(milliseconds: 300),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 200),
+    );
+  }
 
-            // Animated Start Button
-            MouseRegion(
-              onEnter: (_) => setState(() => startButtonOpacity = 0.8),
-              onExit: (_) => setState(() => startButtonOpacity = 1.0),
-              child: GestureDetector(
-                onTapDown: (_) => setState(() => startButtonOpacity = 0.6),
-                onTapUp: (_) {
-                  setState(() => startButtonOpacity = 1.0);
-                  _stopMusic();
-                  widget.startGame();
-                },
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 150),
-                  opacity: startButtonOpacity,
-                  child: Image.asset(
-                    'assets/images/start_button.png',
-                    width: 250,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // Animated Options Button
-            MouseRegion(
-              onEnter: (_) => setState(() => optionsButtonOpacity = 0.8),
-              onExit: (_) => setState(() => optionsButtonOpacity = 1.0),
-              child: GestureDetector(
-                onTapDown: (_) => setState(() => optionsButtonOpacity = 0.6),
-                onTapUp: (_) {
-                  setState(() => optionsButtonOpacity = 1.0);
-                  Navigator.push(
-                    context,
-                    GamePageTransition(
-                      builder: (context) => OptionsScreen(
-                        onBack: () => Navigator.pop(context),
-                      ),
-                      transitionType: TransitionType.fade,
-                      duration: const Duration(milliseconds: 300),
-                    ),
-                  );
-                },
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 150),
-                  opacity: optionsButtonOpacity,
-                  child: Image.asset(
-                    'assets/images/options_button.png',
-                    width: 250,
-                  ),
-                ),
-              ),
-            ),
-          ],
+  // 🔄 Helper function for buttons
+  Widget _buildAnimatedButton(
+      {required String image, required VoidCallback onTap}) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => startButtonOpacity = 0.8),
+      onExit: (_) => setState(() => startButtonOpacity = 1.0),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => startButtonOpacity = 0.6),
+        onTapUp: (_) {
+          setState(() => startButtonOpacity = 1.0);
+          onTap();
+        },
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 150),
+          opacity: startButtonOpacity,
+          child: Image.asset(image, width: 250),
         ),
       ),
     );
