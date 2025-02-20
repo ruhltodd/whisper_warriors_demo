@@ -377,7 +377,7 @@ class RogueShooterGame extends FlameGame
       // ✅ Initialize camera inside onLoad
       print('🎥 Initializing camera...');
       customCamera = CustomCamera(
-        rawScreenSize: screenSize, // ✅ Now size is ready
+        screenSize: screenSize, // ✅ Now size is ready
         worldSize: Vector2(1280, 1280),
       );
 

@@ -2,7 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
-class CustomCamera {
+/*class CustomCamera {
   // Force fixed game size
   final Vector2 gameSize = Vector2(820, 820);
   final Vector2 worldSize;
@@ -42,9 +42,9 @@ class CustomCamera {
     canvas.scale(scale);
     canvas.translate(-position.x, -position.y);
   }
-}
+}*/
 
-/*class CustomCamera {
+class CustomCamera {
   final Vector2 screenSize;
   final Vector2 worldSize;
   Vector2 position = Vector2.zero();
@@ -67,4 +67,4 @@ class CustomCamera {
   void applyTransform(Canvas canvas) {
     canvas.translate(-position.x, -position.y);
   }
-}*/
+}
