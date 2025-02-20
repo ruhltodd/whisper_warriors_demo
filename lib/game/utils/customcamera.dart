@@ -16,15 +16,14 @@ class CustomCamera {
     required Vector2 rawScreenSize, // Keep parameter but ignore it
     required this.worldSize,
   }) {
-    // Calculate the center point of the world
-    worldCenter = worldSize / 2;
-    // Initialize camera position to center
-    position = Vector2(
-        worldCenter.x - (gameSize.x / 2), worldCenter.y - (gameSize.y / 2));
+    // Initialize camera at the correct position to center the viewport
+    // For 1280x1280 world, this would be [230,230] (640 - 410)
+    position = Vector2((worldSize.x / 2) - (gameSize.x / 2),
+        (worldSize.y / 2) - (gameSize.y / 2));
   }
 
   void follow(Vector2 playerPosition, double dt) {
-    // Calculate target position relative to world center
+    // Calculate target position to keep player centered
     Vector2 targetPosition = Vector2(playerPosition.x - (gameSize.x / 2),
         playerPosition.y - (gameSize.y / 2));
 
@@ -38,7 +37,7 @@ class CustomCamera {
 
     // Debug print
     print(
-        '📸 Target: $targetPosition, Camera: $position, Player: $playerPosition, World Center: $worldCenter');
+        '📸 Target: $targetPosition, Camera: $position, Player: $playerPosition');
   }
 
   void applyTransform(Canvas canvas) {
