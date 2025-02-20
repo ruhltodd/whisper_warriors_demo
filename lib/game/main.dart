@@ -164,40 +164,50 @@ class _MyAppState extends State<MyApp> {
               onAbilitiesSelected: (abilities) async {
                 final availableItems = await InventoryStorage.loadInventory();
 
-                Navigator.pushReplacement(
-                  context,
-                  GamePageTransition(
-                    builder: (context) => InventoryScreen(
-                      availableItems: availableItems,
-                      onConfirm: (selectedItems) async {
-                        print(
-                            "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
-
-                        // Update equipped status
-                        final items = await InventoryStorage.loadInventory();
-                        for (var item in items) {
-                          item.isEquipped = selectedItems
-                              .any((selected) => selected.name == item.name);
-                        }
-                        await InventoryStorage.saveInventory(items);
-
-                        setState(() {
-                          gameInstance = RogueShooterGame(
-                            selectedAbilities: abilities,
-                            equippedItems: selectedItems,
-                          );
-                        });
-
-                        Navigator.pop(
-                            context); // Navigate back to the root route
-                      },
-                    ),
-                    transitionType: TransitionType.slideUp,
-                    duration: Duration(milliseconds: 300),
-                  ),
-                );
+                if (context.mounted) {
+                  Navigator.pushNamed(
+                    // Use pushNamed for consistent navigation
+                    context,
+                    '/item_selection',
+                    arguments: {
+                      'abilities': abilities,
+                      'availableItems': availableItems,
+                    },
+                  );
+                }
               },
             ),
+        '/item_selection': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>;
+          return InventoryScreen(
+            availableItems: args['availableItems'],
+            onConfirm: (selectedItems) async {
+              print(
+                  "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
+
+              // Update equipped status
+              final items = await InventoryStorage.loadInventory();
+              for (var item in items) {
+                item.isEquipped =
+                    selectedItems.any((selected) => selected.name == item.name);
+              }
+              await InventoryStorage.saveInventory(items);
+
+              if (context.mounted) {
+                setState(() {
+                  gameInstance = RogueShooterGame(
+                    selectedAbilities: args['abilities'],
+                    equippedItems: selectedItems,
+                  );
+                });
+
+                // Pop back to root
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
+            },
+          );
+        },
       },
     );
   }

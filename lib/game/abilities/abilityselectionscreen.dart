@@ -324,7 +324,16 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
   }
 
   void _confirmSelection() {
+    print("✅ Confirming ability selection...");
     print("✅ Selected Abilities: $selectedAbilities");
+
+    if (selectedAbilities.isEmpty) {
+      print("❌ No abilities selected!");
+      return;
+    }
+
+    print("✅ Calling onAbilitiesSelected callback...");
     widget.onAbilitiesSelected(selectedAbilities);
+    print("✅ Callback completed");
   }
 }
