@@ -64,142 +64,140 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
     return Scaffold(
       backgroundColor: Colors.black87,
       body: Center(
-        child: SizedBox(
-          // Changed from Container to SizedBox for strict sizing
-          width: 820,
-          height: 820,
-          child: FittedBox(
-            // Add FittedBox to ensure content fits
-            fit: BoxFit.contain,
-            child: SizedBox(
-              width: 820,
-              height: 820,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Image.asset(
-                      'assets/images/main_menu_background.png',
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: 820,
+              maxHeight: 820,
+            ),
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: SizedBox(
+                width: 820,
+                height: 820,
+                child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    image: DecorationImage(
+                      image:
+                          AssetImage('assets/images/main_menu_background.png'),
                       fit: BoxFit.cover,
                     ),
                   ),
-                  Positioned(
-                    top: 20,
-                    right: 20,
-                    child: Text(
-                      "Abilities",
-                      style: GameTextStyles.gameTitle(
-                        fontSize: 22,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  Column(
+                  child: Stack(
                     children: [
-                      SizedBox(height: 100), // Space for hover stats
-                      // Available abilities grid
-                      Expanded(
-                        child: GridView.builder(
-                          padding: EdgeInsets.all(16),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 8,
-                            crossAxisSpacing: 4,
-                            mainAxisSpacing: 4,
-                            childAspectRatio: 1,
+                      Column(
+                        children: [
+                          SizedBox(height: 100),
+                          Expanded(
+                            child: GridView.builder(
+                              padding: EdgeInsets.all(16),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 8,
+                                crossAxisSpacing: 4,
+                                mainAxisSpacing: 4,
+                                childAspectRatio: 1,
+                              ),
+                              itemCount: 16,
+                              itemBuilder: (context, index) {
+                                if (index < unlockedAbilities.length) {
+                                  return _buildAbilityTile(
+                                      unlockedAbilities[index]);
+                                } else {
+                                  return _buildLockedAbilityTile();
+                                }
+                              },
+                            ),
                           ),
-                          itemCount: 16,
-                          itemBuilder: (context, index) {
-                            if (index < unlockedAbilities.length) {
-                              return _buildAbilityTile(
-                                  unlockedAbilities[index]);
-                            } else {
-                              return _buildLockedAbilityTile();
-                            }
-                          },
-                        ),
-                      ),
-                      // Selected abilities grid (3 slots)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 24.0, top: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(3, (index) {
-                            if (index < selectedAbilities.length) {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 6.0),
-                                child: Container(
-                                  width: 64,
-                                  height: 64,
-                                  decoration: BoxDecoration(
-                                    color: Colors.blueGrey,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(bottom: 24.0, top: 8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(3, (index) {
+                                if (index < selectedAbilities.length) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6.0),
+                                    child: Container(
+                                      width: 64,
+                                      height: 64,
+                                      decoration: BoxDecoration(
+                                        color: Colors.blueGrey,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(6.0),
+                                        child: Image.asset(
+                                          'assets/images/${selectedAbilities[index].toLowerCase().replaceAll(" ", "_")}.png',
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(6.0),
-                                    child: Image.asset(
-                                      'assets/images/${selectedAbilities[index].toLowerCase().replaceAll(" ", "_")}.png',
-                                      fit: BoxFit.contain,
+                                  );
+                                } else {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6.0),
+                                    child: Container(
+                                      width: 64,
+                                      height: 64,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black38,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: Colors.grey.shade600,
+                                          width: 2,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            } else {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 6.0),
-                                child: Container(
-                                  width: 64,
-                                  height: 64,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black38,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: Colors.grey.shade600,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
-                          }),
-                        ),
-                      ),
-                      // Experience bar
-                      GlobalExperienceLevelBar(),
-                      SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (selectedAbilities.isEmpty) return;
-
-                            setState(() {}); // Force rebuild
-
-                            // Add small delay to ensure layout is complete
-                            Future.delayed(Duration(milliseconds: 50), () {
-                              if (!mounted) return;
-                              widget.onAbilitiesSelected(
-                                  List<String>.from(selectedAbilities));
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: Size(200, 50), // Force button size
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 32, vertical: 16),
+                                  );
+                                }
+                              }),
+                            ),
                           ),
-                          child: Text("Confirm Selection"),
-                        ),
+                          GlobalExperienceLevelBar(),
+                          SizedBox(height: 20),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: ElevatedButton(
+                              onPressed: selectedAbilities.isEmpty
+                                  ? null
+                                  : _confirmSelection,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    const Color.fromARGB(255, 123, 123, 123),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 40, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                minimumSize: Size(200, 50),
+                              ),
+                              child: const Text(
+                                "Confirm Selection",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                        ],
                       ),
-                      SizedBox(height: 10),
+                      if (_hoveredAbility != null) _buildHoverStats(),
                     ],
                   ),
-                  if (_hoveredAbility != null) _buildHoverStats(),
-                ],
+                ),
               ),
             ),
           ),
@@ -332,5 +330,12 @@ class _AbilitySelectionScreenState extends State<AbilitySelectionScreen> {
         selectedAbilities.add(ability);
       }
     });
+  }
+
+  void _confirmSelection() {
+    if (selectedAbilities.isEmpty) return;
+
+    print("✅ Confirming abilities: $selectedAbilities");
+    widget.onAbilitiesSelected(List<String>.from(selectedAbilities));
   }
 }
