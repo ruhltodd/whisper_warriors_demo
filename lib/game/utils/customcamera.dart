@@ -9,41 +9,39 @@ class CustomCamera {
   Vector2 position = Vector2.zero();
   double followSpeed = 5.0;
 
-  // Calculate the offset needed to center the viewport in the world
-  late final Vector2 worldOffset;
+  // Calculate the world center offset
+  late final Vector2 worldCenter;
 
   CustomCamera({
     required Vector2 rawScreenSize, // Keep parameter but ignore it
     required this.worldSize,
   }) {
-    // Calculate the offset to center the game viewport in the world
-    worldOffset = (worldSize - gameSize) / 2;
-    // Initialize camera position at the offset
-    position = worldOffset.clone();
+    // Calculate the center point of the world
+    worldCenter = worldSize / 2;
+    // Initialize camera position to center
+    position = Vector2(
+        worldCenter.x - (gameSize.x / 2), worldCenter.y - (gameSize.y / 2));
   }
 
   void follow(Vector2 playerPosition, double dt) {
-    // Calculate target position with world offset
-    Vector2 targetPosition = playerPosition - (gameSize / 2) + worldOffset;
+    // Calculate target position relative to world center
+    Vector2 targetPosition = Vector2(playerPosition.x - (gameSize.x / 2),
+        playerPosition.y - (gameSize.y / 2));
 
     // Smooth follow
     position.x += (targetPosition.x - position.x) * followSpeed * dt;
     position.y += (targetPosition.y - position.y) * followSpeed * dt;
 
-    // Clamp to world bounds while maintaining the offset
+    // Clamp to world bounds
     position.x = position.x.clamp(0, worldSize.x - gameSize.x);
     position.y = position.y.clamp(0, worldSize.y - gameSize.y);
 
     // Debug print
     print(
-      '📸 Camera Target: $targetPosition, Current: $position, Player: $playerPosition',
-    );
+        '📸 Target: $targetPosition, Camera: $position, Player: $playerPosition, World Center: $worldCenter');
   }
 
   void applyTransform(Canvas canvas) {
-    // Center the game view
-    final scale = gameSize.x / 820; // Calculate scale factor if needed
-    canvas.scale(scale);
     canvas.translate(-position.x, -position.y);
   }
 }
