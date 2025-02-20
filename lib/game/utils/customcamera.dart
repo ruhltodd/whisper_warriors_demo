@@ -3,26 +3,32 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 class CustomCamera {
-  final Vector2 rawScreenSize;
+  // Force fixed game size
+  final Vector2 gameSize = Vector2(820, 820);
   final Vector2 worldSize;
   Vector2 position = Vector2.zero();
   double followSpeed = 5.0;
 
   CustomCamera({
-    required this.rawScreenSize,
+    required Vector2 rawScreenSize, // Keep parameter but ignore it
     required this.worldSize,
   });
 
   void follow(Vector2 playerPosition, double dt) {
-    final desiredPosition = playerPosition - rawScreenSize / 2;
+    // Use gameSize instead of rawScreenSize for calculations
+    final desiredPosition = playerPosition - gameSize / 2;
     position.x += (desiredPosition.x - position.x) * followSpeed * dt;
     position.y += (desiredPosition.y - position.y) * followSpeed * dt;
 
-    position.x = position.x.clamp(0, worldSize.x - rawScreenSize.x);
-    position.y = position.y.clamp(0, worldSize.y - rawScreenSize.y);
+    // Clamp using gameSize
+    position.x = position.x.clamp(0, worldSize.x - gameSize.x);
+    position.y = position.y.clamp(0, worldSize.y - gameSize.y);
   }
 
   void applyTransform(Canvas canvas) {
+    // Center the game view
+    final scale = gameSize.x / 820; // Calculate scale factor if needed
+    canvas.scale(scale);
     canvas.translate(-position.x, -position.y);
   }
 }
