@@ -175,132 +175,19 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.black,
         canvasColor: Colors.black,
-        primaryColor: Colors.black,
-        // Force dark mode
-        brightness: Brightness.dark,
-        // Use colorScheme instead of backgroundColor
         colorScheme: ColorScheme.dark(
           background: Colors.black,
           surface: Colors.black,
-          primary: Colors.black,
-          secondary: Colors.black,
         ),
-        // Ensure all surfaces are black
-        cardColor: Colors.black,
-        dialogBackgroundColor: Colors.black,
-        // Set the default text color to white for contrast
-        textTheme: const TextTheme().apply(bodyColor: Colors.white),
       ),
       home: Scaffold(
         backgroundColor: Colors.black,
         body: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 820,
-              maxHeight: 820,
-            ),
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: Colors.black,
-              child: Builder(
-                builder: (context) => MainMenu(
-                  startGame: () {
-                    Navigator.push(
-                      context,
-                      GamePageTransition(
-                        builder: (context) => AbilitySelectionScreen(
-                          onAbilitiesSelected: (abilities) async {
-                            final availableItems =
-                                await InventoryStorage.loadInventory();
-
-                            Navigator.pushReplacement(
-                              context,
-                              GamePageTransition(
-                                builder: (context) => InventoryScreen(
-                                  availableItems: availableItems,
-                                  onConfirm: (selectedItems) async {
-                                    print(
-                                        "🎒 Selected Items: ${selectedItems.map((item) => item.name).toList()}");
-
-                                    // Update equipped status
-                                    final items =
-                                        await InventoryStorage.loadInventory();
-                                    for (var item in items) {
-                                      item.isEquipped = selectedItems.any(
-                                          (selected) =>
-                                              selected.name == item.name);
-                                    }
-                                    await InventoryStorage.saveInventory(items);
-
-                                    gameInstance = RogueShooterGame(
-                                      selectedAbilities: abilities,
-                                      equippedItems: selectedItems,
-                                    );
-
-                                    Navigator.pushReplacement(
-                                      context,
-                                      GamePageTransition(
-                                        builder: (context) => GameWidget(
-                                          game: gameInstance,
-                                          overlayBuilderMap: {
-                                            'hud': (_, game) => HUD(
-                                                  onJoystickMove: (delta) =>
-                                                      (game)
-                                                          .player
-                                                          .updateJoystick(
-                                                              delta),
-                                                  experienceBar:
-                                                      (game as RogueShooterGame)
-                                                          .experienceBar,
-                                                  game: game,
-                                                  bossHealthNotifier:
-                                                      (game).bossHealthNotifier,
-                                                  bossStaggerNotifier: (game)
-                                                      .bossStaggerNotifier,
-                                                ),
-                                            'retryOverlay': (_, game) =>
-                                                RetryOverlay(
-                                                    game: game
-                                                        as RogueShooterGame),
-                                            'optionsMenu': (_, game) =>
-                                                OptionsMenu(
-                                                    game: game
-                                                        as RogueShooterGame),
-                                            'damageReport': (_, game) =>
-                                                DamageReportOverlay(
-                                                    game: game
-                                                        as RogueShooterGame),
-                                            'playerStatsOverlay': (_, game) =>
-                                                PlayerStatsOverlay(
-                                                    player: gameInstance.player,
-                                                    game: gameInstance),
-                                          },
-                                        ),
-                                        transitionType: TransitionType.fade,
-                                        duration: Duration(milliseconds: 400),
-                                      ),
-                                    );
-
-                                    Future.delayed(Duration(milliseconds: 500),
-                                        () {
-                                      gameInstance.player.applyEquippedItems();
-                                    });
-                                  },
-                                ),
-                                transitionType: TransitionType.fade,
-                                duration: Duration(milliseconds: 300),
-                              ),
-                            );
-                          },
-                        ),
-                        transitionType: TransitionType.fade,
-                        duration: Duration(milliseconds: 300),
-                      ),
-                    );
-                  },
-                ),
-              ),
+          child: SizedBox(
+            width: 820,
+            height: 820,
+            child: GameWidget(
+              game: gameInstance,
             ),
           ),
         ),
