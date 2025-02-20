@@ -180,54 +180,57 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.black,
         canvasColor: Colors.black,
-        colorScheme: ColorScheme.dark(
-          background: Colors.black,
-          surface: Colors.black,
+      ),
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Container(
+            width: 820,
+            height: 820,
+            clipBehavior: Clip.hardEdge, // Add clipping
+            decoration: BoxDecoration(
+              color: Colors.black,
+              border: Border.all(
+                  color: Colors.purple
+                      .withOpacity(0.3)), // Optional: visible boundary
+            ),
+            child: ClipRect(
+              // Force clipping of game content
+              child: gameInstance == null
+                  ? MainMenu(startGame: () => startGame(context))
+                  : GameWidget.controlled(
+                      gameFactory: () => gameInstance!,
+                      loadingBuilder: (context) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      backgroundBuilder: (context) => Container(
+                        color: Colors.black,
+                      ),
+                      overlayBuilderMap: {
+                        'hud': (_, game) => HUD(
+                              onJoystickMove: (delta) =>
+                                  (game).player.updateJoystick(delta),
+                              experienceBar:
+                                  (game as RogueShooterGame).experienceBar,
+                              game: game,
+                              bossHealthNotifier: (game).bossHealthNotifier,
+                              bossStaggerNotifier: (game).bossStaggerNotifier,
+                            ),
+                        'retryOverlay': (_, game) =>
+                            RetryOverlay(game: game as RogueShooterGame),
+                        'optionsMenu': (_, game) => OptionsMenu(
+                              game: game as RogueShooterGame?,
+                            ),
+                        'damageReport': (_, game) =>
+                            DamageReportOverlay(game: game as RogueShooterGame),
+                        'playerStatsOverlay': (_, game) => PlayerStatsOverlay(
+                            player: gameInstance!.player, game: gameInstance!),
+                      },
+                    ),
+            ),
+          ),
         ),
       ),
-      // Add routes for navigation
-      routes: {
-        '/': (context) => Scaffold(
-              backgroundColor: Colors.black,
-              body: Center(
-                child: SizedBox(
-                  width: 820,
-                  height: 820,
-                  child: gameInstance == null
-                      ? MainMenu(
-                          startGame: () =>
-                              startGame(context), // Pass context here
-                        )
-                      : GameWidget(
-                          game: gameInstance!,
-                          overlayBuilderMap: {
-                            'hud': (_, game) => HUD(
-                                  onJoystickMove: (delta) =>
-                                      (game).player.updateJoystick(delta),
-                                  experienceBar:
-                                      (game as RogueShooterGame).experienceBar,
-                                  game: game,
-                                  bossHealthNotifier: (game).bossHealthNotifier,
-                                  bossStaggerNotifier:
-                                      (game).bossStaggerNotifier,
-                                ),
-                            'retryOverlay': (_, game) =>
-                                RetryOverlay(game: game as RogueShooterGame),
-                            'optionsMenu': (_, game) => OptionsMenu(
-                                  game: game as RogueShooterGame?,
-                                ),
-                            'damageReport': (_, game) => DamageReportOverlay(
-                                game: game as RogueShooterGame),
-                            'playerStatsOverlay': (_, game) =>
-                                PlayerStatsOverlay(
-                                    player: gameInstance!.player,
-                                    game: gameInstance!),
-                          },
-                        ),
-                ),
-              ),
-            ),
-      },
     );
   }
 }
