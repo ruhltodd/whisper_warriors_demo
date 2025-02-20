@@ -74,23 +74,28 @@ abstract class BaseEnemy extends SpriteAnimationComponent
     }
   }
 
-  void takeDamage(double amount,
-      {bool isCritical = false, bool isEchoed = false}) {
+  void takeDamage(double damage,
+      {bool isCritical = false,
+      bool isEchoed = false,
+      bool showDamageNumber = true,
+      bool isWhisperingFlames = false}) {
+    if (!isTargetable) return;
     if (_baseHealth <= 0) return;
 
     // Convert damage to int for health calculation
-    int damageAmount = amount.round();
+    int damageAmount = damage.round();
     _baseHealth -= damageAmount;
 
-    // Add damage number display
-    // Show damage number
-    if (timeSinceLastDamageNumber >= damageNumberInterval) {
-      final damageNumber = DamageNumber(
+    // Show damage number if enabled and not WhisperingFlames
+    // (since WhisperingFlames creates its own damage number)
+    if (showDamageNumber &&
+        !isWhisperingFlames &&
+        timeSinceLastDamageNumber >= damageNumberInterval) {
+      gameRef.add(DamageNumber(
         damageAmount,
-        position.clone(),
+        position,
         isCritical: isCritical,
-      );
-      gameRef.add(damageNumber);
+      ));
       timeSinceLastDamageNumber = 0;
     }
 
@@ -98,11 +103,11 @@ abstract class BaseEnemy extends SpriteAnimationComponent
         '💥 Enemy took $damageAmount damage${isCritical ? " (CRIT!)" : ""}${isEchoed ? " (Echo)" : ""}. Health: $_baseHealth');
 
     if (_baseHealth <= 0) {
-      die();
+      die(isEchoed: isEchoed);
     }
   }
 
-  void die() {
+  void die({bool isEchoed = false}) {
     if (!hasExploded && gameRef.player.hasAbility<SoulFracture>()) {
       hasExploded = true;
       gameRef.add(Explosion(position)); // ✅ Explosion animation

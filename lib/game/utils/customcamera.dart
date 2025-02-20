@@ -3,6 +3,30 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 class CustomCamera {
+  final Vector2 rawScreenSize;
+  final Vector2 worldSize;
+  Vector2 position = Vector2.zero();
+  double followSpeed = 5.0;
+
+  CustomCamera({
+    required this.rawScreenSize,
+    required this.worldSize,
+  });
+
+  void follow(Vector2 playerPosition, double dt) {
+    final desiredPosition = playerPosition - rawScreenSize / 2;
+    position.x += (desiredPosition.x - position.x) * followSpeed * dt;
+    position.y += (desiredPosition.y - position.y) * followSpeed * dt;
+
+    position.x = position.x.clamp(0, worldSize.x - rawScreenSize.x);
+    position.y = position.y.clamp(0, worldSize.y - rawScreenSize.y);
+  }
+
+  void applyTransform(Canvas canvas) {
+    canvas.translate(-position.x, -position.y);
+  }
+}
+/*class CustomCamera {
   final Vector2 screenSize;
   final Vector2 worldSize;
   Vector2 position = Vector2.zero();
@@ -25,4 +49,4 @@ class CustomCamera {
   void applyTransform(Canvas canvas) {
     canvas.translate(-position.x, -position.y);
   }
-}
+}*/

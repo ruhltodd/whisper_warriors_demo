@@ -5,6 +5,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:whisper_warriors/game/bosses/staggerbar.dart';
+import 'package:whisper_warriors/game/effects/damagenumber.dart';
 import 'package:whisper_warriors/game/inventory/loottable.dart';
 import 'package:whisper_warriors/game/items/lootbox.dart';
 import 'package:whisper_warriors/game/items/items.dart';
@@ -290,10 +291,14 @@ class Boss2 extends BaseEnemy with Staggerable {
   }
 
   @override
-  void takeDamage(double baseDamage,
-      {bool isCritical = false,
-      bool isEchoed = false,
-      bool isFlameDamage = false}) {
+  void takeDamage(
+    double baseDamage, {
+    bool isCritical = false,
+    bool isEchoed = false,
+    bool showDamageNumber = true,
+    bool isWhisperingFlames = false,
+    // Match BaseEnemy parameter
+  }) {
     if (!isCritical) {
       isCritical = gameRef.random.nextDouble() < player.critChance / 100;
     }
@@ -304,9 +309,18 @@ class Boss2 extends BaseEnemy with Staggerable {
     // Apply damage to the local class
     double currentHealth = healthNotifier.value;
     currentHealth -= finalDamage;
+
+    // Show damage number if enabled
+    if (showDamageNumber) {
+      gameRef.add(DamageNumber(
+        finalDamage,
+        position.clone() + Vector2(0, -20),
+        isCritical: isCritical,
+      ));
+    }
+
     // Update
     healthNotifier.value = currentHealth.toDouble();
-
     onHealthChanged(healthNotifier.value);
     print('⚠️ Boss took damage! Health: ${healthNotifier.value}');
 
@@ -327,7 +341,7 @@ class Boss2 extends BaseEnemy with Staggerable {
   }
 
   @override
-  void die() {
+  void die({bool isEchoed = false}) {
     if (_isDying || _isRemoved) {
       print("⚠️ Attempted to kill already dying/removed boss");
       return;

@@ -90,13 +90,6 @@ class WhisperingFlames extends Component
       double spiritMultiplier = PlayerProgressManager.getSpiritMultiplier();
       double scaledDamage = baseDamagePerSecond * spiritMultiplier;
 
-      // Rate-limited debug print
-      if (_shouldPrintDebug()) {
-        print('🔥 WhisperingFlames tick');
-        print(
-            '🔥 Base damage: $baseDamagePerSecond × ${spiritMultiplier.toStringAsFixed(2)} = $scaledDamage');
-      }
-
       try {
         int enemiesInRange = 0;
         for (var enemy in gameRef.children.whereType<BaseEnemy>()) {
@@ -114,7 +107,6 @@ class WhisperingFlames extends Component
 
             print(
                 '🔥 WhisperingFlames hitting enemy at distance $distance with $finalDamage damage (Crit: $isCritical)');
-            enemy.takeDamage(finalDamage.toDouble(), isCritical: isCritical);
 
             // Add damage number with orange numbers
             gameRef.add(DamageNumber(
@@ -122,10 +114,16 @@ class WhisperingFlames extends Component
               enemy.position,
               isCritical: isCritical,
               isWhisperingFlames: true,
-              customSize: Vector2(10, 11), // This will use orange numbers
+              customSize: Vector2(10, 11),
             ));
 
-            // Use onHit to record the damage
+            // Apply damage and record it (but don't create another damage number)
+            enemy.takeDamage(finalDamage.toDouble(),
+                isCritical: isCritical,
+                showDamageNumber: false,
+                isWhisperingFlames: true);
+
+            // Record the damage
             onHit(_player, enemy, finalDamage, isCritical: isCritical);
           }
         }

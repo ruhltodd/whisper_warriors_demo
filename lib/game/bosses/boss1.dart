@@ -564,10 +564,13 @@ class Boss1 extends BaseEnemy with Staggerable, KeyboardHandler {
   }
 
   @override
-  void takeDamage(double baseDamage,
-      {bool isCritical = false,
-      bool isEchoed = false,
-      bool isFlameDamage = false}) {
+  void takeDamage(
+    double baseDamage, {
+    bool isCritical = false,
+    bool isEchoed = false,
+    bool showDamageNumber = true,
+    bool isWhisperingFlames = false,
+  }) {
     if (!isMounted || healthNotifier.value <= 0 || _isUpdatingHealth) {
       print('⚠️ Damage blocked - Boss not mounted, dead, or updating');
       return;
@@ -583,13 +586,15 @@ class Boss1 extends BaseEnemy with Staggerable, KeyboardHandler {
       print(
           '💉 Taking damage: $actualDamage, Current Health: $currentHealth -> New Health: $newHealth');
 
-      // Show damage number
-      final damageNumber = DamageNumber(
-        actualDamage.toInt(),
-        position.clone() + Vector2(0, -20),
-        isCritical: isCritical,
-      );
-      gameRef.add(damageNumber);
+      // Show damage number if enabled and not WhisperingFlames
+      if (showDamageNumber && !isWhisperingFlames) {
+        final damageNumber = DamageNumber(
+          actualDamage.toInt(),
+          position.clone() + Vector2(0, -20),
+          isCritical: isCritical,
+        );
+        gameRef.add(damageNumber);
+      }
 
       // Update health notifiers in a single batch
       healthNotifier.value = newHealth;
@@ -605,7 +610,7 @@ class Boss1 extends BaseEnemy with Staggerable, KeyboardHandler {
 
       if (newHealth <= 0) {
         die();
-        onBossDefeated(); // ✅ Call cleanup function
+        onBossDefeated();
         onDeath();
       }
     } finally {
@@ -1302,7 +1307,7 @@ class Boss1 extends BaseEnemy with Staggerable, KeyboardHandler {
   }
 
   @override
-  void die() {
+  void die({bool isEchoed = false}) {
     print('💀 Umbrathos is dying...');
 
     // Stop any active attacks
